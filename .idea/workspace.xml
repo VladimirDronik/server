@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="472e680c-dca4-4fd8-a6ee-cf51837341de" name="Default" comment="" />
+    <list default="true" id="472e680c-dca4-4fd8-a6ee-cf51837341de" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Megad (2).php" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Objects (2).php" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Scripts (2).php" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Users (2).php" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Views (2).php" afterPath="" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -58,24 +64,6 @@
                 <marker date="1548608492738" expanded="true" signature="5186:5311" ph="UPDATE `view... " />
                 <marker date="1548608492738" expanded="true" signature="6563:6646" ph="UPDATE `view... " />
                 <marker date="1548608492738" expanded="true" signature="6807:6853" ph="SELECT * FRO... view_items" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Views (2).php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/classes/Views (2).php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2592">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding>
-                <marker date="1548066377526" expanded="true" signature="337:394" ph="SELECT * FRO... view_items" />
-                <marker date="1548066377526" expanded="true" signature="1447:1505" ph="SELECT * FRO... view_items" />
-                <marker date="1548066377526" expanded="true" signature="2989:3223" ph="SELECT * FRO... view_items" />
-                <marker date="1548066377526" expanded="true" signature="3996:4054" ph="SELECT * FRO... view_items" />
-                <marker date="1548066377526" expanded="true" signature="5187:5312" ph="UPDATE `view... " />
-                <marker date="1548066377526" expanded="true" signature="6564:6647" ph="UPDATE `view... " />
-                <marker date="1548066377526" expanded="true" signature="6808:6854" ph="SELECT * FRO... view_items" />
               </folding>
             </state>
           </provider>
@@ -598,15 +586,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-2592">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <marker date="1548066377526" expanded="true" signature="337:394" ph="SELECT * FRO... view_items" />
-            <marker date="1548066377526" expanded="true" signature="1447:1505" ph="SELECT * FRO... view_items" />
-            <marker date="1548066377526" expanded="true" signature="2989:3223" ph="SELECT * FRO... view_items" />
-            <marker date="1548066377526" expanded="true" signature="3996:4054" ph="SELECT * FRO... view_items" />
-            <marker date="1548066377526" expanded="true" signature="5187:5312" ph="UPDATE `view... " />
-            <marker date="1548066377526" expanded="true" signature="6564:6647" ph="UPDATE `view... " />
-            <marker date="1548066377526" expanded="true" signature="6808:6854" ph="SELECT * FRO... view_items" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>

@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="472e680c-dca4-4fd8-a6ee-cf51837341de" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Megad (2).php" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Objects (2).php" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Scripts (2).php" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Users (2).php" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/classes/Views (2).php" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/classes/Views.php" afterPath="$PROJECT_DIR$/classes/Views.php" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -54,16 +51,16 @@
       <file leaf-file-name="Views.php" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/classes/Views.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="36">
-              <caret line="2" column="25" lean-forward="false" selection-start-line="2" selection-start-column="25" selection-end-line="2" selection-end-column="25" />
+            <state relative-caret-position="54">
+              <caret line="3" column="1" lean-forward="false" selection-start-line="3" selection-start-column="1" selection-end-line="3" selection-end-column="1" />
               <folding>
-                <marker date="1548608492738" expanded="true" signature="337:394" ph="SELECT * FRO... view_items" />
-                <marker date="1548608492738" expanded="true" signature="1446:1504" ph="SELECT * FRO... view_items" />
-                <marker date="1548608492738" expanded="true" signature="2988:3222" ph="SELECT * FRO... view_items" />
-                <marker date="1548608492738" expanded="true" signature="3995:4053" ph="SELECT * FRO... view_items" />
-                <marker date="1548608492738" expanded="true" signature="5186:5311" ph="UPDATE `view... " />
-                <marker date="1548608492738" expanded="true" signature="6563:6646" ph="UPDATE `view... " />
-                <marker date="1548608492738" expanded="true" signature="6807:6853" ph="SELECT * FRO... view_items" />
+                <marker date="1548610291962" expanded="true" signature="338:395" ph="SELECT * FRO... view_items" />
+                <marker date="1548610291962" expanded="true" signature="1447:1505" ph="SELECT * FRO... view_items" />
+                <marker date="1548610291962" expanded="true" signature="2989:3223" ph="SELECT * FRO... view_items" />
+                <marker date="1548610291962" expanded="true" signature="3996:4054" ph="SELECT * FRO... view_items" />
+                <marker date="1548610291962" expanded="true" signature="5187:5312" ph="UPDATE `view... " />
+                <marker date="1548610291962" expanded="true" signature="6564:6647" ph="UPDATE `view... " />
+                <marker date="1548610291962" expanded="true" signature="6808:6854" ph="SELECT * FRO... view_items" />
               </folding>
             </state>
           </provider>
@@ -352,10 +349,10 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="85109000" />
+    <option name="totallyTimeSpent" value="85112000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-3" y="0" width="1926" height="1058" extended-state="7" />
+    <frame x="-3" y="0" width="1926" height="1058" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.226254" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
@@ -603,16 +600,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/classes/Views.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="36">
-          <caret line="2" column="25" lean-forward="false" selection-start-line="2" selection-start-column="25" selection-end-line="2" selection-end-column="25" />
+        <state relative-caret-position="54">
+          <caret line="3" column="1" lean-forward="false" selection-start-line="3" selection-start-column="1" selection-end-line="3" selection-end-column="1" />
           <folding>
-            <marker date="1548608492738" expanded="true" signature="337:394" ph="SELECT * FRO... view_items" />
-            <marker date="1548608492738" expanded="true" signature="1446:1504" ph="SELECT * FRO... view_items" />
-            <marker date="1548608492738" expanded="true" signature="2988:3222" ph="SELECT * FRO... view_items" />
-            <marker date="1548608492738" expanded="true" signature="3995:4053" ph="SELECT * FRO... view_items" />
-            <marker date="1548608492738" expanded="true" signature="5186:5311" ph="UPDATE `view... " />
-            <marker date="1548608492738" expanded="true" signature="6563:6646" ph="UPDATE `view... " />
-            <marker date="1548608492738" expanded="true" signature="6807:6853" ph="SELECT * FRO... view_items" />
+            <marker date="1548610291962" expanded="true" signature="338:395" ph="SELECT * FRO... view_items" />
+            <marker date="1548610291962" expanded="true" signature="1447:1505" ph="SELECT * FRO... view_items" />
+            <marker date="1548610291962" expanded="true" signature="2989:3223" ph="SELECT * FRO... view_items" />
+            <marker date="1548610291962" expanded="true" signature="3996:4054" ph="SELECT * FRO... view_items" />
+            <marker date="1548610291962" expanded="true" signature="5187:5312" ph="UPDATE `view... " />
+            <marker date="1548610291962" expanded="true" signature="6564:6647" ph="UPDATE `view... " />
+            <marker date="1548610291962" expanded="true" signature="6808:6854" ph="SELECT * FRO... view_items" />
           </folding>
         </state>
       </provider>

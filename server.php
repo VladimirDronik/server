@@ -1,0 +1,181 @@
+<?php
+/** Сервер запущен как демон. Осуществляет обмен данными с клиентом. В этом скрипте прописаны основные методы
+ * работ с сокетами. Так же в этом скрипте реализована функция пориема сообщений от клиента через сокет и выполнение
+ действий в зависимости от того, какие данные шлет клиент
+ *
+ *  * #Запуск демона сервера сокетов на cron
+ * @reboot cd /var/www/socket_test && php server.php start -d
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/include.php';
+use Workerman\Worker;
+
+// массив для связи соединения пользователя и необходимого нам параметра
+$users = [];
+
+
+// создаём ws-сервер, к которому будут подключаться все наши пользователи
+$ws_worker = new Worker("websocket://0.0.0.0:8000");
+
+
+// создаём обработчик, который будет выполняться при запуске ws-сервера
+$ws_worker->onWorkerStart = function() use (&$users)
+{
+    // создаём локальный tcp-сервер, чтобы отправлять на него сообщения из кода нашего сайта
+    $inner_tcp_worker = new Worker("tcp://127.0.0.1:5678");
+    // создаём обработчик сообщений, который будет срабатывать,
+    // когда на локальный tcp-сокет приходит сообщение
+    $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
+        $data = json_decode($data);
+
+
+        //Если отправили сообщение от скрипта watchdog
+        if( $data->message == 'watchdog'){
+
+            //Отпарвляем скрипту watchdog ответ от сервера
+
+        }
+
+        //Если рассылаем всем ползователям
+        if ($data->user=='all') {
+
+           foreach ($users as $user) {
+            $webconnection = $user;
+            $webconnection->send($data->message);          
+
+            } 
+
+           } else {
+
+                    if (isset($users[$data->user])) {
+                    $webconnection = $users[$data->user];
+                    $webconnection->send($data->message);
+                   }
+            }
+
+          
+            
+    };
+    $inner_tcp_worker->listen();
+};
+
+
+
+
+//функция обработки нового подключения пользователя
+$ws_worker->onConnect = function($connection) use (&$users)
+{
+    $connection->onWebSocketConnect = function($connection) use (&$users)
+    {
+        // при подключении нового пользователя сохраняем get-параметр, который же сами и передали со страницы сайта
+        $users[$_GET['user']] = $connection;
+        echo $_GET['user'];
+    };
+};
+
+
+
+/** Получение данных от клиента */
+$ws_worker->onMessage = function($connection, $data) use (&$users)
+{
+
+    $views = new Views();
+    $user = new Users();
+
+    $objjson = json_decode($data);
+
+
+
+
+    $data_array = explode(';',$objjson->{'status'});
+
+    //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
+    if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')) {
+
+
+        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
+        $views->res_data($data);
+
+        //отдаем данные об изменении всем другим зарегестрированным клиентам
+        foreach ($users as $user) {
+            $webconnection = $user;
+            $webconnection->send($data);
+        }
+
+
+    } elseif  ((($objjson->{'status'})=='adduser')||(($objjson->{'status'})=='edituser')||(($objjson->{'status'})=='deleteuser')||($data_array[0]=='checkuser')) {
+
+        $method = $objjson->{'status'};
+
+        //Отвечаем на запрос разрешения вывода данных или запрещение
+        if ($data_array[0]=='checkuser'){
+
+         $user->checkuser($data_array[1]);
+
+        } else {
+
+            //Вызываем метод в зависимости от статуса
+            $user->$method($objjson->items[0]->id, $objjson->items[0]->dashboard, $objjson->items[0]->old_id);
+
+            //Формируем ответ со всеми юзерами, котоыре доступны
+            $data1 = $user->get_all_users();
+
+            $webconnection = $users[$objjson->iduser];
+            $webconnection->send("$data1");
+        }
+
+        } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
+
+
+
+            //формируем и отвечаем на запрос на получение всех данных с главной страницы
+            if ($data_array[0]=='ready?dashboard') {
+
+                    //Получаем данные из БД
+                    $data1 = $views->get_all_items();
+
+                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
+                    $webconnection = $users[$data_array[1]];
+                    $webconnection->send("$data1");
+
+            }
+
+            if ($data_array[0]=='ready?settings') {
+
+                    //формируем и отвечаем на запрос на получение всех данных страницы настроек
+                    $data1 = $views->get_all_settings();
+
+                    //Отвечаем на запрос получения всех данных страницы настроек (получаем события)
+                    $data2 = $views->get_all_events();
+
+                    //Формируем ответ со всеми юзерами, котоыре доступны
+                    $data3 = $user->get_all_users();
+
+                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
+                    $webconnection = $users[$data_array[1]];
+                    $webconnection->send("$data1");
+                    $webconnection->send("$data2");
+                    $webconnection->send("$data3");
+
+
+
+
+
+            }
+
+        }
+
+
+};
+
+
+$ws_worker->onClose = function($connection) use(&$users)
+{
+    // удаляем параметр при отключении пользователя
+    $user = array_search($connection, $users);
+    unset($users[$user]);
+};
+
+// Run worker
+Worker::runAll();

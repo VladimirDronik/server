@@ -3,11 +3,8 @@
  * работ с сокетами. Так же в этом скрипте реализована функция пориема сообщений от клиента через сокет и выполнение
  действий в зависимости от того, какие данные шлет клиент
  *
- *
  *  * #Запуск демона сервера сокетов на cron
  * @reboot cd /var/www/socket_test && php server.php start -d
- *
- *
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -131,9 +128,8 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
 
 
-
-            //формируем и отвечаем на запрос на получение всех данных с главной страницы
-            if ($data_array[0]=='ready?dashboard') {
+                //формируем и отвечаем на запрос на получение всех данных с главной страницы
+                if ($data_array[0] == 'ready?dashboard') {
 
                     //Получаем данные из БД
                     $data1 = $views->get_all_items();
@@ -142,34 +138,37 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $webconnection = $users[$data_array[1]];
                     $webconnection->send("$data1");
 
-            }
+                }
 
-            if ($data_array[0]=='ready?settings') {
 
-                    //формируем и отвечаем на запрос на получение всех данных страницы настроек
+                //формируем и отвечаем на запрос на получение всех данных страницы настроек
+                if ($data_array[0] == 'ready?settings') {
+
+                    //Отдаем все настройки
                     $data1 = $views->get_all_settings();
 
-                    //Отвечаем на запрос получения всех данных страницы настроек (получаем события)
-                    $data2 = $views->get_all_events();
-
                     //Формируем ответ со всеми юзерами, котоыре доступны
-                    $data3 = $user->get_all_users();
+                    $data2 = $user->get_all_users();
 
                     /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
                     $webconnection = $users[$data_array[1]];
                     $webconnection->send("$data1");
                     $webconnection->send("$data2");
-                    $webconnection->send("$data3");
 
 
+                }
 
+                //Формируем и отвечаем на запрос на получение всех данных для страницы события
+                if ($data_array[0] == 'ready?events') {
 
+                    //Отвечаем на запрос получения всех данных страницы событий
+                    $data1 = $views->get_all_events();
 
-            }
+                    $webconnection = $users[$data_array[1]];
+                    $webconnection->send("$data1");
+                }
 
-        }
-
-
+        };
 };
 
 

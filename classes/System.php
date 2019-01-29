@@ -10,11 +10,10 @@ class System
 {
     public static $db;
 
-
     /* Подключение к БД*/
-    static function db_connect()
+    static function db_connect($dbname, $dbuser, $dbpass)
     {
-        $db = new PDO('mysql:host=localhost;dbname=smarthome', 'smarthome', 'smartpaswd');
+        $db = new PDO("mysql:host=localhost;dbname=$dbname", $dbuser, $dbpass);
         Self::$db = $db;
 
         $db->exec("set charset utf8");

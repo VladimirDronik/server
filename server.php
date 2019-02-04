@@ -14,6 +14,8 @@ use Workerman\Worker;
 // массив для связи соединения пользователя и необходимого нам параметра
 $users = [];
 
+//Переменная для вывода в неё служебной информации
+$system_message = true;
 
 // создаём ws-сервер, к которому будут подключаться все наши пользователи
 $ws_worker = new Worker("websocket://0.0.0.0:8000");
@@ -28,12 +30,17 @@ $ws_worker->onWorkerStart = function() use (&$users)
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
         $data = json_decode($data);
-
+        global $system_message;
 
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
-            //Отпарвляем скрипту watchdog ответ от сервера
+            //Записываем в файл что всё ок и сервер работает
+            $file = 'watchdog.txt';
+            file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
+
+            if ($system_message)
+            print_r("Watchdog is OK\n");
 
         }
 
@@ -66,12 +73,19 @@ $ws_worker->onWorkerStart = function() use (&$users)
 //функция обработки нового подключения пользователя
 $ws_worker->onConnect = function($connection) use (&$users)
 {
+    global $system_message;
+
     $connection->onWebSocketConnect = function($connection) use (&$users)
     {
+        global $system_message;
+
         // при подключении нового пользователя сохраняем get-параметр, который же сами и передали со страницы сайта
         $users[$_GET['user']] = $connection;
-        echo $_GET['user'];
+        if ($system_message)
+        print_r('User '.$_GET['user']." is connected \n");
     };
+
+
 };
 
 
@@ -84,8 +98,6 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
     $user = new Users();
 
     $objjson = json_decode($data);
-
-
 
 
     $data_array = explode(';',$objjson->{'status'});
@@ -179,5 +191,7 @@ $ws_worker->onClose = function($connection) use(&$users)
     unset($users[$user]);
 };
 
+
 // Run worker
 Worker::runAll();
+

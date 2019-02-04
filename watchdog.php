@@ -9,14 +9,40 @@ $localsocket = 'tcp://127.0.0.1:5678';
 $user = 'all';
 $message = 'watchdog';
 
+//Флаг рестарта
+$restart = false;
+
 // connect to a local tcp-server
 $instance = stream_socket_client($localsocket, $errno, $errstr, 30);
 
 //Если сервер не откликается, то перезапускаем его
 if (!$instance) {
-    echo "$errstr ($errno)<br />\n";
-    system("php server.php  restart");
-}else
-;
-// send message
-fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
+   $restart = true;
+}else {
+
+    //Шлем тестовое сообщеение через сокет
+    fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
+
+    sleep(5);
+
+    //Читаем строку из файла
+    $handle = @fopen("watchdog.txt", "r");
+    if ($handle) {
+        while (($buffer = fgets($handle, 4096)) !== false) {
+            if ($buffer != 'OK') $restart = true;
+        }
+        if (!feof($handle)) {
+            $restart = true;
+        }
+        fclose($handle);
+    }
+
+    unlink('watchdog.txt');
+
+}
+
+if ($restart)
+system("php server.php restart");
+
+
+

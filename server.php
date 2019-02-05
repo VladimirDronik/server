@@ -81,6 +81,9 @@ $ws_worker->onConnect = function($connection) use (&$users)
 
         // при подключении нового пользователя сохраняем get-параметр, который же сами и передали со страницы сайта
         $users[$_GET['user']] = $connection;
+
+        System::addlog('User '.$_GET['user'].' is connected');
+
         if ($system_message)
         print_r('User '.$_GET['user']." is connected \n");
     };

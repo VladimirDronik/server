@@ -3,6 +3,8 @@
  * и шлет серверу эхо-запрос, если данные от сервера не вернулись, то данный скрипт останавливает
  * сервекр и запускает его снова  **/
 
+require_once __DIR__ . '/include.php';
+
 $localsocket = 'tcp://127.0.0.1:5678';
 
 //$user = 'tester01';
@@ -41,8 +43,9 @@ if (!$instance) {
 
 }
 
-if ($restart)
-system("php server.php restart");
-
+if ($restart) {
+    System::addlog('Server is restarted from the watchdog');
+    system("php server.php restart");
+}
 
 

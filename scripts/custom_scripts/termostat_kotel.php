@@ -6,14 +6,16 @@
 
 require_once '../../include.php';
 
+//Указываем номер термостата с которым будем рабоать
+$termostat = 1;
 
-$thermostat = new Thermostats();
+$thermostat = new Thermostats($termostat);
 $script = new Scripts();
 
 //Снимаем показания с датчика температуры в помещении и передаем его в БД
 $thermostat->get_temperature(1);
 
 /** Проверяем состояние термостата и в зависимости от этого - включаем или выключаем котел.*/
-$thermostat->check(1);
+$thermostat->check();
 
 

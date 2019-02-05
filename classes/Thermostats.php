@@ -7,57 +7,72 @@ class Thermostats extends Objects
 {
 
     private $script;
+    private $id_termostat;
 
-    function __construct()
+    private $min_threshold;
+    private $max_threshold;
+    private $min_alarm;
+    private $max_alarm;
+    private $termostat;
+
+    function __construct($id_termost)
     {
         $this->script =  new Scripts();
+
+        $this->id_termostat = $id_termost;
+
+        //Получаем все данные термостата
+        $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` FROM termostats
+                                         WHERE id=$this->id_termostat");
+
+        $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
+
+        $this->min_threshold = $termostat->min_threshold;
+        $this->max_threshold = $termostat->max_threshold;
+        $this->min_alarm = $termostat->min_alarm;
+        $this->max_alarm = $termostat->min_alarm;
+
     }
 
 
     /** Проверяем параметры нужного термостата, на входе id термостата, который проверяем */
 
-    function check(int $id)
+    function check()
     {
-
-        $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, method_off FROM termostats
-                                         WHERE id=$id");
-
-        $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
-
         //Если термостат с фйнкцией нагрева
-        if ($termostat->thermostat == 1)
+        if ($this->termostat->thermostat == 1)
         {
 
-            if ($termostat->current >=($termostat->optimal+$termostat->gisteresis))
+            if ($this->termostat->current >=($this->termostat->optimal))
             {
                 // Вызываем метод off
-                $this->script->runscript($termostat->object,$termostat->method_off);
+                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
                 return 0;
 
             }
 
-            if ($termostat->current < $termostat->optimal)
+            if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод on
-                $this->script->runscript($termostat->object,$termostat->method_on);
+                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
                 return 1;
             }
 
 
         } else //Если термостат с функцией охлаждения
         {
-            if ($termostat->current <=($termostat->optimal-$termostat->gisteresis))
+            if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод off
-                $this->script->runscript($termostat->object,$termostat->method_off);
+                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
                 return 0;
             }
 
 
-            if ($termostat->current > $termostat->optimal)
+            if ($this->termostat->current > $this->termostat->optimal)
             {
                 // Вызываем метод on
-                $this->script->runscript($termostat->object,$termostat->method_on);
+                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
                 return 1;
             }
 
@@ -66,28 +81,47 @@ class Thermostats extends Objects
 
 
     /** Получение температуры термостата */
-    function get_temperature(int $id_termostat)
+    function get_temperature()
     {
 
         //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
         $termostatsql = parent::$db->query("SELECT id_device, port, id_termometr FROM termostats
-                                         WHERE id=$id_termostat");
+                                         WHERE id=$this->id_termostat");
 
         $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
 
-        //вызываем status(int $port, int $id_device=null)
-        $termometrs = Megad::status($termostat->port,'list', $termostat->id_device);
+        do {
 
-        /**Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-        e2b5d7020000:23.62;1fa3d7020000:23.62*/
-        $termometrsarray = explode(';',$termometrs);
+            do {
+                //вызываем status(int $port, int $id_device=null)
+                $termometrs = Megad::status($termostat->port, 'list', $termostat->id_device);
 
-        foreach ($termometrsarray as $termometr) {
-            $termarray = explode(':',$termometr);
-            if ($termarray[0]==$termostat->id_termometr)
-               $id_termometr = $termarray[0];
-               $termometr_value = $termarray[1];
-        }
+                /**Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                 * e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                $termometrsarray = explode(';', $termometrs);
+
+                foreach ($termometrsarray as $termometr) {
+                    $termarray = explode(':', $termometr);
+                    if ($termarray[0] == $termostat->id_termometr)
+                        $id_termometr = $termarray[0];
+                    $termometr_value = $termarray[1];
+                }
+
+                $alarm_cnt++;
+
+                //Если превышено число аварийных значений термометра
+                if ($alarm_cnt>=10)
+                {
+                    //Здесь сделать вызов обработчика аварии и выходим из цикла
+                    break 2;
+                }
+
+                //Проверка на аварийные занчения
+            } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
+
+            //Проверка на пороговые значения
+        } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
+
 
         //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
         parent::$db->query("UPDATE termostats SET `current` = $termometr_value

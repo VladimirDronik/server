@@ -15,6 +15,7 @@ class Thermostats extends Objects
     private $max_alarm;
     private $termostat;
 
+
     function __construct($id_termost)
     {
         $this->script =  new Scripts();
@@ -30,19 +31,16 @@ class Thermostats extends Objects
         $this->min_threshold = $termostat->min_threshold;
         $this->max_threshold = $termostat->max_threshold;
         $this->min_alarm = $termostat->min_alarm;
-        $this->max_alarm = $termostat->min_alarm;
+        $this->max_alarm = $termostat->max_alarm;
+
 
     }
 
 
-    /** Проверяем параметры нужного термостата, на входе id термостата, который проверяем */
+    /** Проверяем параметры нужного термостата */
 
     function check()
     {
-        $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis FROM termostats
-                                         WHERE id=$this->id_termostat");
-
-        $this->termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
         //Если термостат с фйнкцией нагрева
         if ($this->termostat->thermostat == 1)

@@ -8,8 +8,6 @@
 
 require_once '../include.php';
 
-System::db_connect();
-
 $script = new Scripts();
 $script->cron($argv[1]); //Ищем в БД скрипт, который подходит по периоду к вызвываемому и запускаем.
 

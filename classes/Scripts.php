@@ -43,8 +43,7 @@ class Scripts extends Megad
         while ($script = $sql->fetch(PDO::FETCH_OBJ))
         {
             system("cd custom_scripts && php -f {$script->link} &"); //выполняем внешний скрипт
-
-            $this->object->set_property($script->id_object, $script->method); //Меняем состояние объекта
+            System::addlog('Script "'.$script->link.'" is running');
         }
 
     }
@@ -68,8 +67,7 @@ class Scripts extends Megad
         while ($script = $sql->fetch(PDO::FETCH_OBJ))
         {
             system("cd custom_scripts && php -f {$script->link} &"); //выполняем внешний скрипт
-
-            $this->object->set_property($script->id_object, $script->method); //Меняем состояние объекта
+            System::addlog('Script "'.$script->link.'" is running');
         }
 
     }

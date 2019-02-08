@@ -22,9 +22,9 @@ class System
     /* Добавляет новую строку в лог файл*/
     static function addlog($string){
 
-        $date = date('m/d/Y h:i:s a', time());
-        $file = 'server.log';
-        file_put_contents($file, $date.':   '.$string, FILE_APPEND | LOCK_EX);
+        $date = date('m/d/Y H:i:s', time());
+        $file = '../server.log';
+        file_put_contents($file, $date.':   '.$string."\n", FILE_APPEND | LOCK_EX);
     }
 
 

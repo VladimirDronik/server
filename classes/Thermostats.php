@@ -39,6 +39,11 @@ class Thermostats extends Objects
 
     function check()
     {
+        $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis FROM termostats
+                                         WHERE id=$this->id_termostat");
+
+        $this->termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
+
         //Если термостат с фйнкцией нагрева
         if ($this->termostat->thermostat == 1)
         {

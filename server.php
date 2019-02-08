@@ -73,7 +73,6 @@ $ws_worker->onWorkerStart = function() use (&$users)
 //функция обработки нового подключения пользователя
 $ws_worker->onConnect = function($connection) use (&$users)
 {
-    global $system_message;
 
     $connection->onWebSocketConnect = function($connection) use (&$users)
     {

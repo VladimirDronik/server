@@ -10458,3 +10458,7 @@ Stack trace:
 2019-02-05 00:25:44 pid:25287 Workerman[server.php] stop success
 2019-02-05 00:27:30 pid:25287 Workerman[server.php] stopping ...
 2019-02-05 00:27:30 pid:25287 Workerman[server.php] has been stopped
+2019-02-05 00:30:30 pid:25417 Workerman[server.php] restart 
+2019-02-05 00:30:30 pid:25417 Workerman[server.php] is stopping ...
+2019-02-05 00:30:30 pid:25417 Workerman[server.php] stop success
+2019-02-07 00:59:55 pid:10469 Workerman[server.php] start in DEBUG mode

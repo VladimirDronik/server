@@ -4,44 +4,49 @@
  * контактов какого-либо порта
  */
 
+
+
 require_once '../include.php';
 flush();
 
 
-/* Определяем какой мегадевайс вызвал скрипт */
-$ip_device =  $_SERVER['REMOTE_ADDR'];
-$pt = $_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
-$state = file_get_contents("http://$ip_device/sec/?pt=$pt&cmd=get"); //Получаем состояние порта, который активировал скрипт
+        /* Определяем какой мегадевайс вызвал скрипт */
+        $ip_device = '192.168.88.14';//$_SERVER['REMOTE_ADDR'];
+        $pt = 0;//$_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
+        //$state = file_get_contents("http://$ip_device/sec/?pt=$pt&cmd=get"); //Получаем состояние порта, который активировал скрипт
 
+        //$state = explode('/',$state);
 
-Megad::$ip_device = $ip_device;
+        Megad::$ip_device = $ip_device;
 
-$mega = new Megad();
+        $mega = new Megad();
 
-$port = $mega->get($pt); //взяли номер порта, который сработал - нашли нужный порт в таблице портов
+        $port = $mega->get($pt); //взяли номер порта, который сработал - нашли нужный порт в таблице портов
+
 
         if ($port->easy!=null)
         { // Выполняем простое действие, указанное в easy
 
-            echo $port->easy;
+            file_get_contents("http://$ip_device/sec/?cmd=$port->easy");
+
+            //Меняем состояние связанного итема, пока не реализовано
+            //$port = explode(':',$port->easy);
+            //$state = file_get_contents("http://$ip_device/sec/?pt=$port&cmd=get"); //Получаем состояние порта, на который воздействуем
+            //$state = explode('/',$state);
+            //$view = new Views();
+            //$view->update_item($port->object, $state[0]);
 
         }
         elseif ($port->script!=null) {
 
-            exec("cd ".$dir."/../scripts/custom_scripts && php -f penetration.php &"); //выполняем внешний скрипт
+            // exec("cd ".$dir."/../scripts/custom_scripts && php -f penetration.php &"); //выполняем внешний скрипт
+        }
+        else{ // Выполняем внешний скрипт, который находим по объекту и его методу
+
+            if($port->object!=null)
+            {
+                $script = new Scripts();
+                $script->runscript($port->object, $port->method);
             }
-            else{ // Выполняем внешний скрипт, который находим по объекту и его методу
+        }
 
-                if($port->object!=null)
-                {
-                    $state = explode('/',$state);
-
-                    $script = new Scripts();
-                    $script->runscript($port->object, $port->method, $state[0]);
-                }
-            }
-
-
-//Меняем состояние связанного итема
-$view = new Views();
-$view->update_item($port->object, $state);

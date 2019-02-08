@@ -24,7 +24,7 @@ class Megad extends System
 
 
     /** Установка значения порта. На входе номер порта $num и значение, которое устанавливаем $val */
-    function set(int $num, int $val, int $id_device=null)
+    function set($num, $val, $id_device=null)
     {
         $ip = $this->ip_address($id_device);
         file_get_contents("http://$ip/sec/?cmd=$num:$val");
@@ -32,9 +32,11 @@ class Megad extends System
 
 
     /** Получение значения порта. На входе номер порта $port и возможно $id_device*/
-      static function status(int $port, string $command, int $id_device=null)
+      static function status($port, $command, $id_device=null)
     {
-        return $state = file_get_contents("http://".self::ip_address($id_device)."/sec/?pt=$port&cmd=$command");
+        $state = file_get_contents("http://".self::ip_address($id_device)."/sec/?pt=$port&cmd=$command");
+        $state = explode('/',$state);
+        return $state[0];
     }
 
 

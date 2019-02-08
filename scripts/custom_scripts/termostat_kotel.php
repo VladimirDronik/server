@@ -13,7 +13,7 @@ $thermostat = new Thermostats($termostat);
 $script = new Scripts();
 
 //Снимаем показания с датчика температуры в помещении и передаем его в БД
-$thermostat->get_temperature(1);
+$thermostat->get_temperature();
 
 /** Проверяем состояние термостата и в зависимости от этого - включаем или выключаем котел.*/
 $thermostat->check();

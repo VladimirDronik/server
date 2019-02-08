@@ -151,18 +151,18 @@ class Views extends System
 
 
     /** Обновление состояния итема в таблице представлений и у клиентов*/
-    function update_item(int $id_object, string $item_status){
+    function update_item(int $id_item, string $item_status){
 
         global $localsocket;
 
         $item_status = mb_strtolower($item_status);
 
         // Обновляем данные в таблице представлений
-        parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status' WHERE `view_items`.`id_object` = $id_object");
+        parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status' WHERE `view_items`.`id` = $id_item");
 
         // Получаем необходимые данные из таблицы представлений для итемов, которые связаны с данным объектом
 
-        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `id_object`= $id_object");
+        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `id`= $id_item");
 
         while ($ret_item = $sql->fetch(PDO::FETCH_OBJ)) {
 

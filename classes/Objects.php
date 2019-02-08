@@ -7,6 +7,13 @@
 class Objects extends System
 {
 
+    public $id;
+    public $type;
+    public $status;
+    public $view;
+    public $port;
+    public $device;
+
 
     /** Ищем объект и его метод в таблице объектов выводим ссылку на скрипт или код*/
     function get(int $object, $id_method, string $method=null){
@@ -22,6 +29,48 @@ class Objects extends System
         return $scriptsql->fetch(PDO::FETCH_OBJ);
     }
 
+    /** Выбираем объект из таблицы объектов */
+    function select($object){
+
+
+        $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+                                    `ports`.`id` AS port, `ports`.`id_device` AS device FROM `objects` LEFT JOIN `ports` ON 
+                                    `objects`.`id` = `ports`.`object` WHERE `objects`.`id`= $object");
+        $obj = $sql->fetch(PDO::FETCH_OBJ);
+
+        $this->id = $obj->id;
+        $this->type = $obj->type;
+        $this->status = $obj->status;
+        $this->view = $obj->view;
+        $this->port = $obj->port;
+        $this->device = (int)$obj->device;
+        return true;
+    }
+
+    /** Функция меняем состояние у объекта и его представления в соответствии с его статусом */
+    function set_status($status){
+
+
+        //Если статус объекта переключатель, то определяем текущее значение
+        if ($status=='sw')
+            if ($this->status=='on') $status='off'; else $status='on';
+
+        //Изменяем статус объекта
+        parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
+
+        //Если с объектом связан какой-либо порт на устройстве
+        if($this->port!=null) {
+            $script = new Scripts();
+            $script->set($this->port, $status, $this->device);
+        }
+
+        //Если у объекта есть представление
+        if ($this->view!=null) {
+            //меняем представление объекта
+            $view = new Views();
+            $view->update_item($this->view, $status);
+        }
+    }
 
     /** Ищем id объекта в таблице представлений */
     function view_oject(int $item_id){
@@ -32,10 +81,5 @@ class Objects extends System
 
     }
 
-    /* Изменение состояния (свойства) объекта в БД*/
-    function set_property(int $id_object, $id_method){
-
-
-    }
 
 }

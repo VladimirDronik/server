@@ -11,6 +11,6 @@ $script = new Scripts();
 
 
 if ($argv[1]=='on')
-    $script->set(3,1, 1);
+    $script->set(25,0, 1);
 else
-    $script->set(3,0, 1);
+    $script->set(25,1, 1);

@@ -10462,3 +10462,14 @@ Stack trace:
 2019-02-05 00:30:30 pid:25417 Workerman[server.php] is stopping ...
 2019-02-05 00:30:30 pid:25417 Workerman[server.php] stop success
 2019-02-07 00:59:55 pid:10469 Workerman[server.php] start in DEBUG mode
+2019-02-10 22:07:58 pid:2870 Workerman[server.php] start in DEBUG mode
+2019-02-10 22:08:57 pid:2870 Workerman[server.php] stopping ...
+2019-02-10 22:08:57 pid:2870 Workerman[server.php] has been stopped
+2019-02-10 22:09:02 pid:2949 Workerman[server.php] start in DEBUG mode
+2019-02-10 22:09:23 pid:2949 Workerman[server.php] stopping ...
+2019-02-10 22:09:23 pid:2949 Workerman[server.php] has been stopped
+2019-02-10 22:09:59 pid:2986 Workerman[server.php] start in DEBUG mode
+2019-02-11 00:27:37 pid:8009 Workerman[server.php] start in DEBUG mode
+2019-02-11 00:27:47 pid:8017 Workerman[server.php] start in DEBUG mode
+2019-02-11 00:29:37 pid:8017 Workerman[server.php] stopping ...
+2019-02-11 00:29:37 pid:8017 Workerman[server.php] has been stopped

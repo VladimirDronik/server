@@ -131,7 +131,7 @@ class Thermostats extends Objects
                                          WHERE id_termometr='$id_termometr'");
 
         parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
-                                      VALUES (null, '$id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
+                                      VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
 
 
     }

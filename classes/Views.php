@@ -10,23 +10,36 @@ class Views extends System
      */
     function get_all_items(){
 
-        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' ORDER BY `id`");
-        while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-            // Если тип объекта кнопка или переключатель
-            if (($view_obj->name=='light')||($view_obj->name=='light-own')||($view_obj->name=='socket'))
-                $items_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'status'=>$view_obj->status, 'left'=>$view_obj->position_left, 'top'=>$view_obj->position_top);
+        //Находим комнаты
+        $sql_rooms = parent::$db->query("SELECT * FROM `rooms` ORDER BY `sort`");
+        while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {
 
-            // Если тип объекта термометр или гигрометр
-            if (($view_obj->name=='temp')||($view_obj->name=='humidity'))
-                $items_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'left'=>$view_obj->position_left, 'top'=>$view_obj->position_top);
+            //Отдаем элементы
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = $rooms_obj->id ORDER BY `id`");
+            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+                // Если тип объекта кнопка или переключатель
+                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
-            $items[] = $items_array;
+                // Если тип объекта термометр или гигрометр
+                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                $items_array[] = $item;
+
+                $room = array('id' => (int)$rooms_obj->id,'name' => $rooms_obj->name,'image' => $rooms_obj->image,'style' => $rooms_obj->style, 'items' => $items_array);
+
+            }
+
+            $room_array[] = $room;
 
         }
 
-       return $json = json_encode(array('status'=>'itemsLoad', 'items'=>$items));
+        return $json = json_encode(array('status'=>'itemsLoad', 'items'=>$room_array));
 
     }
+
+
 
 
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */

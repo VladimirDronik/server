@@ -72,10 +72,10 @@ class Objects extends System
         }
     }
 
-    /** Ищем id объекта в таблице представлений */
+    /** Ищем id объекта, который соответствует представлению */
     function view_oject(int $item_id){
 
-        $sql = parent::$db->query("SELECT `id_object` FROM `view_items` WHERE `id`= $item_id");
+        $sql = parent::$db->query("SELECT `id` FROM `objects` WHERE `view`= $item_id");
         $view_obj = $sql->fetch(PDO::FETCH_OBJ);
         return $id_object = $view_obj->id_object;
 

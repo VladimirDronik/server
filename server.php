@@ -117,7 +117,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             $webconnection->send($data);
         }
 
-
+    //Если клиент отправил данные на получение или изменение юзера
     } elseif  ((($objjson->{'status'})=='adduser')||(($objjson->{'status'})=='edituser')||(($objjson->{'status'})=='deleteuser')||($data_array[0]=='checkuser')) {
 
         $method = $objjson->{'status'};
@@ -146,11 +146,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 if ($data_array[0] == 'ready?dashboard') {
 
                     //Получаем данные из БД
-                    $data1 = $views->get_all_items();
+                    $data1 = $views->get_room_items();
+                    $data2 = $views->get_main_items();
 
                     /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
                     $webconnection = $users[$data_array[1]];
                     $webconnection->send("$data1");
+                    $webconnection->send("$data2");
 
                 }
 

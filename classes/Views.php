@@ -8,22 +8,24 @@ class Views extends System
     /** Получаем список итемов для главной страницы, упаковываем его в json и отдаем скрипту server.php, который
      отправляет этот json клиенту, запрашивающему данные
      */
-    function get_all_items(){
+    function get_room_items(){
 
-        //Находим комнаты
-        $sql_rooms = parent::$db->query("SELECT * FROM `rooms` ORDER BY `sort`");
+        //Находим комнаты, кроме главной нулевой комнаты
+        $sql_rooms = parent::$db->query("SELECT * FROM `rooms` WHERE `id`!=0 ORDER BY `sort`");
         while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {
 
+            unset($items_array);
+
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = $rooms_obj->id ORDER BY `id`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр или гигрометр
                 if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 $items_array[] = $item;
 
@@ -35,9 +37,34 @@ class Views extends System
 
         }
 
-        return $json = json_encode(array('status'=>'itemsLoad', 'items'=>$room_array));
+        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$room_array));
 
     }
+
+    /** Получаем список итемов, которые относятся к главной комнате */
+    function get_main_items(){
+
+
+            //Отдаем элементы
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = 0 AND `active` = 1 ORDER BY `sort`");
+            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+                // Если тип объекта кнопка или переключатель
+                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                // Если тип объекта термометр или гигрометр
+                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                $items_array[] = $item;
+
+            }
+
+
+        return $json = json_encode(array('status'=>'MainItems', 'items'=>$items_array));
+
+    }
+
 
 
 
@@ -56,14 +83,14 @@ class Views extends System
                 $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value);
 
             if ($view_obj->name=='checkbox')
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'status'=>$view_obj->status, 'title'=>$view_obj->title);
+                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'status'=>$view_obj->status, 'title'=>$view_obj->on_title);
 
             if ($view_obj->name=='eco')
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$view_obj->status, 'title'=>$view_obj->title);
+                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$view_obj->status, 'title'=>$view_obj->on_title);
 
             if (($view_obj->name=='radio')){
                 $status = explode(',',$view_obj->status);
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$status, 'title'=>$view_obj->title);
+                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$status, 'title'=>$view_obj->on_title);
 
             }
 
@@ -83,7 +110,7 @@ class Views extends System
                     $terms = array('id'=>(int)$term->id, 'name'=>$term->name, 'value'=>$term->value);
                     $term_array[] = $terms;
                 }
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'title'=>$view_obj->title, 'items'=>$term_array);
+                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'title'=>$view_obj->on_title, 'items'=>$term_array);
             }
 
 
@@ -121,13 +148,13 @@ class Views extends System
             $item_name = $data_array->items[0]->name;
             $item_status = $data_array->items[0]->status;
             $item_value = $data_array->items[0]->value;
-            $item_title = $data_array->items[0]->title;
+
 
 
             if ($item_value == '') $item_value = 'NULL';
 
             //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-            parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status', `value` = $item_value, `title` = '$item_title'  WHERE `view_items`.`id` = $item_id");
+            parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status', `value` = $item_value  WHERE `view_items`.`id` = $item_id");
 
             //Получаем id объекта из таблицы представлений
             $object = new Objects();

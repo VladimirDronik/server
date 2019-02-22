@@ -63,20 +63,10 @@ class Objects extends System
 
 
         //Если статус объекта переключатель, то определяем текущее значение
-        if ($status=='sw')
-            if ($this->status=='on') $status='off'; else $status='on';
+        $status = $this->check_switch_state($status);
 
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
-
-
-        //Если с объектом связан какой-либо порт на устройстве и этот порт out
-        if(($this->port!=null)&&($this->portstate=='out')) {
-            $script = new Scripts();
-            if ($status=='on') $statusport=1;
-            if ($status=='off') $statusport=0;
-            $script->set($this->port, $statusport, $this->device);
-        }
 
         //Если у объекта есть представление
         if ($this->view!=null) {
@@ -85,6 +75,22 @@ class Objects extends System
             $view->update_item($this->view, $status);
         }
     }
+
+
+    /** Установка нового значения для порта */
+    function set_port_state($status){
+
+        $script = new Scripts();
+
+        $status = $this->check_switch_state($status);
+
+        if ($status=='on') $statusport=1;
+        if ($status=='off') $statusport=0;
+
+        //назначаем порту новое значение
+        $script->set($this->port, $statusport, $this->device);
+    }
+
 
 
     /** Ищем id объекта, который соответствует представлению */
@@ -96,5 +102,15 @@ class Objects extends System
 
     }
 
+
+    //Определяем на что нужно сменить статус у объекта, если отправляем переключение
+    function check_switch_state($status){
+
+        //Если статус объекта переключатель, то определяем текущее значение
+        if ($status=='sw')
+            if ($this->status=='on') $status='off'; else $status='on';
+
+        return $status;
+    }
 
 }

@@ -160,8 +160,6 @@ class Views extends System
             $object = new Objects();
             $id_object = $object->view_oject($item_id);
 
-            //Изменяем состояние объекта в БД
-
             //Если объект у итема существует
             if ($id_object!=null){
 
@@ -173,6 +171,9 @@ class Views extends System
                     $termostat->set_temperature($id_object,$item_value);
 
                 } else { //Если объект является обычной кнопкой
+
+                    //Изменяем состояние объекта в БД
+                    parent::$db->exec("UPDATE `objects` SET `status` = '$item_status'  WHERE `id` = $id_object");
 
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();
@@ -212,6 +213,8 @@ class Views extends System
 
             $message = '{ "status": "itemChange", "items": [{"id":'.$ret_item->id.',
             "name":"'.$ret_item->name.'","status":"'.$ret_item->status.'",
+            "on_image":"'.$ret_item->on_image.'","off_image":"'.$ret_item->off_image.'",
+            "on_title":"'.$ret_item->on_title.'","off_title":"'.$ret_item->off_title.'",
             "left":"'.$ret_item->position_left.'","top":"'.$ret_item->position_top.'"}]}';
 
 

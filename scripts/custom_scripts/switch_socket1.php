@@ -18,7 +18,6 @@ $script = new Scripts();
 //Выбрали объект с которым будем работать
 $object = new Objects();
 $object->select(3);
-$object->set_status($argv[1]);
 $object->set_port_state($argv[1]);
 
 

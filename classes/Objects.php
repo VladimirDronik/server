@@ -68,6 +68,8 @@ class Objects extends System
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
+        
+
         //Если у объекта есть представление
         if ($this->view!=null) {
             //меняем представление объекта

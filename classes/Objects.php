@@ -18,14 +18,21 @@ class Objects extends System
     /** Ищем объект и его метод в таблице объектов выводим ссылку на скрипт или код*/
     function get(int $object, $id_method, string $method=null){
        //Если указан не id метода, а название конкретного метода
-
+/*
         if ($id_method==null)
           $extended_str =  " 0 OR methods.method='$method'";
+
 
 
         $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM methods 
                                         INNER JOIN scripts ON methods.script = scripts.id 
                                         WHERE (methods.id = $id_method $extended_str) AND methods.id_object = $object");
+*/
+        $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM methods 
+                                        INNER JOIN scripts ON methods.script = scripts.id 
+                                        WHERE methods.id_object = $object");
+
+
         return $scriptsql->fetch(PDO::FETCH_OBJ);
     }
 
@@ -34,7 +41,7 @@ class Objects extends System
 
 
         $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
-                                    `ports`.`id` AS port, `ports`.`id_device` AS device FROM `objects` LEFT JOIN `ports` ON 
+                                    `ports`.`id` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate FROM `objects` LEFT JOIN `ports` ON 
                                     `objects`.`id` = `ports`.`object` WHERE `objects`.`id`= $object");
         $obj = $sql->fetch(PDO::FETCH_OBJ);
 
@@ -43,9 +50,13 @@ class Objects extends System
         $this->status = $obj->status;
         $this->view = $obj->view;
         $this->port = $obj->port;
+        $this->portstate = $obj->portstate;
         $this->device = (int)$obj->device;
         return true;
     }
+
+
+
 
     /** Функция меняем состояние у объекта и его представления в соответствии с его статусом */
     function set_status($status){
@@ -58,10 +69,13 @@ class Objects extends System
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
-        //Если с объектом связан какой-либо порт на устройстве
-        if($this->port!=null) {
+
+        //Если с объектом связан какой-либо порт на устройстве и этот порт out
+        if(($this->port!=null)&&($this->portstate=='out')) {
             $script = new Scripts();
-            $script->set($this->port, $status, $this->device);
+            if ($status=='on') $statusport=1;
+            if ($status=='off') $statusport=0;
+            $script->set($this->port, $statusport, $this->device);
         }
 
         //Если у объекта есть представление
@@ -72,12 +86,13 @@ class Objects extends System
         }
     }
 
+
     /** Ищем id объекта, который соответствует представлению */
     function view_oject(int $item_id){
 
         $sql = parent::$db->query("SELECT `id` FROM `objects` WHERE `view`= $item_id");
         $view_obj = $sql->fetch(PDO::FETCH_OBJ);
-        return $id_object = $view_obj->id_object;
+        return $id_object = $view_obj->id;
 
     }
 

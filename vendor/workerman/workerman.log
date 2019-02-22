@@ -13890,3 +13890,258 @@ Stack trace:
 2019-02-17 01:46:23 pid:30749 Workerman[server.php] start in DEBUG mode
 2019-02-18 17:05:43 pid:30749 Workerman[server.php] stopping ...
 2019-02-18 17:05:43 pid:30749 Workerman[server.php] has been stopped
+2019-02-22 15:01:50 pid:18999 Workerman[server.php] start in DEBUG mode
+2019-02-22 18:53:31 pid:32279 Workerman[server.php] restart 
+2019-02-22 18:53:31 pid:32279 Workerman[server.php] is stopping ...
+2019-02-22 18:53:31 pid:32279 Workerman[server.php] stop success
+2019-02-22 18:54:21 pid:32280 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Objects.php:29
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/classes/Scripts.php(82): Objects->get(1, NULL, 'off')
+#1 /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php(179): Scripts->runscript('1', NULL, 'off')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/server.php(112): Views->res_data('{ "status": "it...')
+#3 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status": "it...')
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status": "it...')
+#5 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #80)
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(478): Workerman\Worker::forkWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 18:54:21 pid:32280 Worker[32280] process terminated
+2019-02-22 18:54:21 pid:32279 worker[none:32280] exit with status 64000
+2019-02-22 18:54:21 pid:32313 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #59)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 18:54:21 pid:32313 Worker[32313] process terminated
+2019-02-22 18:54:21 pid:32279 worker[none:32313] exit with status 64000
+2019-02-22 18:54:21 pid:32314 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #60)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 18:54:21 pid:32314 Worker[32314] process terminated
+2019-02-22 18:54:21 pid:32279 worker[none:32314] exit with status 64000
+2019-02-22 18:54:21 pid:32315 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #61)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 18:54:21 pid:32315 Worker[32315] process terminated
+2019-02-22 18:54:21 pid:32279 worker[none:32315] exit with status 64000
+2019-02-22 18:54:24 pid:32279 Workerman[server.php] stopping ...
+2019-02-22 18:54:24 pid:32279 Workerman[server.php] has been stopped
+2019-02-22 18:54:37 pid:32326 Workerman[server.php] restart 
+2019-02-22 18:54:37 pid:32326 Workerman[server.php] is stopping ...
+2019-02-22 18:54:37 pid:32326 Workerman[server.php] stop success
+2019-02-22 19:05:21 pid:32326 Workerman[server.php] stopping ...
+2019-02-22 19:05:21 pid:32326 Workerman[server.php] has been stopped
+2019-02-22 19:05:22 pid:32639 Workerman[server.php] restart 
+2019-02-22 19:05:22 pid:32639 Workerman[server.php] is stopping ...
+2019-02-22 19:05:22 pid:32639 Workerman[server.php] stop success
+2019-02-22 19:05:28 pid:32640 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Objects.php:29
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/classes/Scripts.php(82): Objects->get(1, NULL, 'on')
+#1 /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php(179): Scripts->runscript('1', NULL, 'on')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/server.php(112): Views->res_data('{ "status": "it...')
+#3 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status": "it...')
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status": "it...')
+#5 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #53)
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(478): Workerman\Worker::forkWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32640 Worker[32640] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32640] exit with status 64000
+2019-02-22 19:05:28 pid:32643 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #58)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32643 Worker[32643] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32643] exit with status 64000
+2019-02-22 19:05:28 pid:32644 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #59)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32644 Worker[32644] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32644] exit with status 64000
+2019-02-22 19:05:28 pid:32645 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #60)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32645 Worker[32645] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32645] exit with status 64000
+2019-02-22 19:05:28 pid:32646 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #61)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32646 Worker[32646] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32646] exit with status 64000
+2019-02-22 19:05:28 pid:32647 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #62)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32647 Worker[32647] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32647] exit with status 64000
+2019-02-22 19:05:28 pid:32648 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #63)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:28 pid:32648 Worker[32648] process terminated
+2019-02-22 19:05:28 pid:32639 worker[none:32648] exit with status 64000
+2019-02-22 19:05:29 pid:32650 Error: Call to a member function fetch() on boolean in /home/kinord/Yandex.Disk/www/touchon/server/classes/Views.php:15
+Stack trace:
+#0 /home/kinord/Yandex.Disk/www/touchon/server/server.php(149): Views->get_room_items()
+#1 [internal function]: {closure}(Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#2 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Connection/TcpConnection.php(645): call_user_func(Object(Closure), Object(Workerman\Connection\TcpConnection), '{ "status" : "r...')
+#3 [internal function]: Workerman\Connection\TcpConnection->baseRead(Resource id #64)
+#4 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Events/Select.php(289): call_user_func_array(Array, Array)
+#5 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(2231): Workerman\Events\Select->loop()
+#6 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1356): Workerman\Worker->run()
+#7 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1188): Workerman\Worker::forkOneWorkerForLinux(Object(Workerman\Worker))
+#8 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1162): Workerman\Worker::forkWorkersForLinux()
+#9 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1490): Workerman\Worker::forkWorkers()
+#10 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(1439): Workerman\Worker::monitorWorkersForLinux()
+#11 /home/kinord/Yandex.Disk/www/touchon/server/vendor/workerman/workerman/Worker.php(480): Workerman\Worker::monitorWorkers()
+#12 /home/kinord/Yandex.Disk/www/touchon/server/server.php(200): Workerman\Worker::runAll()
+#13 {main}
+2019-02-22 19:05:29 pid:32650 Worker[32650] process terminated
+2019-02-22 19:05:29 pid:32639 worker[none:32650] exit with status 64000
+2019-02-22 19:05:29 pid:32639 Workerman[server.php] stopping ...
+2019-02-22 19:05:29 pid:32639 Workerman[server.php] has been stopped
+2019-02-22 19:06:32 pid:32681 Workerman[server.php] restart 
+2019-02-22 19:06:32 pid:32681 Workerman[server.php] is stopping ...
+2019-02-22 19:06:32 pid:32681 Workerman[server.php] stop success
+2019-02-22 19:07:52 pid:32681 Workerman[server.php] stopping ...
+2019-02-22 19:07:52 pid:32681 Workerman[server.php] has been stopped
+2019-02-22 19:07:52 pid:32754 Workerman[server.php] restart 
+2019-02-22 19:07:52 pid:32754 Workerman[server.php] is stopping ...
+2019-02-22 19:07:52 pid:32754 Workerman[server.php] stop success
+2019-02-22 19:08:08 pid:32754 Workerman[server.php] stopping ...
+2019-02-22 19:08:08 pid:32754 Workerman[server.php] has been stopped
+2019-02-22 19:08:10 pid:32760 Workerman[server.php] restart 
+2019-02-22 19:08:10 pid:32760 Workerman[server.php] is stopping ...
+2019-02-22 19:08:10 pid:32760 Workerman[server.php] stop success
+2019-02-22 19:08:16 pid:32760 Workerman[server.php] stopping ...
+2019-02-22 19:08:16 pid:32760 Workerman[server.php] has been stopped
+2019-02-22 19:08:17 pid:305 Workerman[server.php] restart 
+2019-02-22 19:08:17 pid:305 Workerman[server.php] is stopping ...
+2019-02-22 19:08:17 pid:305 Workerman[server.php] stop success
+2019-02-22 20:20:49 pid:305 Workerman[server.php] stopping ...
+2019-02-22 20:20:49 pid:305 Workerman[server.php] has been stopped
+2019-02-22 20:20:50 pid:3504 Workerman[server.php] restart 
+2019-02-22 20:20:50 pid:3504 Workerman[server.php] is stopping ...
+2019-02-22 20:20:50 pid:3504 Workerman[server.php] stop success

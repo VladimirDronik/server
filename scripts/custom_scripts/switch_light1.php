@@ -11,19 +11,28 @@
 require_once '../../include.php';
 
 
-$script = new Scripts();
+//$script = new Scripts();
 
 
+//Создали экземпляр класса объектов
+$object = new Objects();
 
-//Выбрали объект с которым будем работать
-$object4 = new Objects();
-$object4->select(4);
+//Выбрали объект с которым будем работать, в данном случае выключатель
+$object->select(1);
 
 //Установили объекту новый статус который взяли из аргумента вызванного скрипта или написали вручную
-$object4->set_status($argv[1]);
+//В данном случае установили выключателю статус для визуального отображения
+$object->set_status($argv[1]);
+
+//Выбрали объект с которым будем работать, в данном случае лампочку
+$object->select(4);
+//Установили объекту статус. Этот объект связан с выходным портом, поэтому на порту меняем состояние
+$object->set_status($argv[1]);
+
 // $object4->set_status('on'); - это для примера
 
-
+//Отправляем данные монитору демостенда
+//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
 
 
 /*

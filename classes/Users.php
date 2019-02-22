@@ -10,7 +10,7 @@ class Users extends System
 
         global $localsocket;
 
-
+/*
         $sql = parent::$db->query("SELECT * FROM `devusers` WHERE `dev_id`= '$device'");
 
         if ($result_dev = $sql->fetch(PDO::FETCH_OBJ)){
@@ -25,9 +25,9 @@ class Users extends System
             $message = '{ "status": "error", "errorMessage": "access denied"}';
             $success = false;
        }
-
-        //$message = '{ "status": "success", "defscene":0}';
-        //$success = true;
+*/
+        $message = '{ "status": "success", "defscene":0}';
+        $success = true;
 
         $res_json = (['user' => $device, 'message' => $message]);
         $res_json = json_encode($res_json);

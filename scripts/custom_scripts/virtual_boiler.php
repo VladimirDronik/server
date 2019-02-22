@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Скрипт включения или выключения виртуального котла и системы отопления в целом
+ */
+
+
+require_once '../../include.php';
+
+
+$script = new Scripts();
+
+
+//Отправляем данные монитору демостенда
+//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
+

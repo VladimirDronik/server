@@ -16,5 +16,6 @@ require_once __DIR__.'/classes/Scripts.php';
 require_once __DIR__.'/classes/Thermostats.php';
 require_once __DIR__.'/classes/Views.php';
 require_once __DIR__.'/classes/Users.php';
+require_once __DIR__.'/classes/Demostand.php';
 
 System::db_connect($dbname, $dbuser, $dbpass);

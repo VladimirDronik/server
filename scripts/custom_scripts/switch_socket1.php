@@ -16,12 +16,11 @@ $script = new Scripts();
 
 
 //Выбрали объект с которым будем работать
-$object4 = new Objects();
-$object4->select(3);
+$object = new Objects();
+$object->select(3);
+$object->set_status($argv[1]);
+$object->set_port_state($argv[1]);
 
-//Установили объекту новый статус который взяли из аргумента вызванного скрипта или написали вручную
-$object4->set_status($argv[1]);
-// $object4->set_status('on'); - это для примера
 
 //Отправляем данные монитору демостенда
 //demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');

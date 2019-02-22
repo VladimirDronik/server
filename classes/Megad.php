@@ -34,6 +34,7 @@ class Megad extends System
     /** Получение значения порта. На входе номер порта $port и возможно $id_device*/
       static function status($port, $command, $id_device=null)
     {
+
         $state = file_get_contents("http://".self::ip_address($id_device)."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[0];

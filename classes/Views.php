@@ -150,15 +150,10 @@ class Views extends System
             $item_value = $data_array->items[0]->value;
 
 
-
-            if ($item_value == '') $item_value = 'NULL';
-
-            //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-            parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status', `value` = $item_value  WHERE `view_items`.`id` = $item_id");
-
             //Получаем id объекта из таблицы представлений
             $object = new Objects();
-            $id_object = $object->view_oject($item_id);
+            $id_object = $object->id = $object->view_oject($item_id);
+
 
             //Если объект у итема существует
             if ($id_object!=null){
@@ -166,19 +161,24 @@ class Views extends System
                 //Если объект является термостатом или гигрометром
                 if(($item_name=='temp')||($item_name=='humidity')){
 
+
+                    if ($item_value == '') $item_value = 'NULL';
+
+                    //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                    parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status', `value` = $item_value  WHERE `view_items`.`id` = $item_id");
+
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
                     $termostat->set_temperature($id_object,$item_value);
 
                 } else { //Если объект является обычной кнопкой
 
-                    //Изменяем состояние объекта в БД
-                    parent::$db->exec("UPDATE `objects` SET `status` = '$item_status'  WHERE `id` = $id_object");
+                    //Меняем состояние связанного элемента
+                    $object->set_status($item_status);
 
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();
                     $script->runscript($id_object, null, $item_status);
-
                 }
 
             }

@@ -58,9 +58,10 @@ class Objects extends System
 
 
 
-    /** Функция меняем состояние у объекта и его представления в соответствии с его статусом */
-    function set_status($status){
-
+    /** Меняем состояние у объекта и его представления в соответствии с его статусом
+     *  $statusonly=true - при этом параметре не меняем состояние физическог порта, а только состояние объекта
+     */
+    function set_status($status, $portrelease=true){
 
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->check_switch_state($status);
@@ -68,7 +69,9 @@ class Objects extends System
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
-        
+        //Выполняем по умолчанию смену состояния связанного порта
+        if($portrelease)
+        $this->set_port_state($status);
 
         //Если у объекта есть представление
         if ($this->view!=null) {
@@ -77,6 +80,7 @@ class Objects extends System
             $view->update_item($this->view, $status);
         }
     }
+
 
 
     /** Установка нового значения для порта */

@@ -174,7 +174,7 @@ class Views extends System
                 } else { //Если объект является обычной кнопкой
 
                     //Меняем состояние связанного элемента  и одновременно состояние итема
-                    $object->set_status($item_status);
+                    $object->set_status($item_status, false);
 
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();

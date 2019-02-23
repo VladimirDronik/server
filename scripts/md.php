@@ -11,8 +11,8 @@ flush();
 
 
         /* Определяем какой мегадевайс вызвал скрипт */
-        $ip_device = $_SERVER['REMOTE_ADDR'];
-        $pt = $_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
+        $ip_device = '172.16.100.201';//$_SERVER['REMOTE_ADDR'];
+        $pt = 0;//$_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
         //$state = file_get_contents("http://$ip_device/sec/?pt=$pt&cmd=get"); //Получаем состояние порта, который активировал скрипт
 
         //$state = explode('/',$state);
@@ -48,7 +48,7 @@ flush();
                 //Устанавливаем новый статус объекту, который связан с портом, вызвавшим скрипт
                 $object = new Objects();
                 $object->select($port->object);
-                $object->set_status($port->status);
+                $object->set_status($port->status, false);
 
 
                 //Запускаем связанный скрипт

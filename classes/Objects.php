@@ -69,9 +69,6 @@ class Objects extends System
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
-        //Выполняем по умолчанию смену состояния связанного порта
-        if($portrelease)
-        $this->set_port_state($status);
 
         //Если у объекта есть представление
         if ($this->view!=null) {
@@ -79,6 +76,11 @@ class Objects extends System
             $view = new Views();
             $view->update_item($this->view, $status);
         }
+
+        //Выполняем по умолчанию смену состояния связанного порта
+        if($portrelease)
+        $this->set_port_state($status);
+
     }
 
 

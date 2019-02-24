@@ -11,26 +11,6 @@
 require_once '../../include.php';
 
 
-//Создали экземпляр класса объектов
-$object = new Objects();
-
-//Выбрали объект с которым будем работать, в данном случае лампочку
-$object->select(10);
-
-//Если второй параметр передаем 1 - значит меняем только состояние порта, если передаем 2,
-//то меняем состояние порта и состояние объекта
-if($argv[2]==1) {
-    $object->set_port_state($argv[1]);
-    $object->select(19);
-    $object->set_status($argv[1],false);
-}
-else {
-    $object->set_status($argv[1]);
-
-}
-
-
-
 
 //Отправляем данные монитору демостенда
 //demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');

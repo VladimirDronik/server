@@ -41,8 +41,9 @@ class Objects extends System
 
 
         $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
-                                    `ports`.`id` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate FROM `objects` LEFT JOIN `ports` ON 
-                                    `objects`.`id` = `ports`.`object` WHERE `objects`.`id`= $object");
+                                    `ports`.`id` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
+                                    FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
+                                    WHERE `objects`.`id`= $object");
         $obj = $sql->fetch(PDO::FETCH_OBJ);
 
         $this->id = $obj->id;
@@ -66,6 +67,10 @@ class Objects extends System
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->check_switch_state($status);
 
+        //Выполняем по умолчанию смену состояния связанного порта
+        if($portrelease)
+            $this->set_port_state($status);
+
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
@@ -76,10 +81,6 @@ class Objects extends System
             $view = new Views();
             $view->update_item($this->view, $status);
         }
-
-        //Выполняем по умолчанию смену состояния связанного порта
-        if($portrelease)
-        $this->set_port_state($status);
 
     }
 

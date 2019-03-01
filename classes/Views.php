@@ -179,6 +179,7 @@ class Views extends System
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();
                     $script->runscript($id_object, null, $item_status);
+
                 }
 
             }

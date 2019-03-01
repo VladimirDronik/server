@@ -45,15 +45,15 @@ flush();
 
             if($port->object!=null)
             {
+                //Запускаем связанный скрипт
+                $script = new Scripts();
+                $script->runscript($port->object, $port->method);
+
                 //Устанавливаем новый статус объекту, который связан с портом, вызвавшим скрипт
                 $object = new Objects();
                 $object->select($port->object);
                 $object->set_status($port->status, false);
 
-
-                //Запускаем связанный скрипт
-                $script = new Scripts();
-                $script->runscript($port->object, $port->method);
             }
         }
 

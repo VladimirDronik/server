@@ -32,6 +32,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
         $data = json_decode($data);
         global $system_message;
 
+
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
@@ -120,24 +121,24 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
     //Если клиент отправил данные на получение или изменение юзера
     } elseif  ((($objjson->{'status'})=='adduser')||(($objjson->{'status'})=='edituser')||(($objjson->{'status'})=='deleteuser')||($data_array[0]=='checkuser')) {
 
-        $method = $objjson->{'status'};
+                    $method = $objjson->{'status'};
 
-        //Отвечаем на запрос разрешения вывода данных или запрещение
-        if ($data_array[0]=='checkuser'){
+                    //Отвечаем на запрос разрешения вывода данных или запрещение
+                    if ($data_array[0]=='checkuser'){
 
-         $user->checkuser($data_array[1]);
+                     $user->checkuser($data_array[1]);
 
-        } else {
+                    } else {
 
-            //Вызываем метод в зависимости от статуса
-            $user->$method($objjson->items[0]->id, $objjson->items[0]->dashboard, $objjson->items[0]->old_id);
+                        //Вызываем метод в зависимости от статуса
+                        $user->$method($objjson->items[0]->id, $objjson->items[0]->dashboard, $objjson->items[0]->old_id);
 
-            //Формируем ответ со всеми юзерами, котоыре доступны
-            $data1 = $user->get_all_users();
+                        //Формируем ответ со всеми юзерами, котоыре доступны
+                        $data1 = $user->get_all_users();
 
-            $webconnection = $users[$objjson->iduser];
-            $webconnection->send("$data1");
-        }
+                        $webconnection = $users[$objjson->iduser];
+                        $webconnection->send("$data1");
+                    }
 
         } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
 

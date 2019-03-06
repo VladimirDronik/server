@@ -28,9 +28,14 @@ class Objects extends System
                                         INNER JOIN scripts ON methods.script = scripts.id 
                                         WHERE (methods.id = $id_method $extended_str) AND methods.id_object = $object");
 */
+        if ($id_method!=null)
+            $methodstr = " AND methods.id = $id_method";
+
+
         $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM methods 
                                         INNER JOIN scripts ON methods.script = scripts.id 
-                                        WHERE methods.id_object = $object");
+                                        WHERE methods.id_object = $object $methodstr");
+
 
 
         return $scriptsql->fetch(PDO::FETCH_OBJ);

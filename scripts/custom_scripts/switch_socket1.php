@@ -21,6 +21,10 @@ $object->select(3);
 $object->set_port_state($argv[1]);
 
 
-//Отправляем данные монитору демостенда
-//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
+if ($object->status =='on')
+    $sendsring = '{"events":{"spalnya_rozetka": "on"}, "info": {"spalnya_rozetka": "on"}, "status": ["light_off"]}';
+else
+    $sendsring = '{"events":{"spalnya_rozetka": "off"}, "info": {"spalnya_rozetka": "off"}}';
 
+//Отправляем данные монитору демостенда
+demostand::send($sendsring);

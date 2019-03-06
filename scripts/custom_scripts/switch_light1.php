@@ -22,6 +22,13 @@ $object->select(4);
 //Установили объекту статус.
 $object->set_status($argv[1]);
 
+if ($object->check_switch_state($argv[1])=='on')
+    $sendsring = '{"events":{"spalnya": "on"}, "info": {"spalnya": "on"}, "status": ["light_off"]}';
+else
+    $sendsring = '{"events":{"spalnya": "off"}, "info": {"spalnya": "off"}}';
+
+//Отправляем данные монитору демостенда
+demostand::send($sendsring);
 
 
 
@@ -30,8 +37,6 @@ $object->set_status($argv[1]);
 
 // $object4->set_status('on'); - это для примера
 
-//Отправляем данные монитору демостенда
-//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
 
 
 /*

@@ -7,10 +7,11 @@ class demostand
 {
 
     private static $socketserver = 'localhost:5678';
-    private static $user = 'all';
+    private static $user = 'tester0192';
 
     //Отправка данных серверу соккетов
     static function send($message){
+
 
         $instance = stream_socket_client(self::$socketserver);
         fwrite($instance, json_encode(['user' => self::$user, 'message' => $message])  . "\n");

@@ -16,8 +16,13 @@ $object->select(13);
 //Установили объекту статус. Этот объект связан с выходным портом, поэтому на порту меняем состояние
 $object->set_status($argv[1]);
 
+if ($object->check_switch_state($argv[1])=='on')
+    $sendsring = '{"events":{"gostin": "on"}, "info": {"gostin": "on"}, "status": ["light_off"]}';
+else
+    $sendsring = '{"events":{"gostin": "off"}, "info": {"gostin": "off"}}';
 
 //Отправляем данные монитору демостенда
-//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
+demostand::send($sendsring);
+
 
 

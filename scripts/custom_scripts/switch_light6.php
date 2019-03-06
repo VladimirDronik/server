@@ -11,20 +11,16 @@
 require_once '../../include.php';
 
 
+//Создали экземпляр класса объектов
+$object = new Objects();
+
+//Выбрали объект с которым будем работать, в данном случае лампочку
+$object->select(18);
+
+if ($object->status == 'on')
+    $sendsring = '{"events":{"kuhnya": "on"}, "info": {"kuhnya": "on"}, "status": ["light_off"]}';
+else
+    $sendsring = '{"events":{"kuhnya": "off"}, "info": {"kuhnya": "off"}}';
 
 //Отправляем данные монитору демостенда
-//demostand::send('{"events":{"window": "off", "door": "off", "gostin": "on", "elect_on":"on"}, "info": {"home_lock_status": "on"}, "status": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}');
-
-
-/*
-if ($argv[1]=='on'){ //Если функция вызвана с каким-то параметром (к примеру on или off)
-
-
-    $script->set(15,1, 1); // Устанавливаем 3 порту значение 1
-    $script->set(16,1, 1);
-}
-else
-    $script->set(16,0, 1); // Устанавливаем 3 порту значение 0
-
-*/
-// Тут устанавливаем значение визуальному элементу в БД в зависимости от того, какое дейчтвие сделали
+demostand::send($sendsring);

@@ -23,7 +23,7 @@ class System
     static function addlog($string){
 
         $date = date('m/d/Y H:i:s', time());
-        $file = '../server.log';
+        $file = ROOT_DIR.'/server.log';
         file_put_contents($file, $date.':   '.$string."\n", FILE_APPEND | LOCK_EX);
     }
 

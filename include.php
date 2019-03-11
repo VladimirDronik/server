@@ -4,10 +4,13 @@
  * А также здесь описываем системные настройки и подключение к БД
  */
 
+define("ROOT_DIR",  __DIR__);
+
 $localsocket = 'tcp://127.0.0.1:5678';
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
 $dbpass = 'smartpaswd';
+
 
 require_once __DIR__.'/classes/System.php';
 require_once __DIR__.'/classes/Objects.php';

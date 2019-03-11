@@ -108,7 +108,7 @@ class Objects extends System
 
 
     /** Ищем id объекта, который соответствует представлению */
-    function view_oject(int $item_id){
+    function view_oject($item_id){
 
         $sql = parent::$db->query("SELECT `id` FROM `objects` WHERE `view`= $item_id");
         $view_obj = $sql->fetch(PDO::FETCH_OBJ);

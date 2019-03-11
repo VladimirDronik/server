@@ -84,6 +84,7 @@ $ws_worker->onConnect = function($connection) use (&$users)
 
         if ($system_message)
         print_r('User '.$_GET['user']." is connected \n");
+
     };
 
 
@@ -124,7 +125,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     //Отвечаем на запрос разрешения вывода данных или запрещение
                     if ($data_array[0]=='checkuser'){
 
-                     $user->checkuser($data_array[1]);
+                        $data1 = $user->checkuser($data_array[1]);
+
+                        $webconnection = $users[$data_array[1]];
+                        $webconnection->send("$data1");
 
                     } else {
 

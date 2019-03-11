@@ -27,16 +27,8 @@ class Users extends System
        }
 */
         $message = '{ "status": "success", "defscene":0}';
-        $success = true;
 
-        $res_json = (['user' => $device, 'message' => $message]);
-        $res_json = json_encode($res_json);
-
-        $instance = stream_socket_client($localsocket);
-        // send message
-        fwrite($instance,  $res_json . "\n");
-
-        return $success;
+        return $message;
     }
 
 

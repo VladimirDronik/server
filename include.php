@@ -7,6 +7,11 @@
 //Корневая папка для проекта
 define("ROOT_DIR",  __DIR__);
 
+
+//Переменная для вывода в неё служебной информации
+$system_message = true;
+
+
 $localsocket = 'tcp://127.0.0.1:5678';
 $dbname = 'smarthome';
 $dbuser = 'smarthome';

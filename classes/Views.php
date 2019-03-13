@@ -69,6 +69,43 @@ class Views extends System
 
 
 
+
+
+    /** Получаем список итемов, которые относятся к сценам */
+    function get_scenes_items(){
+
+        //Находим сцены в таблице сцен, у которых статус=активен
+        $sql_scenes = parent::$db->query("SELECT * FROM `scenes` WHERE `active`=1 ORDER BY `sort`");
+        while ($scenes_obj = $sql_scenes->fetch(PDO::FETCH_OBJ)) {
+
+            unset($items_array);
+            //Отдаем элементы
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `scene` = $scenes_obj->id AND `active` = 1 ORDER BY `sort`");
+            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+                // Если тип объекта кнопка или переключатель
+                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                // Если тип объекта термометр или гигрометр
+                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                $items_array[] = $item;
+
+                $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image,'label' => $scenes_obj->label, 'items' => $items_array);
+
+            }
+
+            $scenes_array[] = $scenes;
+
+        }
+
+        return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
+
+    }
+
+
+
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
     function get_all_settings(){
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");

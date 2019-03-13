@@ -152,10 +152,25 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $data1 = $views->get_room_items();
                     $data2 = $views->get_main_items();
 
+
                     /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
                     $webconnection = $users[$data_array[1]];
                     $webconnection->send("$data1");
                     $webconnection->send("$data2");
+                   
+
+                }
+
+
+                //формируем и отвечаем на запрос на получение всех данных для любой сцены
+                if ($data_array[0] == 'ready?scene') {
+
+                    //Получаем данные из БД
+                    $data1 = $views->get_scenes_items();
+
+                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
+                    $webconnection = $users[$data_array[1]];
+                    $webconnection->send("$data1");
 
                 }
 

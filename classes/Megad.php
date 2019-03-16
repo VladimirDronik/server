@@ -14,17 +14,11 @@ class Megad extends System
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
         {
-            $ip_sql = parent::$db->query("SELECT ip_address, status FROM devices WHERE id=$id_device");
+            $ip_sql = parent::$db->query("SELECT ip_address, active FROM devices WHERE id=$id_device");
             $device = $ip_sql->fetch(PDO::FETCH_OBJ);
-
-            //Если статус устройства - неактивно
-            if($device->status)
-                $ip_addr = $device->ip_address;
-            else
-                $ip_addr =0;
         }
 
-        return $ip_addr;
+        return $device;
 
     }
 
@@ -32,10 +26,13 @@ class Megad extends System
     /** Установка значения порта. На входе номер порта $num и значение, которое устанавливаем $val */
     function set($num, $val, $id_device=null)
     {
-        $ip = $this->ip_address($id_device);
+        $device = $this->ip_address($id_device);
+
         //Если ip адрес равен 0, то не выполняем действие
-        if($ip)
-        file_get_contents("http://$ip/sec/?cmd=$num:$val");
+        if($device->active)
+        file_get_contents("http://$device->ip_address/sec/?cmd=$num:$val");
+        else
+            system::addlog("Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
     }
 
 
@@ -43,7 +40,7 @@ class Megad extends System
       static function status($port, $command, $id_device=null)
     {
 
-        $state = file_get_contents("http://".self::ip_address($id_device)."/sec/?pt=$port&cmd=$command");
+        $state = file_get_contents("http://".self::ip_address($id_device)->ip_address."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[0];
     }
@@ -53,11 +50,11 @@ class Megad extends System
     /** Получение номера порта, который активировал девайс*/
     function get(int $port)
     {
-       $ip_addr = self::$ip_device;
+       $device = self::$ip_device;
 
         $sth = parent::$db->query("SELECT `easy`, `object`, `method`, `script`, `status` FROM ports 
                                   INNER JOIN devices ON ports.id_device = devices.id 
-                                  WHERE devices.ip_address = '$ip_addr' AND ports.num_port = $port");
+                                  WHERE devices.ip_address = '$device->ip_address' AND ports.num_port = $port");
 
         return $sth->fetch(PDO::FETCH_OBJ);
     }

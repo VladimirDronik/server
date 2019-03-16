@@ -14,8 +14,14 @@ class Megad extends System
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
         {
-            $ip_sql = parent::$db->query("SELECT ip_address FROM devices WHERE id=$id_device");
-            $ip_addr = $ip_sql->fetch(PDO::FETCH_OBJ)->ip_address;
+            $ip_sql = parent::$db->query("SELECT ip_address, status FROM devices WHERE id=$id_device");
+            $device = $ip_sql->fetch(PDO::FETCH_OBJ);
+
+            //Если статус устройства - неактивно
+            if($device->status)
+                $ip_addr = $device->ip_address;
+            else
+                $ip_addr =0;
         }
 
         return $ip_addr;
@@ -27,6 +33,8 @@ class Megad extends System
     function set($num, $val, $id_device=null)
     {
         $ip = $this->ip_address($id_device);
+        //Если ip адрес равен 0, то не выполняем действие
+        if($ip)
         file_get_contents("http://$ip/sec/?cmd=$num:$val");
     }
 

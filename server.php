@@ -43,6 +43,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
         }
 
+        print_r($data->message);
         //Если рассылаем всем ползователям
         if ($data->user=='all') {
 
@@ -53,6 +54,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
             } 
 
            } else {
+
 
                     if (isset($users[$data->user])) {
                     $webconnection = $users[$data->user];
@@ -95,114 +97,122 @@ $ws_worker->onConnect = function($connection) use (&$users)
 /** Получение данных от клиента */
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
+    print_r("=====================================\n");
 
-    $views = new Views();
-    $user = new Users();
+        $views = new Views();
+        $user = new Users();
 
-    $objjson = json_decode($data);
+        $objjson = json_decode($data);
+        $data_array = explode(';',$objjson->{'status'});
 
+    //if ($data_array[1]!='demostand') {
 
-    $data_array = explode(';',$objjson->{'status'});
-
-    //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
-    if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')) {
-
-
-        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-        $views->res_data($data);
-
-        //отдаем данные об изменении всем другим зарегестрированным клиентам
-        foreach ($users as $user) {
-            $webconnection = $user;
-            $webconnection->send($data);
-        }
-
-    //Если клиент отправил данные на получение или изменение юзера
-    } elseif  ((($objjson->{'status'})=='adduser')||(($objjson->{'status'})=='edituser')||(($objjson->{'status'})=='deleteuser')||($data_array[0]=='checkuser')) {
-
-                    $method = $objjson->{'status'};
-
-                    //Отвечаем на запрос разрешения вывода данных или запрещение
-                    if ($data_array[0]=='checkuser'){
-
-                        $data1 = $user->checkuser($data_array[1]);
-
-                        $webconnection = $users[$data_array[1]];
-                        $webconnection->send("$data1");
-
-                    } else {
-
-                        //Вызываем метод в зависимости от статуса
-                        $user->$method($objjson->items[0]->id, $objjson->items[0]->dashboard, $objjson->items[0]->old_id);
-
-                        //Формируем ответ со всеми юзерами, котоыре доступны
-                        $data1 = $user->get_all_users();
-
-                        $webconnection = $users[$objjson->iduser];
-                        $webconnection->send("$data1");
-                    }
-
-        } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
+        //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
+        if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')) {
 
 
-                //формируем и отвечаем на запрос на получение всех данных с главной страницы
-                if ($data_array[0] == 'ready?dashboard') {
+            //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
+            $views->res_data($data);
 
-                    //Получаем данные из БД
-                    $data1 = $views->get_room_items();
-                    $data2 = $views->get_main_items();
+            //отдаем данные об изменении всем другим зарегестрированным клиентам
+            foreach ($users as $user) {
+                $webconnection = $user;
+                $webconnection->send($data);
+            }
 
+        //Если клиент отправил данные на получение или изменение юзера
+        } elseif  ((($objjson->{'status'})=='adduser')||(($objjson->{'status'})=='edituser')||(($objjson->{'status'})=='deleteuser')||($data_array[0]=='checkuser')) {
 
-                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
-                    $webconnection->send("$data2");
-                   
+                        $method = $objjson->{'status'};
+                        //Отвечаем на запрос разрешения вывода данных или запрещение
+                        if ($data_array[0]=='checkuser'){
 
-                }
+                            $data1 = $user->checkuser($data_array[1]);
 
+                            $webconnection = $users[$data_array[1]];
 
-                //формируем и отвечаем на запрос на получение всех данных для любой сцены
-                if ($data_array[0] == 'ready?scene') {
+                            // Если id подключенного устройства = demostand, то не выполняем отправку, иначе
+                            // обрезаются данные для демостенда
+                            //if ($data_array[1]!='demostand')
+                            $webconnection->send("$data1");
 
-                    //Получаем данные из БД
-                    $data1 = $views->get_scenes_items();
+                        } else {
 
-                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
+                            //Вызываем метод в зависимости от статуса
+                            $user->$method($objjson->items[0]->id, $objjson->items[0]->dashboard, $objjson->items[0]->old_id);
 
-                }
+                            //Формируем ответ со всеми юзерами, котоыре доступны
+                            $data1 = $user->get_all_users();
 
+                            $webconnection = $users[$objjson->iduser];
+                            $webconnection->send("$data1");
 
-                //формируем и отвечаем на запрос на получение всех данных страницы настроек
-                if ($data_array[0] == 'ready?settings') {
-
-                    //Отдаем все настройки
-                    $data1 = $views->get_all_settings();
-
-                    //Формируем ответ со всеми юзерами, котоыре доступны
-                    $data2 = $user->get_all_users();
-
-                    /* Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками */
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
-                    $webconnection->send("$data2");
+                        }
+            } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
 
 
-                }
+            //формируем и отвечаем на запрос на получение всех данных с главной страницы
+            if ($data_array[0] == 'ready?dashboard') {
 
-                //Формируем и отвечаем на запрос на получение всех данных для страницы события
-                if ($data_array[0] == 'ready?events') {
+                //Получаем данные из БД
+                $data1 = $views->get_room_items();
+                $data2 = $views->get_main_items();
 
-                    //Отвечаем на запрос получения всех данных страницы событий
-                    $data1 = $views->get_all_events();
 
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
-                }
+                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+                $webconnection->send("$data2");
 
-        };
+
+            }
+
+
+            //формируем и отвечаем на запрос на получение всех данных для любой сцены
+            if ($data_array[0] == 'ready?scene') {
+
+                //Получаем данные из БД
+                $data1 = $views->get_scenes_items();
+
+                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
+                $webconnection = $users[$data_array[1]];
+
+                $webconnection->send("$data1");
+
+            }
+
+
+            //формируем и отвечаем на запрос на получение всех данных страницы настроек
+            if ($data_array[0] == 'ready?settings') {
+
+                //Отдаем все настройки
+                $data1 = $views->get_all_settings();
+
+                //Формируем ответ со всеми юзерами, котоыре доступны
+                $data2 = $user->get_all_users();
+
+                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+                $webconnection->send("$data2");
+
+
+            }
+
+            //Формируем и отвечаем на запрос на получение всех данных для страницы события
+            if ($data_array[0] == 'ready?events') {
+
+                //Отвечаем на запрос получения всех данных страницы событий
+                $data1 = $views->get_all_events();
+
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+            }
+
+
+
+            };
+      //  };
 };
 
 

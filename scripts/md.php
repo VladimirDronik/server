@@ -45,6 +45,7 @@ flush();
 
             if($port->object!=null)
             {
+              
                 //Запускаем связанный скрипт
                 $script = new Scripts();
                 $script->runscript($port->object, $port->method);

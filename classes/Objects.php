@@ -69,6 +69,8 @@ class Objects extends System
      */
     function set_status($status, $portrelease=true){
 
+
+
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->check_switch_state($status);
 
@@ -82,9 +84,11 @@ class Objects extends System
 
         //Если у объекта есть представление
         if ($this->view!=null) {
+
             //меняем представление объекта
             $view = new Views();
             $view->update_item($this->view, $status);
+
         }
 
     }

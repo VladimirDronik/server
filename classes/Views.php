@@ -179,6 +179,7 @@ class Views extends System
         $data_array = json_decode($data);
 
 
+
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status=='itemChange'){
 
@@ -187,11 +188,10 @@ class Views extends System
             $item_status = $data_array->items[0]->status;
             $item_value = $data_array->items[0]->value;
 
-
             //Получаем id объекта из таблицы представлений
             $object = new Objects();
             $id_object = $object->id = $object->view_oject($item_id);
-
+            $object->view = $item_id;
 
             //Если объект у итема существует
             if ($id_object!=null){
@@ -210,6 +210,7 @@ class Views extends System
                     $termostat->set_temperature($id_object,$item_value);
 
                 } else { //Если объект является обычной кнопкой
+
 
                     //Меняем состояние связанного элемента  и одновременно состояние итема
                     $object->set_status($item_status, false);

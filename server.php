@@ -31,20 +31,30 @@ $ws_worker->onWorkerStart = function() use (&$users)
         global $system_message;
 
 
+
+
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
-            //Записываем в файл что всё ок и сервер работает
             $file = 'watchdog.txt';
-            file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
 
-            if ($system_message)
-            print_r("Watchdog is OK\n");
+            //Проверяем есть ли в массиве users элементы, если нет, значит по какой-то причине они не подключены
+            if ($users) {
+                //Записываем в файл что всё ок и сервер работает
+                file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
 
-        }
+                if ($system_message)
+                    print_r("Watchdog is OK\n");
+            } else {
+                file_put_contents($file, 'FAIL', FILE_APPEND | LOCK_EX);
+                System::addlog('Сервер сокетов перезапущен (отсутствуют активные подключения)');
+            }
+        };
 
-        print_r($data->message);
-        //Если рассылаем всем ползователям
+
+
+
+        //Здесь рассылаем приходящие от сторонних скриптов сообщения всем ползователям или конкретному
         if ($data->user=='all') {
 
            foreach ($users as $user) {
@@ -54,8 +64,6 @@ $ws_worker->onWorkerStart = function() use (&$users)
             } 
 
            } else {
-
-
                     if (isset($users[$data->user])) {
                     $webconnection = $users[$data->user];
                     $webconnection->send($data->message);
@@ -82,7 +90,7 @@ $ws_worker->onConnect = function($connection) use (&$users)
         // при подключении нового пользователя сохраняем get-параметр, который же сами и передали со страницы сайта
         $users[$_GET['user']] = $connection;
 
-        System::addlog('User '.$_GET['user'].' is connected');
+        //System::addlog('User '.$_GET['user'].' is connected');
 
         if ($system_message)
         print_r('User '.$_GET['user']." is connected \n");
@@ -107,6 +115,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
     //if ($data_array[1]!='demostand') {
 
+
         //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
         if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')) {
 
@@ -116,6 +125,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             //отдаем данные об изменении всем другим зарегестрированным клиентам
             foreach ($users as $user) {
+
                 $webconnection = $user;
                 $webconnection->send($data);
             }
@@ -135,6 +145,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                             // обрезаются данные для демостенда
                             //if ($data_array[1]!='demostand')
                             $webconnection->send("$data1");
+
 
                         } else {
 

@@ -7,8 +7,7 @@ require_once __DIR__ . '/include.php';
 
 $localsocket = 'tcp://127.0.0.1:5678';
 
-//$user = 'tester01';
-$user = 'all';
+$user = 'watchdog';
 $message = 'watchdog';
 
 //Флаг рестарта

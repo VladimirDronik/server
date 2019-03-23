@@ -113,11 +113,11 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-    //if ($data_array[1]!='demostand') {
+
 
 
         //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
-        if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')) {
+        if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')||(($objjson->{'status'})=='temperaturesChange')) {
 
 
             //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
@@ -141,9 +141,6 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                             $webconnection = $users[$data_array[1]];
 
-                            // Если id подключенного устройства = demostand, то не выполняем отправку, иначе
-                            // обрезаются данные для демостенда
-                            //if ($data_array[1]!='demostand')
                             $webconnection->send("$data1");
 
 
@@ -177,6 +174,19 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             }
+
+
+
+            //Формируем и отвечаем на запрос на получение данных на странице термометров
+            if ($data_array[0] == 'ready?temperatures'){
+
+                $data1 = $views->get_temperatures();
+
+                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+            }
+
 
 
             //формируем и отвечаем на запрос на получение всех данных для любой сцены
@@ -223,7 +233,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             };
-      //  };
+
 };
 
 

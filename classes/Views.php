@@ -107,6 +107,27 @@ class Views extends System
 
 
 
+
+
+
+
+    /** Получаем список итемов, которые относятся к сценам */
+    function get_temperatures(){
+
+        $sql = parent::$db->query("SELECT * FROM `temperatures` WHERE ORDER BY `sort`");
+        while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
+
+            $temp_array = array('id'=>(int)$temp->id, 'name'=>$temp->name, 'normal'=>$temp->normal, 'night'=>$temp->night, 'eco'=>$temp->eco);
+
+        }
+
+        $json = json_encode(array('status'=>'TemperaturesLoad', 'items'=> $temp_array));
+        return $json;
+    }
+
+
+
+
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
     function get_all_settings(){
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");
@@ -132,7 +153,7 @@ class Views extends System
 
             }
 
-
+/*
             // Если тип объекта группа термометров
             if ($view_obj->name=='temps'){
 
@@ -150,7 +171,7 @@ class Views extends System
                 }
                 $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'title'=>$view_obj->on_title, 'items'=>$term_array);
             }
-
+*/
 
             $settings[] = $settings_array;
         }

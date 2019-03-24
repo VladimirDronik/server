@@ -114,14 +114,14 @@ class Views extends System
     /** Получаем список итемов, которые относятся к сценам */
     function get_temperatures(){
 
-        $sql = parent::$db->query("SELECT * FROM `temperatures` WHERE ORDER BY `sort`");
+        $sql = parent::$db->query("SELECT * FROM `temperatures` ORDER BY `sort`");
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 
             $temp_array = array('id'=>(int)$temp->id, 'name'=>$temp->name, 'normal'=>$temp->normal, 'night'=>$temp->night, 'eco'=>$temp->eco);
-
+            $temperatures[] = $temp_array;
         }
 
-        $json = json_encode(array('status'=>'TemperaturesLoad', 'items'=> $temp_array));
+        $json = json_encode(array('status'=>'TemperaturesLoad', 'items'=> $temperatures));
         return $json;
     }
 
@@ -198,6 +198,20 @@ class Views extends System
     function res_data($data){
 
         $data_array = json_decode($data);
+
+
+        //Если клиент отправил запрос на изменение состояния термометра на странице термометров
+        if ($data_array->status=='temperaturesChange'){
+
+            $item_id = $data_array->item->id;
+            $item_value = $data_array->item->value;
+            $item_key = $data_array->item->key;
+
+            //Обновляем данные в таблице температур
+            parent::$db->exec("UPDATE `temperatures` SET  `$item_key` = $item_value  WHERE `id` = $item_id");
+
+        }
+
 
 
 

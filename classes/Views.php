@@ -128,6 +128,32 @@ class Views extends System
 
 
 
+
+    /** Получаем данные из таблицы графиков */
+    function get_graphs(){
+
+        //Перебираем комнаты в, которых установлены термостаты
+        $sql = parent::$db->query("SELECT id, name FROM `temperatures` ORDER BY `sort`");
+        while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
+
+            unset($temperatureLog);
+
+            //Ищем данные в таблице графиков, которые относятся к данным термостатам
+            $sql_graph = parent::$db->query("SELECT `graph`.`datetime` AS `date`, `graph`.`value` AS `value` FROM `graph` 
+                                              INNER JOIN `termostats` ON `graph`.`id_termostat` = `termostats`.`id` 
+                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph`.`datetime`)='00' ");
+            while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
+                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
+            }
+
+            $rooms[] = array('room'=>$temp->name, 'temperatureLog'=>$temperatureLog);
+        }
+
+        return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));
+    }
+
+
+
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
     function get_all_settings(){
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");

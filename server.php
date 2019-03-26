@@ -181,8 +181,20 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                 $data1 = $views->get_temperatures();
 
-                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
+                // Получаем id клиента, который делает запрос и отправляем ему json
                 $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+            }
+
+
+
+            //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
+            if ($data_array[0] == 'ready?graphs'){
+
+                $data1 = $views->get_graphs();
+
+                // Получаем id клиента, который делает запрос и отправляем ему json
+               $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");
             }
 

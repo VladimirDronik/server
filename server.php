@@ -232,14 +232,19 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             }
 
             //Формируем и отвечаем на запрос на получение всех данных для страницы события
-            if ($data_array[0] == 'ready?events') {
+           if ($data_array[0] == 'ready?events') {
 
                 //Отвечаем на запрос получения всех данных страницы событий
-                $data1 = $views->get_all_events();
+                $data1 = $views->get_events('w');
+                $data2 = $views->get_events('m');
+                $data3 = $views->get_events('y');
 
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");
-            }
+                $webconnection->send("$data2");
+                $webconnection->send("$data3");
+
+                   }
 
 
 

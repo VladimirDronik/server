@@ -207,17 +207,31 @@ class Views extends System
         return $json;
     }
 
-    /** Получаем список событий для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
-    function get_all_events(){
-        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='e'  ORDER BY `id`");
+
+
+
+    /** Получаем список ных событий, упаковываем в json и отправляем клиенту, через скрипт server.php */
+    function get_events($period){
+
+
+        $sql = parent::$db->query("SELECT `scheduler_points`.`id` AS `id`, `type`, `time` AS `time`, `days`, `scheduler_tasks`.`name` AS `name` 
+                                    FROM `scheduler_points` 
+                                    INNER JOIN `scheduler_tasks` ON `scheduler_points`.`id_task`=`scheduler_tasks`.`id` 
+                                    WHERE `system` = 0 AND `type`='$period'");
+
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-            $events_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'title'=>$view_obj->title, 'status'=>$view_obj->status, 'value'=>$view_obj->value, 'date'=>$view_obj->date);
+            $events_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$view_obj->days);
             $events[] = $events_array;
         }
 
-        return $json = json_encode(array('status'=>'eventsLoad', 'events'=>$events));
 
+        return $json = json_encode(array('status'=>$period.'_eventsLoad', 'events'=>$events));
     }
+
+
+
+
+
 
 
     /**  Получаем данные от клиента и выполняем действия в зависимости от этого  */

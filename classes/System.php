@@ -35,6 +35,13 @@ class System
     }
 
 
+    /* Устанавливает значение выбранному свойству */
+    static function set_setting($setting, $value){
+
+        self::$db->query("UPDATE settings SET `value` = '$value'
+                                         WHERE `name`='$setting'");
+    }
+
 
 
 }

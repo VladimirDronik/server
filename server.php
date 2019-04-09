@@ -157,6 +157,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                         }
             } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
 
+            if ($data_array[0] == 'ready?menu') {
+
+                //отправляем пользователю меню
+                $data1 = $views->get_menu();
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send($data1);
+            }
 
             //формируем и отвечаем на запрос на получение всех данных с главной страницы
             if ($data_array[0] == 'ready?dashboard') {
@@ -195,7 +202,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                $webconnection = $users[$data_array[1]];
-                $webconnection->send("$data1");
+               $webconnection->send("$data1");
             }
 
 
@@ -244,10 +251,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection->send("$data2");
                 $webconnection->send("$data3");
 
-                   }
-
-
-
+                }
             };
 
 };

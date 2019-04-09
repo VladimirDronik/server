@@ -88,6 +88,7 @@ class Thermostats extends Objects
     /** Получение температуры термостата */
     function get_temperature()
     {
+        $alarm_cnt = 0;
 
         //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
         $termostatsql = parent::$db->query("SELECT id_device, port, id_termometr FROM termostats
@@ -142,12 +143,34 @@ class Thermostats extends Objects
 
 
     /** Заносим в таблицу термостатов данные об установленной пользователем температуре */
-    function set_temperature(int $id_object, $value){
+    function set_temperature($id_object, $value){
 
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE termostats SET `optimal` = $value
                                          WHERE id_object='$id_object'");
 
+    }
+
+
+    /* Установка режима отопления для термостата и изменение связанного графического элемента
+       Указываем mode=режим, коорый хотим установить,
+       $id_object = ид объекта, коотрый используем */
+    static function set_temperature_mode($mode, $id_object){
+
+        //Берем температуру у выбранного режима
+        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
+                                       INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
+                                       INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
+                                       WHERE `termostats`.`id_object` = $id_object");
+
+        $result = $modesql->fetch(PDO::FETCH_OBJ);
+
+
+        //Заносим значение в БД для выбранного термостата
+        self::set_temperature($id_object, $result->temperature);
+
+        $view = new Views();
+        $view->update_item($result->view, $result->temperature);
     }
 
 }

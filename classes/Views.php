@@ -93,7 +93,7 @@ class Views extends System
 
                 $items_array[] = $item;
 
-                $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image,'label' => $scenes_obj->label, 'items' => $items_array);
+                $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image, 'backgroung-color' => $scenes_obj->backgroung_color, 'label' => $scenes_obj->label, 'items' => $items_array);
 
             }
 
@@ -107,14 +107,31 @@ class Views extends System
 
 
 
+    //Получаем все пункты меню
+    function get_menu(){
+
+        $sql = parent::$db->query("SELECT `id`, `name`, `title`, `link`, `image` FROM `menu` WHERE `active`=1 ORDER BY `sort`");
+        while ($menu = $sql->fetch(PDO::FETCH_OBJ)) {
+
+            $menu_array = array('id'=>(int)$menu->id, 'name'=>$menu->name, 'title'=>$menu->title, 'link'=>$menu->link, 'image'=>$menu->image);
+            $menures[] = $menu_array;
+        }
+
+        $json = json_encode(array('menu'=> $menures));
+        return $json;
+    }
 
 
 
-
-    /** Получаем список итемов, которые относятся к сценам */
+    /** Получаем список элементов для отображения температуры */
     function get_temperatures(){
 
-        $sql = parent::$db->query("SELECT * FROM `temperatures` ORDER BY `sort`");
+
+        $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `temperatures`.`normal`,
+                                   `temperatures`.`night`, `temperatures`.`eco`
+                                   FROM `temperatures` INNER JOIN rooms 
+                                   ON `temperatures`.`id_room` = `rooms`.`id` ORDER BY `temperatures`.`sort`");
+
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 
             $temp_array = array('id'=>(int)$temp->id, 'name'=>$temp->name, 'normal'=>$temp->normal, 'night'=>$temp->night, 'eco'=>$temp->eco);
@@ -133,7 +150,10 @@ class Views extends System
     function get_graphs(){
 
         //Перебираем комнаты в, которых установлены термостаты
-        $sql = parent::$db->query("SELECT id, name FROM `temperatures` ORDER BY `sort`");
+        $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `rooms`.`style`  
+                                   FROM `temperatures` INNER JOIN rooms 
+                                   ON `temperatures`.`id_room` = `rooms`.`id` ORDER BY `temperatures`.`sort`");
+
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 
             unset($temperatureLog);
@@ -146,7 +166,7 @@ class Views extends System
                 $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
             }
 
-            $rooms[] = array('room'=>$temp->name, 'temperatureLog'=>$temperatureLog);
+            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>$temperatureLog);
         }
 
         return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));
@@ -220,7 +240,9 @@ class Views extends System
                                     WHERE `system` = 0 AND `type`='$period'");
 
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-            $events_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$view_obj->days);
+            unset($days_array);
+            $days_array = explode(',',$view_obj->days);
+            $events_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
             $events[] = $events_array;
         }
 
@@ -253,6 +275,13 @@ class Views extends System
         }
 
 
+        //Если клиент отправил запрос на изменение состояния события
+        if ($data_array->status=='eventChange'){
+
+            //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+            parent::$db->exec("UPDATE `sheduler_points` SET `status` = '$item_status', `value` = $item_value  WHERE `view_items`.`id` = $item_id");
+
+        }
 
 
         //Если клиент отправил запрос на изменение состояния итема
@@ -302,7 +331,6 @@ class Views extends System
         }
 
 
-
     }
 
 
@@ -314,7 +342,8 @@ class Views extends System
         $item_status = mb_strtolower($item_status);
 
         // Обновляем данные в таблице представлений
-        parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status' WHERE `view_items`.`id` = $id_item");
+        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`name`='temp', `status`, '$item_status'),
+                            `value` = IF(`name`='temp', '$item_status', `value`) WHERE `view_items`.`id` = $id_item");
 
         // Получаем необходимые данные из таблицы представлений для итемов, которые связаны с данным объектом
 
@@ -327,7 +356,7 @@ class Views extends System
            // $message = array('status' => 'itemChange', 'items'=>[$item]);
 
             $message = '{ "status": "itemChange", "items": [{"id":'.$ret_item->id.',
-            "name":"'.$ret_item->name.'","status":"'.$ret_item->status.'",
+            "name":"'.$ret_item->name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
             "on_image":"'.$ret_item->on_image.'","off_image":"'.$ret_item->off_image.'",
             "on_title":"'.$ret_item->on_title.'","off_title":"'.$ret_item->off_title.'",
             "left":"'.$ret_item->position_left.'","top":"'.$ret_item->position_top.'"}]}';

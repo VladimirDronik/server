@@ -16,7 +16,7 @@ class Objects extends System
 
 
     /** Ищем объект и его метод в таблице объектов выводим ссылку на скрипт или код*/
-    function get(int $object, $id_method, string $method=null){
+    function get($object, $id_method, $method=null){
        //Если указан не id метода, а название конкретного метода
 /*
         if ($id_method==null)
@@ -80,6 +80,7 @@ class Objects extends System
         //Изменяем статус объекта
         parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
+        $this->status = $status;
 
         //Если у объекта есть представление
         if ($this->view!=null) {

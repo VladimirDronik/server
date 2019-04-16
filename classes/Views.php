@@ -335,7 +335,7 @@ class Views extends System
 
 
     /** Обновление состояния итема в таблице представлений и у клиентов*/
-    function update_item(int $id_item, string $item_status){
+    function update_item($id_item, $item_status){
 
         global $localsocket;
 

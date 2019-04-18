@@ -8,9 +8,23 @@
 
 class System
 {
+    /**
+     * Connection to database
+     * @var object
+     */
     public static $db;
 
-    /* Подключение к БД*/
+
+
+
+    /**
+     * Подключение к БД
+     *
+     * @param string $dbname "name of database"
+     * @param string $dbuser "user of database"
+     * @param string $dbpass "password of database"
+     * @return  null
+     */
     static function db_connect($dbname, $dbuser, $dbpass)
     {
         $db = new PDO("mysql:host=localhost;dbname=$dbname", $dbuser, $dbpass);
@@ -19,24 +33,45 @@ class System
         $db->exec("set charset utf8");
     }
 
-    /* Добавляет новую строку в лог файл*/
-    static function addlog($string){
 
+
+
+    /**
+     * Add new string to log-file
+     *
+     * @param string $string
+     * @return null
+     */
+    static function addlog($string){
         $date = date('m/d/Y H:i:s', time());
         $file = ROOT_DIR.'/server.log';
         file_put_contents($file, $date.':   '.$string."\n", FILE_APPEND | LOCK_EX);
     }
 
 
-    /* Проиграть звук из файла */
+
+
+    /**
+     * Play a sound from a file
+     *
+     * @param string $sound "name of sound file"
+     * @return null
+     */
     function play_sound($sound)
     {
         exec("aplay /var/www/smarthome/sounds/$sound");
     }
 
 
-    /* Устанавливает значение выбранному свойству */
-    static function set_setting($setting, $value){
+    /**
+     * Update a setting
+     *
+     * @param string $setting "setting name for update a value"
+     * @param string $value "value setting to update"
+     * @return null
+     */
+    static function set_setting($setting, $value)
+    {
 
         self::$db->query("UPDATE settings SET `value` = '$value'
                                          WHERE `name`='$setting'");

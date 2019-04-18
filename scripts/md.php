@@ -51,10 +51,12 @@ flush();
                 $script->runscript($port->object, $port->method);
 
                 //Устанавливаем новый статус объекту, который связан с портом, вызвавшим скрипт
+                //Эту реализацию сделать только для объектов, которые могут иметь статус
+               /*
                 $object = new Objects();
                 $object->select($port->object);
-                $object->set_status($port->status, false);
-
+                $object->set_status($port->status, false, false);
+                */
             }
         }
 

@@ -5,8 +5,6 @@
 
 require_once __DIR__ . '/include.php';
 
-$localsocket = 'tcp://127.0.0.1:5678';
-
 $user = 'watchdog';
 $message = 'watchdog';
 
@@ -24,7 +22,7 @@ if (!$instance) {
     //Шлем тестовое сообщеение через сокет
     fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
 
-    sleep(5);
+    sleep(1);
 
     //Читаем строку из файла
     $handle = @fopen("watchdog.txt", "r");
@@ -38,13 +36,15 @@ if (!$instance) {
         fclose($handle);
     }
 
+    if (file_exists('watchdog.txt'))
     unlink('watchdog.txt');
-
 }
 
 if ($restart) {
     System::addlog('Server is restarted from the watchdog');
     system("php server.php restart");
 }
+
+return true;
 
 

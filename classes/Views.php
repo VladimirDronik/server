@@ -1,6 +1,7 @@
 <?php
 
-/** Класс работы с визуальными элементами плана дома
+/**
+ * Класс работы с визуальными элементами плана дома
  */
 class Views extends System
 {
@@ -8,7 +9,8 @@ class Views extends System
     /** Получаем список итемов для главной страницы, упаковываем его в json и отдаем скрипту server.php, который
      отправляет этот json клиенту, запрашивающему данные
      */
-    function get_room_items(){
+    function get_room_items()
+    {
 
         //Находим комнаты, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query("SELECT * FROM `rooms` WHERE `id`!=0 ORDER BY `sort`");
@@ -43,7 +45,8 @@ class Views extends System
     }
 
     /** Получаем список итемов, которые относятся к главной комнате */
-    function get_main_items(){
+    function get_main_items()
+    {
 
 
             //Отдаем элементы
@@ -73,7 +76,8 @@ class Views extends System
 
 
     /** Получаем список итемов, которые относятся к сценам */
-    function get_scenes_items(){
+    function get_scenes_items()
+    {
 
         //Находим сцены в таблице сцен, у которых статус=активен
         $sql_scenes = parent::$db->query("SELECT * FROM `scenes` WHERE `active`=1 ORDER BY `sort`");
@@ -108,7 +112,8 @@ class Views extends System
 
 
     //Получаем все пункты меню
-    function get_menu(){
+    function get_menu()
+    {
 
         $sql = parent::$db->query("SELECT `id`, `name`, `title`, `link`, `image` FROM `menu` WHERE `active`=1 ORDER BY `sort`");
         while ($menu = $sql->fetch(PDO::FETCH_OBJ)) {
@@ -124,7 +129,8 @@ class Views extends System
 
 
     /** Получаем список элементов для отображения температуры */
-    function get_temperatures(){
+    function get_temperatures()
+    {
 
 
         $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `temperatures`.`normal`,
@@ -147,7 +153,8 @@ class Views extends System
 
 
     /** Получаем данные из таблицы графиков */
-    function get_graphs(){
+    function get_graphs()
+    {
 
         //Перебираем комнаты в, которых установлены термостаты
         $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `rooms`.`style`  
@@ -175,7 +182,8 @@ class Views extends System
 
 
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
-    function get_all_settings(){
+    function get_all_settings()
+    {
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ))
         {
@@ -231,7 +239,8 @@ class Views extends System
 
 
     /** Получаем список ных событий, упаковываем в json и отправляем клиенту, через скрипт server.php */
-    function get_events($period){
+    function get_events($period)
+    {
 
 
         $sql = parent::$db->query("SELECT `scheduler_points`.`id` AS `id`, `type`, `time` AS `time`, `days`, `scheduler_tasks`.`name` AS `name` 
@@ -257,7 +266,8 @@ class Views extends System
 
 
     /**  Получаем данные от клиента и выполняем действия в зависимости от этого  */
-    function res_data($data){
+    function res_data($data)
+    {
 
         $data_array = json_decode($data);
 
@@ -316,8 +326,11 @@ class Views extends System
                 } else { //Если объект является обычной кнопкой
 
 
-                    //Меняем состояние связанного элемента  и одновременно состояние итема
-                    $object->set_status($item_status, false);
+                    //Меняем состояние итема, состояние объекта не меняем, физическим портом не управляем
+                    //$object->set_status($item_status, false, false);
+
+                    //Меняем состояние итема
+                    $this->update_item($item_id,$item_status);
 
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();
@@ -335,7 +348,8 @@ class Views extends System
 
 
     /** Обновление состояния итема в таблице представлений и у клиентов*/
-    function update_item($id_item, $item_status){
+    function update_item($id_item, $item_status)
+    {
 
         global $localsocket;
 

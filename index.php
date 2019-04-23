@@ -27,6 +27,7 @@ if ($success && $login)
 else
     $data = array('status' => 'fall', 'server' => $success, 'login'=>$login);
 
+header("Access-Control-Allow-Origin: *");
 header('HTTP/1.1 200 OK; Content-Type: application/json');
 print_r( json_encode($data));
 

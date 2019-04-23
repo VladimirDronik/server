@@ -231,7 +231,7 @@ class Views extends System
         }
 
          $json = json_encode(array('status'=>'settingsLoad', 'settings'=>$settings));
-        //print_r($json);
+
         return $json;
     }
 
@@ -329,12 +329,16 @@ class Views extends System
                     //Меняем состояние итема, состояние объекта не меняем, физическим портом не управляем
                     //$object->set_status($item_status, false, false);
 
-                    //Меняем состояние итема
-                    $this->update_item($item_id,$item_status);
-
                     //Запускаем соответствующий скрипт на выполнение.
                     $script = new Scripts();
-                    $script->runscript($id_object, null, $item_status);
+                    $sciptisrun = $script->runscript($id_object, null, $item_status);
+
+                    //Если скрипт не был запущен - меняем статус объекта
+                    if (!$sciptisrun)
+                    $object->set_status($item_status, true, true);
+                    else
+                        //Меняем состояние итема
+                        $this->update_item($item_id,$item_status);
 
                 }
 

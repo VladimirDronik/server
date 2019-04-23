@@ -116,7 +116,7 @@ class Objects extends System
      * Меняем состояние у объекта и его представления в соответствии с его статусом
      *
      * @param string $status
-     * @param bool $set_object_status
+     * @param bool $set_object_status - при true меняем статус объекта, при false не трогаем статус
      * @param bool $portrelease
      * $portrelease=fase - при этом параметре не меняем состояние физическог порта, а только состояние объекта
      * @return null

@@ -77,6 +77,19 @@ class System
                                          WHERE `name`='$setting'");
     }
 
+    /**
+     * Чтение данных из таблицы свойств
+     *
+     * @param string $setting "Название свойства"
+     * @return strings
+    */
+    static function read_setting($setting){
+
+        $sql = parent::$db->query("SELECT `value` FROM `settings` WHERE `name`= $setting");
+        $setting = $sql->fetch(PDO::FETCH_OBJ);
+        return $id_object = $setting->value;
+
+    }
 
 
 }

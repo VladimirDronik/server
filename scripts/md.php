@@ -29,17 +29,18 @@ flush();
 
             file_get_contents("http://$ip_device/sec/?cmd=$port->easy");
 
-            //Меняем состояние связанного итема, пока не реализовано
-            //$port = explode(':',$port->easy);
-            //$state = file_get_contents("http://$ip_device/sec/?pt=$port&cmd=get"); //Получаем состояние порта, на который воздействуем
-            //$state = explode('/',$state);
-            //$view = new Views();
-            //$view->update_item($port->object, $state[0]);
+            //Меняем состояние связанного итема
+            $porteasy = explode(':',$port->easy)[0];
+            $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy&cmd=get"); //Получаем состояние порта, на который воздействуем
+            $state = explode('/',$state)[0];
+            $object = new Objects();
+            $object->select($porteasy);
+            $object->set_status($state,true,false);
 
         }
         elseif ($port->script!=null) {
 
-            // exec("cd ".$dir."/../scripts/custom_scripts && php -f penetration.php &"); //выполняем внешний скрипт
+            system("cd ".$dir."/../scripts/custom_scripts && php -f $port->script &"); //выполняем внешний скрипт
         }
         else{ // Выполняем внешний скрипт, который находим по объекту и его методу
 

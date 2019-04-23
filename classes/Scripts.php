@@ -82,11 +82,18 @@ class Scripts extends Megad
 
        $script = $this->object->get($id_object, $id_method, $method); //Получаем ссылку на скрипт
 
-       //print_r("cd ".$dir."/../scripts/custom_scripts && php -f {$script->link} &");
-       $dir = str_replace(' ', '\ ', __DIR__);
-       system("cd ".$dir."/../scripts/custom_scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
+       //Если у объекта есть скрипт
+       if ($script!=null) {
+           $dir = str_replace(' ', '\ ', __DIR__);
+           system("cd " . $dir . "/../scripts/custom_scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
 
-        System::addlog('Script "'.$script->link.' '.$method.'" is running');
+           System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
+       }else{
+
+           //Если скрипта нет
+           return false;
+       }
+
     }
 
 

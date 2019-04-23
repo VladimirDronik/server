@@ -25,7 +25,7 @@ else
 if ($success && $login)
     $data = array ('status' => 'success', 'server' => $websocket, 'login'=>$login);
 else
-    $data = array('status' => 'fall', 'server' => $success, 'login'=>$login);
+    $data = array('status' => 'fail', 'server' => $success, 'login'=>$login);
 
 header('HTTP/1.1 200 OK; Content-Type: application/json');
 print_r( json_encode($data));

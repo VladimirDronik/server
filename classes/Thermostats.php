@@ -173,4 +173,16 @@ class Thermostats extends Objects
         $view->update_item($result->view, $result->temperature);
     }
 
+    /**
+     * Удаление старых значений температуры в таблице графиков
+     *
+     * @return null
+     */
+
+    static function delete_old_values(){
+
+        $date = parent::read_setting('graphdate');
+        parent::$db->query("DELETE FROM `graph` WHERE `graph`.`datetime` = $date");
+    }
+
 }

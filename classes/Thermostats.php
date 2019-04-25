@@ -3,6 +3,7 @@
 /**
  * Класс работы с термостатами
  */
+
 class Thermostats extends Objects
 {
 
@@ -16,6 +17,11 @@ class Thermostats extends Objects
     private $termostat;
 
 
+    /**
+     * Конструктор определяет рабочие параметры у выбранного термостата
+     *
+     * @param int $id_termost
+    */
     function __construct($id_termost=null)
     {
 
@@ -25,8 +31,9 @@ class Thermostats extends Objects
             $this->id_termostat = $id_termost;
 
             //Получаем все данные термостата
-            $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` FROM termostats
-                                         WHERE id=$this->id_termostat");
+            $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, 
+                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` 
+                                            FROM termostats WHERE id=$this->id_termostat");
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
@@ -39,7 +46,12 @@ class Thermostats extends Objects
     }
 
 
-    /** Проверяем параметры нужного термостата */
+    /**
+     * Проверяем параметры термостата с которым рабоатем
+     *
+     * @return int
+     *
+     */
 
     function check()
     {
@@ -85,7 +97,11 @@ class Thermostats extends Objects
     }
 
 
-    /** Получение температуры термостата */
+    /**
+     * Получение температуры термостата
+     *
+     * @return void
+     */
     function get_temperature()
     {
         $alarm_cnt = 0;
@@ -144,7 +160,12 @@ class Thermostats extends Objects
 
 
 
-    /** Заносим в таблицу термостатов данные об установленной пользователем температуре */
+    /**
+     * Заносим в таблицу термостатов данные об установленной пользователем температуре
+     *
+     * @param int $id_object - id объекта с которым связан термостат
+     * @param float $value - Значение выбраной темпертуры
+     */
     function set_temperature($id_object, $value){
 
         //Заносим значение термостата в БД
@@ -154,9 +175,13 @@ class Thermostats extends Objects
     }
 
 
-    /* Установка режима отопления для термостата и изменение связанного графического элемента
-       Указываем mode=режим, коорый хотим установить,
-       $id_object = ид объекта, коотрый используем */
+    /**
+     * Установка режима отопления для термостата и изменение связанного графического элемента
+     *
+     * @param string $mode - режим, коорый хотим установить
+     * @param int $id_object - id объекта с которым работаем
+     * @return void
+     */
     static function set_temperature_mode($mode, $id_object){
 
         //Берем температуру у выбранного режима
@@ -175,10 +200,12 @@ class Thermostats extends Objects
         $view->update_item($result->view, $result->temperature);
     }
 
+
+
     /**
      * Удаление старых значений температуры в таблице графиков
      *
-     * @return null
+     * @return void
      */
     static function delete_old_values(){
 

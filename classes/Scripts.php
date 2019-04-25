@@ -84,12 +84,12 @@ class Scripts extends Megad
 
        //Если у объекта есть скрипт
        if ($script!=null) {
+
            $dir = str_replace(' ', '\ ', __DIR__);
            system("cd " . $dir . "/../scripts/custom_scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
 
            System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
        }else{
-
            //Если скрипта нет
            return false;
        }

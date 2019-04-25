@@ -85,17 +85,27 @@ class Objects extends System
     /**
      * Выбираем объект из таблицы объектов, заносим его данные в публичные переменные
      *
-     * @param int $object
+     * @param int $object - ид объекта с которым планируем рабоатать, если null, то ищем объект по номеру порта
+     * @param int $id_device - ид устройства, у которого порт связан с объектом
+     * @param int $num_port - номер порта, который связан с устройством
      * @return bool
      */
-    function select($object)
+    function select($object, $id_device=null, $num_port=null)
     {
 
+        if ($object == null) {
 
-        $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
-                                    `ports`.`id` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+                                    `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
+                                    FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
+                                    WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
+
+        }else
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+                                    `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `objects`.`id`= $object");
+
         $obj = $sql->fetch(PDO::FETCH_OBJ);
 
         $this->id = $obj->id;
@@ -107,7 +117,6 @@ class Objects extends System
         $this->device = (int)$obj->device;
         return true;
     }
-
 
 
 
@@ -129,6 +138,7 @@ class Objects extends System
         $status = $this->check_switch_state($status);
 
         //Выполняем по умолчанию смену состояния связанного порта
+
         if($portrelease)
             $this->set_port_state($status);
 

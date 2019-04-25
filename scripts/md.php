@@ -27,16 +27,22 @@ flush();
         if ($port->easy!=null)
         { // Выполняем простое действие, указанное в easy
 
-            file_get_contents("http://$ip_device/sec/?cmd=$port->easy");
+            $porteasy = explode(';',$port->easy);
 
-            //Меняем состояние связанного итема
-            $porteasy = explode(':',$port->easy)[0];
-            $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy&cmd=get"); //Получаем состояние порта, на который воздействуем
-            $state = explode('/',$state)[0];
-            $object = new Objects();
-            $object->select($porteasy);
-            $object->set_status($state,true,false);
+            $device = $mega->ip_address($porteasy[0]);
+            $ip_device = $device->ip_address;
 
+            //Меняем статус порта на физическом устройстве
+            if($device->active) {
+                file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
+
+                //Меняем состояние связанного итема
+                $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get"); //Получаем состояние порта, на который воздействуем
+                $state = explode('/', $state)[0];
+                $object = new Objects();
+                $object->select(null, $porteasy[0], explode(':', $porteasy)[0]);
+                $object->set_status($state, true, false);
+            }
         }
         elseif ($port->script!=null) {
 

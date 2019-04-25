@@ -132,7 +132,6 @@ class Views extends System
     function get_temperatures()
     {
 
-
         $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `temperatures`.`normal`,
                                    `temperatures`.`night`, `temperatures`.`eco`
                                    FROM `temperatures` INNER JOIN rooms 
@@ -183,7 +182,7 @@ class Views extends System
 
     /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
     function get_all_settings()
-    {
+    {/*
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ))
         {
@@ -207,25 +206,6 @@ class Views extends System
 
             }
 
-/*
-            // Если тип объекта группа термометров
-            if ($view_obj->name=='temps'){
-
-                $term_array = null;
-
-                $subitems_array = explode(',',$view_obj->items);
-
-                $sql2 = parent::$db->query("SELECT * FROM `view_items` 
-                                          WHERE `type`='t' AND (`id` = $subitems_array[0] OR `id` = $subitems_array[1] OR `id` = $subitems_array[2])  
-                                          ORDER BY `id`");
-
-                while ($term = $sql2->fetch(PDO::FETCH_OBJ)) {
-                    $terms = array('id'=>(int)$term->id, 'name'=>$term->name, 'value'=>$term->value);
-                    $term_array[] = $terms;
-                }
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'title'=>$view_obj->on_title, 'items'=>$term_array);
-            }
-*/
 
             $settings[] = $settings_array;
         }
@@ -233,6 +213,7 @@ class Views extends System
          $json = json_encode(array('status'=>'settingsLoad', 'settings'=>$settings));
 
         return $json;
+    */
     }
 
 
@@ -334,9 +315,10 @@ class Views extends System
                     $sciptisrun = $script->runscript($id_object, null, $item_status);
 
                     //Если скрипт не был запущен - меняем статус объекта
-                    if (!$sciptisrun)
-                    $object->set_status($item_status, true, true);
-                    else
+                    if (!$sciptisrun) {
+                        $object->select($id_object);
+                        $object->set_status($item_status, true, true);
+                    }else
                         //Меняем состояние итема
                         $this->update_item($item_id,$item_status);
 

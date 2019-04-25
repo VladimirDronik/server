@@ -178,11 +178,10 @@ class Thermostats extends Objects
      *
      * @return null
      */
-
     static function delete_old_values(){
 
-        $date = parent::read_setting('graphdate');
-        parent::$db->query("DELETE FROM `graph` WHERE `graph`.`datetime` = $date");
+        $days = parent::read_setting('graphdate');
+        parent::$db->query("DELETE FROM `graph` WHERE `datetime` <= (now() - INTERVAL $days DAY)");
     }
 
 }

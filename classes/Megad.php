@@ -9,7 +9,7 @@ class Megad extends System
     static public $ip_device;
 
     /** определение ip адреса устройства */
-    private function ip_address($id_device)
+    function ip_address($id_device)
     {
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
@@ -47,17 +47,23 @@ class Megad extends System
 
 
 
-    /** Получение номера порта, который активировал девайс*/
+    /**
+     * Получение данных из таблицы пртов для порта, который активировали на девайсе
+     *
+     * @param int $port - физический порт устройства, который сработал
+     * @return object
+    */
     function get(int $port)
     {
         $ip_device = self::$ip_device;
 
-        $sth = parent::$db->query("SELECT `easy`, `object`, `method`, `script`, `status`, `longclick`, `doubleclick` FROM ports 
+        $sth = parent::$db->query("SELECT `ports`.`id`, `easy`, `object`, `method`, `script`, `status`, `longclick`, `doubleclick` FROM ports 
                                   INNER JOIN devices ON ports.id_device = devices.id 
                                   WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
 
         return $sth->fetch(PDO::FETCH_OBJ);
     }
+
 
 
 }

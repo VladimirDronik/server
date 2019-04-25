@@ -53,16 +53,23 @@ class Scripts extends Megad
 
 
 
-    /** Ищем и выполняем скрипты, которые соответсвуют объектам и их методам из таблицы расписаний*/
+    /**
+     * Ищем и выполняем скрипты, которые соответсвуют объектам и их методам из таблицы расписаний
+     *
+     * @param int $day - день недели, месяца или дата выполнния скрипта
+     * @param string $time - время выполнения скрипта
+     * @param string $type - тип, по которому отбираем данные
+     * @return void
+     */
 
-    function scheduler(int $day, string $time)
+    function scheduler(int $day, string $time, string $type)
     {
 
         $sql = parent::$db->query("SELECT scripts.link, methods.id_object, scheduler_tasks.method FROM scheduler_tasks 
                                     INNER JOIN methods ON scheduler_tasks.method = methods.id 
                                     INNER JOIN scripts ON methods.script = scripts.id
                                     INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
-                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time'");
+                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' AND `scheduler_points`.`type` = '$type' ");
 
         while ($script = $sql->fetch(PDO::FETCH_OBJ))
         {
@@ -76,7 +83,11 @@ class Scripts extends Megad
 
 
 
-    /** Выполняем нужный скрипт для выбранного объекта */
+    /**
+     * Выполняем нужный скрипт для выбранного объекта
+     *
+     * @param int $id_object
+     */
     function runscript($id_object, $id_method, $method=null)
     {
 

@@ -7,23 +7,23 @@
  */
 
 require_once '../include.php';
+require_once '../watchdog.php';
 
 /* Запуск скриптов, которые запланированы по времени из таблицы расписайний*/
 
-
+$script = new Scripts();
 
 $time = date("H:i");
-$day = date("w");
 
-$script = new Scripts();
 //смотрим время и ищем в таблице подходящую запись, которая содержит нужный день недели и время, выполняем найденный скрипт
-$script->scheduler($day,$time);
+//День для еженедельных скриптов
+$day = date("w");
+$script->scheduler($day,$time, 'w');
 
+//День для ежемесячных скриптов
+$day = date("m");
+$script->scheduler($day,$time, 'm');
 
-/*
-while (1){
+$day = date("d.m");
+$script->scheduler($day,$time, 'y');
 
-  // $time =$time+10;
-  //  sleep();
-}
-*/

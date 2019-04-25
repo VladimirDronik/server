@@ -102,8 +102,8 @@ class Thermostats extends Objects
                 //вызываем status(int $port, int $id_device=null)
                 $termometrs = Megad::status($termostat->port, 'list', $termostat->id_device);
 
-                /**Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-                 * e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                  e2b5d7020000:23.62;1fa3d7020000:23.62*/
                 $termometrsarray = explode(';', $termometrs);
 
                 foreach ($termometrsarray as $termometr) {
@@ -119,6 +119,8 @@ class Thermostats extends Objects
                 if ($alarm_cnt>=10)
                 {
                     //Здесь сделать вызов обработчика аварии и выходим из цикла
+
+                    $error = true;
                     break 2;
                 }
 
@@ -128,14 +130,14 @@ class Thermostats extends Objects
             //Проверка на пороговые значения
         } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
 
-
-        //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
-        parent::$db->query("UPDATE termostats SET `current` = $termometr_value
+        if (!$error) {
+            //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
+            parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id_termometr='$id_termometr'");
 
-        parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
+            parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
                                       VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
-
+        }
 
     }
 

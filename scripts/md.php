@@ -34,13 +34,15 @@ flush();
 
             //Меняем статус порта на физическом устройстве
             if($device->active) {
-                file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
+                //file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
 
                 //Меняем состояние связанного итема
                 $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get"); //Получаем состояние порта, на который воздействуем
+
                 $state = explode('/', $state)[0];
                 $object = new Objects();
-                $object->select(null, $porteasy[0], explode(':', $porteasy)[0]);
+
+                $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
                 $object->set_status($state, true, false);
             }
         }

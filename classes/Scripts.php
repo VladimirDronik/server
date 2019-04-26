@@ -56,24 +56,41 @@ class Scripts extends Megad
     /**
      * Ищем и выполняем скрипты, которые соответсвуют объектам и их методам из таблицы расписаний
      *
-     * @param int $day - день недели, месяца или дата выполнния скрипта
+     * @param string $day - день недели, месяца или дата выполнния скрипта
      * @param string $time - время выполнения скрипта
      * @param string $type - тип, по которому отбираем данные
      * @return void
      */
 
-    function scheduler(int $day, string $time, string $type)
+    function scheduler(string $day, string $time, string $type)
     {
 
-        $sql = parent::$db->query("SELECT scripts.link, methods.id_object, scheduler_tasks.method FROM scheduler_tasks 
+       // if ($script->id_script!=null)
+            $sql = parent::$db->query("SELECT scripts.link, scheduler_tasks.method, scheduler_tasks.script 
+                                    AS id_script  FROM scheduler_tasks 
+                                    INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
+                                    INNER JOIN scripts ON scheduler_tasks.script = scripts.id
+                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' 
+                                    AND `scheduler_points`.`type` = '$type' ");
+
+        /*
+        else
+             $sql = parent::$db->query("SELECT scripts.link, methods.id_object, scheduler_tasks.method, scheduler_tasks.script 
+                                    AS id_script  FROM scheduler_tasks 
                                     INNER JOIN methods ON scheduler_tasks.method = methods.id 
                                     INNER JOIN scripts ON methods.script = scripts.id
                                     INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
-                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' AND `scheduler_points`.`type` = '$type' ");
+                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' 
+                                    AND `scheduler_points`.`type` = '$type' ");
+
+*/
+
 
         while ($script = $sql->fetch(PDO::FETCH_OBJ))
         {
-            system("cd custom_scripts && php -f {$script->link} &"); //выполняем внешний скрипт
+            $script = $script->link;
+
+            system("cd custom_scripts && php -f $script &"); //выполняем внешний скрипт
             System::addlog('Script "'.$script->link.'" is running');
         }
 

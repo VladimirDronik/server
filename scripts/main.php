@@ -20,9 +20,10 @@ $day = date("w");
 $script->scheduler($day,$time, 'w');
 
 //День для ежемесячных скриптов
-$day = date("m");
+$day = date("d");
 $script->scheduler($day,$time, 'm');
 
+//Дата для ежегодных скриптов
 $day = date("d.m");
 $script->scheduler($day,$time, 'y');
 

@@ -156,7 +156,7 @@ class Views extends System
     {
 
         //Перебираем комнаты в, которых установлены термостаты
-        $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `rooms`.`style`  
+        $sql = parent::$db->query("SELECT `temperatures`.`id_room` AS id, `rooms`.`name` AS name, `rooms`.`style`  
                                    FROM `temperatures` INNER JOIN rooms 
                                    ON `temperatures`.`id_room` = `rooms`.`id` ORDER BY `temperatures`.`sort`");
 

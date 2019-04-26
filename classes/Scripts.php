@@ -91,7 +91,7 @@ class Scripts extends Megad
     function runscript($id_object, $id_method, $method=null)
     {
 
-       $script = $this->object->get($id_object, $id_method, $method); //Получаем ссылку на скрипт
+       $script = $this->object->get($id_object, $id_method); //Получаем ссылку на скрипт
 
        //Если у объекта есть скрипт
        if ($script!=null) {

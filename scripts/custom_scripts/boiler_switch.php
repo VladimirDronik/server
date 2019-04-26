@@ -7,10 +7,10 @@
 require_once '../../include.php';
 
 
-$script = new Scripts();
+//Создали экземпляр класса объектов
+$object = new Objects();
 
-
-if ($argv[1]=='on')
-    $script->set(25,0, 1);
-else
-    $script->set(25,1, 1);
+//Выбрали объект с которым будем работать, в данном случае лампочку
+$object->select(41);
+//Установили объекту статус.
+$object->set_status($argv[1]);

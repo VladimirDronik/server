@@ -7,7 +7,6 @@
  */
 
 require_once '../include.php';
-require_once '../watchdog.php';
 
 /* Запуск скриптов, которые запланированы по времени из таблицы расписайний*/
 

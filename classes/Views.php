@@ -314,7 +314,8 @@ class Views extends System
                     $script = new Scripts();
                     $sciptisrun = $script->runscript($id_object, null, $item_status);
 
-                    //Если скрипт не был запущен - меняем статус объекта
+                    //Если скрипт не был запущен - меняем статус объекта и меняем состояние порта на основе связанного с
+                    //объектом порта
                     if (!$sciptisrun) {
                         $object->select($id_object);
                         $object->set_status($item_status, true, true);

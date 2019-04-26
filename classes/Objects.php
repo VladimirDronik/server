@@ -138,7 +138,6 @@ class Objects extends System
         $status = $this->check_switch_state($status);
 
         //Выполняем по умолчанию смену состояния связанного порта
-
         if($portrelease)
             $this->set_port_state($status);
 

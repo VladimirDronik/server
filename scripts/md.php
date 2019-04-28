@@ -34,7 +34,7 @@ flush();
 
             //Меняем статус порта на физическом устройстве
             if($device->active) {
-                //file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
+                file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
 
                 //Меняем состояние связанного итема
                 $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get"); //Получаем состояние порта, на который воздействуем

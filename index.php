@@ -23,9 +23,9 @@ else
 
 //Если всё ок, то отправляем данные
 if ($success && $login)
-    $data = array ('status' => 'success', 'server' => $websocket, 'login'=>$login);
+    $data = array ('status' => 'success', 'localserver' => $localwebsocket, 'remoteserver' => $remotewebsocket, 'login'=>$login);
 else
-    $data = array('status' => 'fail', 'server' => $success, 'login'=>$login);
+    $data = array('status' => 'fail', 'localserver' => $success, 'remoteserver' => $success,  'login'=>$login);
 
 header("Access-Control-Allow-Origin: *");
 header('HTTP/1.1 200 OK; Content-Type: application/json');

@@ -11,8 +11,11 @@ define("ROOT_DIR",  __DIR__);
 //Переменная для вывода в неё служебной информации
 $system_message = true;
 
-$websocket = '188.120.233.76:8000';
+$remotewebsocket = '188.120.233.76:8000';
+$localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';
+
+
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
 $dbpass = 'smartpaswd';

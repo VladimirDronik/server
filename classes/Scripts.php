@@ -42,7 +42,7 @@ class Scripts extends Megad
 
         while ($script = $sql->fetch(PDO::FETCH_OBJ))
         {
-            system("cd custom_scripts && php -f {$script->link} &"); //выполняем внешний скрипт
+            system("cd scripts && php -f {$script->link} &"); //выполняем внешний скрипт
             System::addlog('Script "'.$script->link.'" is running');
         }
 
@@ -90,7 +90,7 @@ class Scripts extends Megad
         {
             $script = $script->link;
 
-            system("cd custom_scripts && php -f $script &"); //выполняем внешний скрипт
+            system("cd scripts && php -f $script &"); //выполняем внешний скрипт
             System::addlog('Script "'.$script->link.'" is running');
         }
 
@@ -114,7 +114,7 @@ class Scripts extends Megad
        if ($script!=null) {
 
            $dir = str_replace(' ', '\ ', __DIR__);
-           system("cd " . $dir . "/../scripts/custom_scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
+           system("cd " . $dir . "/../scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
 
            System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
        }else{

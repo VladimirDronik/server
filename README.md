@@ -1,2 +1,3 @@
 # server
-server for touchon project
+server for touchon project v 1.0
+

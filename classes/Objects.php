@@ -76,7 +76,9 @@ class Objects extends System
                                         WHERE methods.id_object = $object $methodstr");
 
 
-        return $scriptsql->fetch(PDO::FETCH_OBJ);
+        $script = $scriptsql->fetch(PDO::FETCH_OBJ);
+
+        return $script->link;
     }
 
 

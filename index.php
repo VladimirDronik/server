@@ -11,7 +11,10 @@ $success = include('watchdog.php');
 
 //Проверяем связку логин-пароль
 
-$sql = system::$db->query("SELECT password FROM users WHERE `name` = '{$_POST['login']}'");
+$sql = system::$db->query("SELECT password, servers.local_server AS local_server, servers.remote_server AS remote_server 
+                          FROM `users` INNER JOIN servers ON users.id = servers.user 
+                          WHERE users.name = '{$_POST['login']}'");
+
 $user = $sql->fetch(PDO::FETCH_OBJ);
 
 
@@ -23,7 +26,7 @@ else
 
 //Если всё ок, то отправляем данные
 if ($success && $login)
-    $data = array ('status' => 'success', 'localserver' => $localwebsocket, 'remoteserver' => $remotewebsocket, 'login'=>$login);
+    $data = array ('status' => 'success', 'localserver' => $user->local_server, 'remoteserver' => $user->remote_server, 'login'=>$login);
 else
     $data = array('status' => 'fail', 'localserver' => $success, 'remoteserver' => $success,  'login'=>$login);
 

@@ -117,6 +117,8 @@ class Scripts extends Megad
            system("cd " . $dir . "/../scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
 
            System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
+
+           return true;
        }else{
            //Если скрипта нет
            return false;

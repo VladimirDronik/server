@@ -127,8 +127,8 @@ class Objects extends System
      * @param string $status
      * @param bool $set_object_status - при true меняем статус объекта, при false не трогаем статус
      * @param bool $portrelease
-     * $portrelease=fase - при этом параметре не меняем состояние физическог порта, а только состояние объекта
-     * @return null
+     * $portrelease=false - при этом параметре не меняем состояние физическог порта, а только состояние объекта
+     * @return bool
      */
     function set_status($status, $set_object_status=true, $portrelease=true)
     {
@@ -155,6 +155,8 @@ class Objects extends System
             $view->update_item($this->view, $status);
 
         }
+
+        return $status;
 
     }
 

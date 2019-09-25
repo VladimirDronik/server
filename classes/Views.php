@@ -3,6 +3,9 @@
 /**
  * Класс работы с визуальными элементами плана дома
  */
+
+
+
 class Views extends System
 {
 
@@ -284,12 +287,13 @@ class Views extends System
             $item_value = $data_array->items[0]->value;
 
             //Получаем id объекта из таблицы представлений
-            $object = new Objects();
-            $id_object = $object->id = $object->view_oject($item_id);
-            $object->view = $item_id;
+            $object = $this->getObjectAndMethod($item_id);
+
+            $idObject = $object->id_obgect;
+            $idMethod = $object->id_method;
 
             //Если объект у итема существует
-            if ($id_object!=null){
+            if ($idObject!=null){
 
                 //Если объект является термостатом или гигрометром
                 if(($item_name=='temp')||($item_name=='humidity')){
@@ -302,27 +306,21 @@ class Views extends System
 
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
-                    $termostat->set_temperature($id_object,$item_value);
+                    $termostat->set_temperature($idObject, $item_value);
+
 
                 } else { //Если объект является обычной кнопкой
 
-                    //Меняем состояние итема, состояние объекта не меняем, физическим портом не управляем
-                    //$object->set_status($item_status, false, false);
+                    //Меняем состояние итема и состояние объекта, физическим портом не управляем
+                    $object->set_status($item_status, true, false);
 
-                    //Запускаем соответствующий скрипт на выполнение.
-                    $script = new Scripts();
-                    $sciptisrun = $script->runscript($id_object, null, $item_status);
+                    //Выполняем действие для данного объекта
+                    Action::selectAction($idMethod);
 
-                    //Если скрипт не был запущен - меняем статус объекта и меняем состояние порта на основе связанного с
-                    //объектом порта
-                    if (!$sciptisrun) {
-                        $object->select($id_object);
-                        $object->set_status($item_status, true, true);
-                    }else
-                        //Меняем состояние итема
-                        $this->update_item($item_id,$item_status);
 
                 }
+
+                //TODO: проверить является ли объект виртуальным
 
             }
 
@@ -342,8 +340,8 @@ class Views extends System
         $item_status = mb_strtolower($item_status);
 
         // Обновляем данные в таблице представлений
-        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`name`='temp', `status`, '$item_status'),
-                            `value` = IF(`name`='temp', '$item_status', `value`) WHERE `view_items`.`id` = $id_item");
+        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type_name`='temp', `status`, '$item_status'),
+                            `value` = IF(`type_name`='temp', '$item_status', `value`) WHERE `view_items`.`id` = $id_item");
 
         // Получаем необходимые данные из таблицы представлений для итемов, которые связаны с данным объектом
 
@@ -356,7 +354,7 @@ class Views extends System
            // $message = array('status' => 'itemChange', 'items'=>[$item]);
 
             $message = '{ "status": "itemChange", "items": [{"id":'.$ret_item->id.',
-            "name":"'.$ret_item->name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
+            "name":"'.$ret_item->type_name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
             "on_image":"'.$ret_item->on_image.'","off_image":"'.$ret_item->off_image.'",
             "on_title":"'.$ret_item->on_title.'","off_title":"'.$ret_item->off_title.'",
             "left":"'.$ret_item->position_left.'","top":"'.$ret_item->position_top.'"}]}';
@@ -374,6 +372,20 @@ class Views extends System
 
         }
 
+    }
+
+
+    /**
+     * получение бъекта и метода, которые соответвуют представлению
+     *
+     * @param  int $item_id - ид метода
+     * @return object
+     */
+    function getObjectAndMethod($item_id)
+    {
+
+        $sql = parent::$db->query("SELECT `id_object`, `id_method`  FROM `view_items` WHERE `id`= $id_item");
+        return $sql->fetch(PDO::FETCH_OBJ);
     }
 
 

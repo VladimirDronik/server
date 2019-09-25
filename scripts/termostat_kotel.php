@@ -4,7 +4,7 @@
  */
 
 
-require_once '../../include.php';
+require_once '../include.php';
 
 //Указываем номер термостата с которым будем рабоать
 $termostat = 1;

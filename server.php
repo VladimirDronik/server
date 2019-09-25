@@ -17,39 +17,43 @@ $users = [];
 // создаём ws-сервер, к которому будут подключаться все наши пользователи
 $ws_worker = new Worker("websocket://0.0.0.0:8000");
 
-
+//по умолчанию создается только один воркер
+$ws_worker->count = 1;
+$ws_worker->reloadable = true;
 
 // создаём обработчик, который будет выполняться при запуске ws-сервера
 $ws_worker->onWorkerStart = function() use (&$users)
 {
+//var_dump($users);
     // создаём локальный tcp-сервер, чтобы отправлять на него сообщения из кода нашего сайта
     $inner_tcp_worker = new Worker("tcp://127.0.0.1:5678");
+
+    //совмесное использование порта группой воркеров
+    $inner_tcp_worker->reusePort = true;
     // создаём обработчик сообщений, который будет срабатывать,
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
         $data = json_decode($data);
         global $system_message;
 
-
-
-
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
-            $file = 'watchdog.txt';
-
+        
+	   $file = 'watchdog.txt';
             //Проверяем есть ли в массиве users элементы, если нет, значит по какой-то причине они не подключены
-            if ($users) {
+//            if ($users) {
                 //Записываем в файл что всё ок и сервер работает
                 file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
 
                 if ($system_message)
                     print_r("Watchdog is OK\n");
-            } else {
+            
+	/* else {
                 file_put_contents($file, 'FAIL', FILE_APPEND | LOCK_EX);
                 System::addlog('Сервер сокетов перезапущен (отсутствуют активные подключения)');
-            }
-        };
+            } */
+        }
 
 
 
@@ -61,7 +65,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
             $webconnection = $user;
             $webconnection->send($data->message);          
 
-            } 
+            }
 
            } else {
                     if (isset($users[$data->user])) {
@@ -139,7 +143,6 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                             $data1 = $user->checkuser($data_array[1]);
 
                             $webconnection = $users[$data_array[1]];
-
                             $webconnection->send("$data1");
 
 

@@ -4,15 +4,13 @@
  * контактов какого-либо порта
  */
 
-
-
 require_once 'include.php';
 flush();
 
 
         /* Определяем какой мегадевайс вызвал скрипт */
-        $ip_device = $_SERVER['REMOTE_ADDR'];
-        $pt = $_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
+        $ip_device = '192.168.100.11';//$_SERVER['REMOTE_ADDR'];
+        $pt = 0; //$_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
         //$state = file_get_contents("http://$ip_device/sec/?pt=$pt&cmd=get"); //Получаем состояние порта, который активировал скрипт
 
         //$state = explode('/',$state);
@@ -24,6 +22,10 @@ flush();
         $port = $mega->get($pt); //взяли номер порта, который сработал - нашли нужный порт в таблице портов
 
 
+        //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
+        Action::selectAction($port->method);
+
+/*
         if ($port->easy!=null)
         { // Выполняем простое действие, указанное в easy
 
@@ -46,10 +48,6 @@ flush();
                 $object->set_status($state, true, false);
             }
         }
-        elseif ($port->script!=null) {
-
-            system("cd ".$dir."/../scripts && php -f $port->script &"); //выполняем внешний скрипт
-        }
         else{ // Выполняем внешний скрипт, который находим по объекту и его методу
 
             if($port->object!=null)
@@ -66,6 +64,6 @@ flush();
                 $object->select($port->object);
                 $object->set_status($port->status, false, false);
                 */
-            }
-        }
+  //          }
+//        }
 

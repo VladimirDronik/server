@@ -18,7 +18,7 @@ $localsocket = 'tcp://127.0.0.1:5678';
 
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
-$dbpass = 'smartpaswd';
+$dbpass = 'Alli80ed!';
 
 
 require_once __DIR__.'/classes/System.php';
@@ -29,5 +29,6 @@ require_once __DIR__.'/classes/Thermostats.php';
 require_once __DIR__.'/classes/Views.php';
 require_once __DIR__.'/classes/Users.php';
 require_once __DIR__.'/classes/Demostand.php';
+require_once __DIR__.'/classes/Action.php';
 
 System::db_connect($dbname, $dbuser, $dbpass);

@@ -191,6 +191,8 @@ class Objects extends System
      * @param int $item_id
      * @return int
      */
+
+/*
     function view_oject($item_id)
     {
 
@@ -199,6 +201,8 @@ class Objects extends System
         return $id_object = $view_obj->id;
 
     }
+*/
+
 
 
     /**

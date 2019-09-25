@@ -101,17 +101,18 @@ class Scripts extends Megad
 
 
     /**
-     * Выполняем нужный скрипт для выбранного объекта
+     * Выполняем нужный скрипт
      *
      * @param int $id_object
      */
-    function runscript($id_object, $id_method, $method=null)
+    function runscript($idScript, $method = null)
     {
 
-       $script = $this->object->get($id_object, $id_method); //Получаем ссылку на скрипт
+        $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
+                                         WHERE scripts.id = $idScript");
 
-       //Если у объекта есть скрипт
-       if ($script!=null) {
+        $script = $scriptsql->fetch(PDO::FETCH_OBJ);
+
 
            $dir = str_replace(' ', '\ ', __DIR__);
            system("cd " . $dir . "/../scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
@@ -119,10 +120,7 @@ class Scripts extends Megad
            System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
 
            return true;
-       }else{
-           //Если скрипта нет
-           return false;
-       }
+
 
     }
 

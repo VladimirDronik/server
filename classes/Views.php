@@ -315,7 +315,7 @@ class Views extends System
                     $object->set_status($item_status, true, false);
 
                     //Выполняем действие для данного объекта
-                    Action::selectAction($idMethod);
+                    Action::runAction($idMethod);
 
 
                 }

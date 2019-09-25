@@ -25,7 +25,11 @@ class Action extends Megad
      * @param int $idObject
      * */
 
-    static public function selectAction($idMethod)
+
+    /**
+     * Определяем по методу какое действие необходимо выполнить и выполняем его
+     */
+    static public function runAction($idMethod)
     {
         $sql = parent::$db->query("SELECT `easy`, `script` FROM `methods` WHERE `methods`.`id`=$idMethod");
         $method = $sql->fetch(PDO::FETCH_OBJ);

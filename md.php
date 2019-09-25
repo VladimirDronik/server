@@ -23,7 +23,7 @@ flush();
 
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
-        Action::selectAction($port->method);
+        Action::runAction($port->method);
 
 /*
         if ($port->easy!=null)

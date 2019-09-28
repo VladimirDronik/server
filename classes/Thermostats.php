@@ -188,6 +188,7 @@ class Thermostats extends Objects
         $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
                                        INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
+                                       LEFT JOIN `view_items` ON `view_items`.`id_object` = `termostats`.`id_object`
                                        WHERE `termostats`.`id` = $id");
 
         $result = $modesql->fetch(PDO::FETCH_OBJ);
@@ -196,8 +197,10 @@ class Thermostats extends Objects
         //Заносим значение в БД для выбранного термостата
         self::set_temperature($id, $result->temperature);
 
-        $view = new Views();
-        $view->update_item($result->view, $result->temperature);
+        if($result->view) {
+            $view = new Views();
+            $view->update_item($result->view, $result->temperature);
+        }
     }
 
 

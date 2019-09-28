@@ -170,7 +170,7 @@ class Thermostats extends Objects
 
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE termostats SET `optimal` = $value
-                                         WHERE id_object='$id'");
+                                         WHERE id='$id'");
 
     }
 

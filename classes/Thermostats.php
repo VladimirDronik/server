@@ -63,7 +63,7 @@ class Thermostats extends Objects
             if ($this->termostat->current >=($this->termostat->optimal))
             {
                 // Вызываем метод off
-                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
+                Action::runAction($this->termostat->method_off);
                 return 0;
 
             }
@@ -71,7 +71,7 @@ class Thermostats extends Objects
             if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод on
-                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
+                Action::runAction($this->termostat->method_on);
                 return 1;
             }
 
@@ -81,7 +81,7 @@ class Thermostats extends Objects
             if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод off
-                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
+                Action::runAction($this->termostat->method_off);
                 return 0;
             }
 
@@ -89,7 +89,7 @@ class Thermostats extends Objects
             if ($this->termostat->current > $this->termostat->optimal)
             {
                 // Вызываем метод on
-                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
+                Action::runAction($this->termostat->method_on);
                 return 1;
             }
 

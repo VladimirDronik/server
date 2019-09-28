@@ -4,7 +4,7 @@
  */
 
 
-require_once '../../include.php';
+require_once '../include.php';
 
 $cnt_light = 10; //интервал включения освещения, сек.
 
@@ -23,7 +23,7 @@ if (($now>$start)||($now<$end)) {
 $st = $script->status(11,'get',1);
 $status = explode('/',$st);
 //Включаем свет 
-if ($status[0]=='ON'){
+if ($status[0]  =='ON'){
 $script->set(27,1, 1);
 
 

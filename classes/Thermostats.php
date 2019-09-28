@@ -163,14 +163,14 @@ class Thermostats extends Objects
     /**
      * Заносим в таблицу термостатов данные об установленной пользователем температуре
      *
-     * @param int $id_object - id объекта с которым связан термостат
+     * @param int $id_object - id термостата
      * @param float $value - Значение выбраной темпертуры
      */
-    function set_temperature($id_object, $value){
+    function set_temperature($id, $value){
 
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE termostats SET `optimal` = $value
-                                         WHERE id_object='$id_object'");
+                                         WHERE id_object='$id'");
 
     }
 
@@ -179,22 +179,22 @@ class Thermostats extends Objects
      * Установка режима отопления для термостата и изменение связанного графического элемента
      *
      * @param string $mode - режим, коорый хотим установить
-     * @param int $id_object - id объекта с которым работаем
+     * @param int $id - id термостата
      * @return void
      */
-    static function set_temperature_mode($mode, $id_object){
+    static function set_temperature_mode($mode, $id){
 
         //Берем температуру у выбранного режима
         $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
                                        INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
-                                       WHERE `termostats`.`id_object` = $id_object");
+                                       WHERE `termostats`.`id` = $id");
 
         $result = $modesql->fetch(PDO::FETCH_OBJ);
 
 
         //Заносим значение в БД для выбранного термостата
-        self::set_temperature($id_object, $result->temperature);
+        self::set_temperature($id, $result->temperature);
 
         $view = new Views();
         $view->update_item($result->view, $result->temperature);

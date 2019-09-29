@@ -199,7 +199,7 @@ class Thermostats extends Objects
 
         if($result->view) {
             $view = new Views();
-            $view->update_item($result->view, $result->temperature);
+            $view->updateItem($result->view, $result->temperature);
         }
     }
 

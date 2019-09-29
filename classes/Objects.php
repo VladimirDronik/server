@@ -152,7 +152,7 @@ class Objects extends System
 
             //меняем представление объекта
             $view = new Views();
-            $view->update_item($this->view, $status);
+            $view->updateItem($this->view, $status);
 
         }
 

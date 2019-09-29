@@ -124,7 +124,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-            $views->res_data($data);
+            $views->resData($data);
 
             //отдаем данные об изменении всем другим зарегестрированным клиентам
             foreach ($users as $user) {
@@ -163,7 +163,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?menu') {
 
                 //отправляем пользователю меню
-                $data1 = $views->get_menu();
+                $data1 = $views->getMenu();
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send($data1);
             }
@@ -172,8 +172,8 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?dashboard') {
 
                 //Получаем данные из БД
-                $data1 = $views->get_room_items();
-                $data2 = $views->get_main_items();
+                $data1 = $views->getRoomItems();
+                $data2 = $views->getMainItems();
 
 
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
@@ -189,7 +189,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Формируем и отвечаем на запрос на получение данных на странице термометров
             if ($data_array[0] == 'ready?temperatures'){
 
-                $data1 = $views->get_temperatures();
+                $data1 = $views->getTemperatures();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                 $webconnection = $users[$data_array[1]];
@@ -201,7 +201,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
             if ($data_array[0] == 'ready?graphs'){
 
-                $data1 = $views->get_graphs();
+                $data1 = $views->getGraphs();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                $webconnection = $users[$data_array[1]];
@@ -214,7 +214,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?scene') {
 
                 //Получаем данные из БД
-                $data1 = $views->get_scenes_items();
+                $data1 = $views->getScenesItems();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
                 $webconnection = $users[$data_array[1]];
@@ -228,7 +228,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?settings') {
 
                 //Отдаем все настройки
-                $data1 = $views->get_all_settings();
+                $data1 = $views->getAllSettings();
 
                 //Формируем ответ со всеми юзерами, котоыре доступны
                 $data2 = $user->get_all_users();
@@ -245,9 +245,9 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
            if ($data_array[0] == 'ready?events') {
 
                 //Отвечаем на запрос получения всех данных страницы событий
-                $data1 = $views->get_events('w');
-                $data2 = $views->get_events('m');
-                $data3 = $views->get_events('y');
+                $data1 = $views->getEvents('w');
+                $data2 = $views->getEvents('m');
+                $data3 = $views->getEvents('y');
 
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");

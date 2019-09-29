@@ -166,11 +166,11 @@ class Thermostats extends Objects
      * @param int $id_object - id термостата
      * @param float $value - Значение выбраной темпертуры
      */
-    function set_temperature($id, $value){
+    function set_temperature($id_object, $value){
 
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE termostats SET `optimal` = $value
-                                         WHERE id_object='$id'");
+                                         WHERE id_object='$id_object'");
 
     }
 
@@ -179,16 +179,17 @@ class Thermostats extends Objects
      * Установка режима отопления для термостата и изменение связанного графического элемента
      *
      * @param string $mode - режим, коорый хотим установить
-     * @param int $id - id термостата
+     * @param int $id_object - id объекта, к которому привязан термостат
      * @return void
      */
-    static function set_temperature_mode($mode, $id){
+    static function set_temperature_mode($mode, $id_object){
 
         //Берем температуру у выбранного режима
         $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
                                        INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
-                                       WHERE `termostats`.`id` = $id");
+                                       LEFT JOIN `view_items` ON `view_items`.`id_object` = `termostats`.`id_object`
+                                       WHERE `termostats`.`id_object` = $id_object");
 
         $result = $modesql->fetch(PDO::FETCH_OBJ);
 
@@ -196,8 +197,10 @@ class Thermostats extends Objects
         //Заносим значение в БД для выбранного термостата
         self::set_temperature($id, $result->temperature);
 
-        $view = new Views();
-        $view->update_item($result->view, $result->temperature);
+        if($result->view) {
+            $view = new Views();
+            $view->update_item($result->view, $result->temperature);
+        }
     }
 
 

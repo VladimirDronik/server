@@ -21,7 +21,7 @@ class Thermostats extends Objects
      * Конструктор определяет рабочие параметры у выбранного термостата
      *
      * @param int $id_termost
-    */
+     */
     function __construct($id_termost=null)
     {
 

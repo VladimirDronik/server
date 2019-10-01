@@ -104,6 +104,7 @@ class Views extends System
 
             }
 
+            if (isset($scenes))
             $scenes_array[] = $scenes;
 
         }

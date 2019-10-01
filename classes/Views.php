@@ -30,8 +30,14 @@ class Views extends System
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр или гигрометр
-                if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity'))
+                if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity')) {
+
+                    //Если температура или влажность не указана, то ставим по умолчанию.
+                    if ($view_obj->value == null) $view_obj->value = 20;
+
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                }
 
                 $items_array[] = $item;
 
@@ -230,7 +236,10 @@ class Views extends System
 
 
     /** 
-     * Получаем список событий, упаковываем в json и отправляем клиенту, через скрипт server.php 
+     * Получаем список событий, упаковываем в json и отправляем клиенту, через скрипт server.php
+     *
+     * @var string $period буквенный элемент для обозначения периода события
+     * @return array json
      */
     function getEvents($period)
     {
@@ -393,10 +402,10 @@ class Views extends System
      * @param  int $item_id - ид метода
      * @return object
      */
-    function getObjectAndMethod($item_id)
+    function getObjectAndMethod($idItem)
     {
 
-        $sql = parent::$db->query("SELECT `id_object`, `id_method`  FROM `view_items` WHERE `id`= $id_item");
+        $sql = parent::$db->query("SELECT `id_object`, `id_method`  FROM `view_items` WHERE `id`= $idItem");
         return $sql->fetch(PDO::FETCH_OBJ);
     }
 

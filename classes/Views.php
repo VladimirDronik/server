@@ -108,6 +108,7 @@ class Views extends System
 
         }
 
+        if (isset($scenes_array))
         return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
 
     }

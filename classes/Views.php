@@ -248,7 +248,7 @@ class Views extends System
             $events[] = $events_array;
         }
 
-
+        if (isset($events))
         return $json = json_encode(array('status'=>$period.'_eventsLoad', 'events'=>$events));
     }
 

@@ -26,7 +26,7 @@ class Views extends System
             $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type` = 'i' OR `type` = 't' AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
-                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
+                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр или гигрометр
@@ -305,7 +305,7 @@ class Views extends System
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($item_id);
 
-            $idObject = $object->id_obgect;
+            $idObject = $object->id_object;
             $idMethod = $object->id_method;
 
             //Если объект у итема существует

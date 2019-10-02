@@ -141,7 +141,6 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                         if ($data_array[0]=='checkuser'){
 
                             $data1 = $user->checkuser($data_array[1]);
-
                             $webconnection = $users[$data_array[1]];
                             $webconnection->send("$data1");
 

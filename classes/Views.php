@@ -16,11 +16,11 @@ class Views extends System
     {
 
         //Находим комнаты, кроме главной нулевой комнаты
-        $sql_rooms = parent::$db->query("SELECT * FROM `rooms` INNER JOIN `view_items` 
+        $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
                                          ON `view_items`.`room` = `rooms`.`id` 
-                                         WHERE `id`!=0 AND `view_items`.`active` = 1 
+                                         WHERE `rooms`.`id`!=0 AND `view_items`.`active` = 1 
                                          GROUP BY `rooms`.`id` 
-                                         ORDER BY `sort`");
+                                         ORDER BY `rooms`.`sort`");
 
 
         while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {

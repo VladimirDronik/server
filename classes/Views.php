@@ -334,11 +334,11 @@ class Views extends System
 
                 } else { //Если объект является обычной кнопкой
 
-                    $object = new Objects();
-                    $object->select($idObject);
-                    
+                    $newObject = new Objects();
+                    $newObject->select($idObject);
+
                     //Меняем состояние итема и состояние объекта, физическим портом не управляем
-                    $object->set_status($item_status, true, false);
+                    $newObject->setStatus($item_status, true, false);
 
                     //Выполняем действие для данного объекта
                     Action::runAction($idMethod);

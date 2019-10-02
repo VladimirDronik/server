@@ -23,7 +23,7 @@ class Views extends System
             unset($items_array);
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type` = 'i' OR `type` = 't' AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE (`type` = 'i' OR `type` = 't') AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
@@ -73,7 +73,7 @@ class Views extends System
 
             }
 
-       // if(isset($items_array))
+        if(isset($items_array))
         return $json = json_encode(array('status'=>'MainItems', 'items'=>$items_array));
 
     }
@@ -112,12 +112,12 @@ class Views extends System
 
             }
 
-          //  if (isset($scenes))
+           if (isset($scenes))
             $scenes_array[] = $scenes;
 
         }
 
-        //if (isset($scenes_array))
+        if (isset($scenes_array))
         return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
 
     }
@@ -259,7 +259,7 @@ class Views extends System
             $events[] = $events_array;
         }
 
-       // if (isset($events))
+        if (isset($events))
         return $json = json_encode(array('status'=>$period.'_eventsLoad', 'events'=>$events));
     }
 

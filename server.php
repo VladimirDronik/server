@@ -116,7 +116,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
-    
+
 
         //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
         if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')||(($objjson->{'status'})=='temperaturesChange')) {

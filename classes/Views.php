@@ -73,7 +73,7 @@ class Views extends System
 
             }
 
-        if(isset($items_array))
+       // if(isset($items_array))
         return $json = json_encode(array('status'=>'MainItems', 'items'=>$items_array));
 
     }
@@ -104,10 +104,10 @@ class Views extends System
                 if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
-                if(isset($item))
+                //if(isset($item))
                 $items_array[] = $item;
 
-                if(isset($items_array))
+                //if(isset($items_array))
                 $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image, 'backgroung-color' => $scenes_obj->backgroung_color, 'label' => $scenes_obj->label, 'items' => $items_array);
 
             }

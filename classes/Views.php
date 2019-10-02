@@ -107,6 +107,7 @@ class Views extends System
                 if(isset($item))
                 $items_array[] = $item;
 
+                if(isset($items_array))
                 $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image, 'backgroung-color' => $scenes_obj->backgroung_color, 'label' => $scenes_obj->label, 'items' => $items_array);
 
             }

@@ -112,12 +112,12 @@ class Views extends System
 
             }
 
-            if (isset($scenes))
+          //  if (isset($scenes))
             $scenes_array[] = $scenes;
 
         }
 
-        if (isset($scenes_array))
+        //if (isset($scenes_array))
         return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
 
     }
@@ -259,7 +259,7 @@ class Views extends System
             $events[] = $events_array;
         }
 
-        if (isset($events))
+       // if (isset($events))
         return $json = json_encode(array('status'=>$period.'_eventsLoad', 'events'=>$events));
     }
 

@@ -14,53 +14,53 @@ $object = new Objects();
 
 //Выбрали объект с которым будем работать
 $object->select(24);
-$object->set_status('on');
+$object->setStatus('on');
 $status = $object->status;
 
 
 if ($status=='on') {
 //Выключаем всю нагрузку
     $object->select(1);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(2);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(6);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(9);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(11);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(12);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(15);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(16);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(17);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(18);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(19);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(20);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(21);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(22);
-    $object->set_status('off');
+    $object->setStatus('off');
 
 }
 

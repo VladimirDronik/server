@@ -130,7 +130,7 @@ class Objects extends System
      * $portrelease=false - при этом параметре не меняем состояние физическог порта, а только состояние объекта
      * @return bool
      */
-    function set_status($status, $set_object_status=true, $portrelease=true)
+    function setStatus($status, $set_object_status=true, $portrelease=true)
     {
 
 

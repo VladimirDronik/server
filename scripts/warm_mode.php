@@ -20,30 +20,30 @@ thermostats::set_temperature_mode('$argv[1]',40);
 if ($argv[1]=='eco'){
 
     $object->select(43);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(45);
-    $object->set_status('off');
+    $object->setStatus('off');
 
 }
 
 if ($argv[1]=='normal'){
 
     $object->select(43);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(44);
-    $object->set_status('off');
+    $object->setStatus('off');
 
 }
 
 if ($argv[1]=='night'){
 
     $object->select(44);
-    $object->set_status('off');
+    $object->setStatus('off');
 
     $object->select(45);
-    $object->set_status('off');
+    $object->setStatus('off');
 
 }
 

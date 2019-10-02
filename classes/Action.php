@@ -66,7 +66,7 @@ class Action extends Megad
 
             //Меняем состояние связанного объекта и итема
             $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
-            $object->set_status($state, true, false);
+            $object->setStatus($state, true, false);
 
         }
     }

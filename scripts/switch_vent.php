@@ -22,10 +22,10 @@ $object->select(10);
 if($argv[2]==1) {
     $object->set_port_state($argv[1]);
     $object->select(19);
-    $object->set_status($argv[1],false);
+    $object->setStatus($argv[1],false);
 }
 else {
-    $object->set_status($argv[1]);
+    $object->setStatus($argv[1]);
 
 }
 

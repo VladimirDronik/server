@@ -16,7 +16,7 @@ $object = new Objects();
 //Выбрали объект с которым будем работать, в данном случае лампочку
 $object->select(20);
 //Установили объекту статус.
-$object->set_status($argv[1]);
+$object->setStatus($argv[1]);
 /*
 if ($object->check_switch_state($argv[1])=='on')
     $sendsring = '{"events":{"spalnya": "on"}, "info": {"spalnya": "on"}, "statusmessage": ["light_off", "elect_on", "normal_warm", "house_unlocked"]}';

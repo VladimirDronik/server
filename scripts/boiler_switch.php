@@ -13,4 +13,4 @@ $object = new Objects();
 //Выбрали объект с которым будем работать, в данном случае лампочку
 $object->select(41);
 //Установили объекту статус.
-$object->set_status($argv[1]);
+$object->setStatus($argv[1]);

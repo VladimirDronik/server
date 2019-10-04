@@ -41,7 +41,7 @@ class Action extends Megad
         if (self::$easy)
             self::easy($method->id_object);
         else
-            self::script();
+            self::script($idObject);
 
     }
 
@@ -72,7 +72,7 @@ class Action extends Megad
             $object->select($idObject);
             $object->setStatus($state);
 
-            //Меняем состояние связанного объекта и итема для порта, которым управляем
+            //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
             $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
             $object->setStatus($state, true, false);
 
@@ -82,10 +82,15 @@ class Action extends Megad
 
     /**
      * Выполнение связанного с объектом скрипта
+     * @param int $idObject ид объекта, который вызвал действие
     */
-    static private function script()
+    static private function script($idObject)
     {
 
+        $object = new Objects();
+        //Меняем состояние объекта и итема, которые вызвали действие
+        $object->select($idObject);
+        $object->setStatus('sw');
 
         //Запускаем связанный скрипт
         $script = new Scripts();

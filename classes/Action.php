@@ -31,21 +31,25 @@ class Action extends Megad
      */
     static public function runAction($idMethod)
     {
-        $sql = parent::$db->query("SELECT `easy`, `script` FROM `methods` WHERE `methods`.`id`=$idMethod");
+        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object` FROM `methods` WHERE `methods`.`id`=$idMethod");
         $method = $sql->fetch(PDO::FETCH_OBJ);
 
         self::$easy = $method->easy;
         self::$idScript = $method->script;
 
+
         if (self::$easy)
-            self::easy();
+            self::easy($method->id_object);
         else
             self::script();
 
     }
 
-    /** Выполнение простого действия в таблице портов */
-    static private function easy()
+    /**
+     * Выполнение простого действия в таблице портов
+     * @param int $idObject ид объекта, который вызвал действие
+     */
+    static private function easy($idObject)
     {
 
         $porteasy = explode(';',self::$easy);
@@ -64,7 +68,11 @@ class Action extends Megad
 
             $object = new Objects();
 
-            //Меняем состояние связанного объекта и итема
+            //Меняем состояние объекта и итема, которые вызвали действие
+            $object->select($idObject);
+            $object->setStatus($state);
+
+            //Меняем состояние связанного объекта и итема для порта, которым управляем
             $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
             $object->setStatus($state, true, false);
 
@@ -77,6 +85,8 @@ class Action extends Megad
     */
     static private function script()
     {
+
+
         //Запускаем связанный скрипт
         $script = new Scripts();
         $script->runscript(self::$idScript);

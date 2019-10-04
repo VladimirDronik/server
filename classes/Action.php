@@ -41,7 +41,7 @@ class Action extends Megad
         if (self::$easy)
             self::easy($method->id_object);
         else
-            self::script($idObject);
+            self::script($method->id_object);
 
     }
 

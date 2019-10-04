@@ -149,12 +149,12 @@ class Objects extends System
 
         //Если у объекта есть представление, то меняем его статус
         $sql = parent::$db->query("SELECT id FROM view_items WHERE id_object =  $this->id");
-        $view = $sql->fetch(PDO::FETCH_OBJ);
+        $item = $sql->fetch(PDO::FETCH_OBJ);
 
-        if(isset($view->id)) {
+        if(isset($item->id)) {
 
             $view = new Views();
-            $view->updateItem($view->id, $status);
+            $view->updateItem($item->id, $status);
         }
 
 

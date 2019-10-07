@@ -95,13 +95,13 @@ class Objects extends System
 
         if ($object == null) {
 
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
                                     `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
 
         }else
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, 
                                     `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `objects`.`id`= $object");

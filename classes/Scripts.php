@@ -67,7 +67,7 @@ class Scripts extends Megad
             Action::runAction($action->method);
             else
                 $this->runscript($action->script);
-                
+
         }
 
     }

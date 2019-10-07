@@ -185,7 +185,7 @@ class Thermostats extends Objects
     static function set_temperature_mode($mode, $idObject){
 
         //Берем температуру у выбранного режима
-        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
+        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
                                        INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
                                        LEFT JOIN `view_items` ON `view_items`.`id_object` = `termostats`.`id_object`

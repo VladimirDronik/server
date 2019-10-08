@@ -146,6 +146,8 @@ class Thermostats extends Objects
             //Проверка на пороговые значения
         } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
 
+        //TODO: проверка на слишком резкое изменеие значения
+
         if (!$error) {
             //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
@@ -154,6 +156,9 @@ class Thermostats extends Objects
             parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
                                       VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
         }
+
+        //Отдаем значение визуальному компоненту
+
 
     }
 

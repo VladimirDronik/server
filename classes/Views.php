@@ -40,7 +40,11 @@ class Views extends System
                     //Если температура или влажность не указана, то ставим по умолчанию.
                     if ($view_obj->value == null) $view_obj->value = 20;
 
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $termostatValues = $this->getTermostats($view_obj->id);
+
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image,
+                        'off_image' => $view_obj->off_image, 'curTemp' => $termostatValues->curTemp,  'newTemp' => $termostatValues->newTemp,
+                        'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 }
 
@@ -149,7 +153,7 @@ class Views extends System
 
 
     /** 
-     * Получаем список элементов для отображения пресетов температуры
+     * Получаем список элементов и отдаем для отображения пресетов температуры
      */
     function getTemperatures()
     {
@@ -169,6 +173,29 @@ class Views extends System
         return $json;
     }
 
+
+    /**
+     * Отдаем значение темпеатуры визуальному отображению термостата
+     * @param int $idView - ИД итема с термостатом
+     */
+    function getTermostats($idView)
+    {
+        $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, `termostats`.`gisteresis` 
+                                    FROM `termostats` INNER JOIN view_items 
+                                    ON termostats.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $idView");
+
+        while ($termostat = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+
+            $termostatArray = array('curTemp' => $termostat->current,
+                                    'newTemp' => $termostat->optimal + $termostat->gisteresis);
+
+            return $termostatArray;
+        }
+
+    }
 
     
     /** 

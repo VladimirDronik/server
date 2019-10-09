@@ -182,6 +182,15 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             }
 
+            //отвечаем температурами термостатов по запросу клиента
+            if ($data_array[0] == 'ready?updateTemp') {
+
+                $data1 = $views->getRoomItems();
+
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+            }
+
 
 
             //Формируем и отвечаем на запрос на получение данных на странице термометров

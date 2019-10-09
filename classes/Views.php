@@ -43,8 +43,8 @@ class Views extends System
                     $termostatValues = $this->getTermostats($view_obj->id);
 
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image,
-                        'off_image' => $view_obj->off_image, 'curTemp' => $termostatValues->curTemp,  'newTemp' => $termostatValues->newTemp,
-                        'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                        'off_image' => $view_obj->off_image, 'curTemp' => $termostatValues['curTemp'],  'newTemp' => $termostatValues['newTemp'],
+                        'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 }
 

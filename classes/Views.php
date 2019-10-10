@@ -11,9 +11,16 @@ class Views extends System
 
     /** Получаем список итемов для главной страницы, упаковываем его в json и отдаем скрипту server.php, который
      отправляет этот json клиенту, запрашивающему данные
+     *
+     * @param string $viewType - указание на то, какие типы элементов ожидаются из БД, если не указано, то все загружаем
      */
-    function getRoomItems()
+    function getRoomItems($viewType = null)
     {
+
+        if($viewType)
+            $whereString = `type_name` = " '$viewType' AND";
+            else
+                $whereString = '';
 
         //Находим комнаты, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
@@ -28,23 +35,23 @@ class Views extends System
             unset($items_array);
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE (`type` = 'i' OR `type` = 't') AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE $whereString `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
+
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
-                // Если тип объекта термометр или гигрометр
-                if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity')) {
+                // Если тип объекта термометр
+                if ($view_obj->type_name == 'temp') {
 
-                    //Если температура или влажность не указана, то ставим по умолчанию.
-                    if ($view_obj->value == null) $view_obj->value = 20;
+                    $item = $this->getTermostats($view_obj);
 
-                    $termostatValues = $this->getTermostats($view_obj->id);
+                }
 
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image,
-                        'off_image' => $view_obj->off_image, 'curTemp' => $termostatValues['curTemp'],  'newTemp' => $termostatValues['newTemp'],
-                        'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                // Если тип объекта гигрометр
+                if ($view_obj->type_name == 'humidity') {
 
                 }
 
@@ -61,6 +68,7 @@ class Views extends System
         return $json = json_encode(array('status'=>'RoomItems', 'items'=>$room_array));
 
     }
+
 
     /** Получаем список итемов, которые относятся к главной комнате */
     function getMainItems()
@@ -86,9 +94,6 @@ class Views extends System
         return $json = json_encode(array('status'=>'MainItems', 'items'=>$items_array));
 
     }
-
-
-
 
 
 
@@ -176,23 +181,26 @@ class Views extends System
 
     /**
      * Отдаем значение темпеатуры визуальному отображению термостата
-     * @param int $idView - ИД итема с термостатом
+     * @param object $view -  итем с термостатом
      */
-    function getTermostats($idView)
+    function getTermostats($view)
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, `termostats`.`gisteresis` 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
-                                    WHERE `view_items`.`id` = $idView");
+                                    WHERE `view_items`.`id` = $view->id");
 
         while ($termostat = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
+            $curTemp = round($termostat->current);
+            $newTemp = $termostat->optimal + $termostat->gisteresis;
 
-            $termostatArray = array('curTemp' => $termostat->current,
-                                    'newTemp' => $termostat->optimal + $termostat->gisteresis);
+            $item = array('id' => (int)$view->id, 'name' => $view->type_name, 'on_image' => $view->on_image,
+                'off_image' => $view->off_image, 'curTemp' => $curTemp,  'newTemp' => $newTemp,
+                'left' => $view->position_left, 'top' => $view->position_top);
 
-            return $termostatArray;
+            return $item;
         }
 
     }

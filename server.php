@@ -39,20 +39,17 @@ $ws_worker->onWorkerStart = function() use (&$users)
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
-        
-	   $file = 'watchdog.txt';
-            //Проверяем есть ли в массиве users элементы, если нет, значит по какой-то причине они не подключены
-//            if ($users) {
-                //Записываем в файл что всё ок и сервер работает
-                file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
 
-                if ($system_message)
-                    print_r("Watchdog is OK\n");
-            
-	/* else {
-                file_put_contents($file, 'FAIL', FILE_APPEND | LOCK_EX);
-                System::addlog('Сервер сокетов перезапущен (отсутствуют активные подключения)');
-            } */
+            System::checkConnection();
+
+            $file = 'watchdog.txt';
+
+            //Записываем в файл что всё ок и сервер работает
+            file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
+
+            if ($system_message)
+               print_r("Watchdog is OK\n");
+
         }
 
 

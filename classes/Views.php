@@ -18,7 +18,7 @@ class Views extends System
     {
 
         if($viewType)
-            $whereString = `type_name` = " '$viewType' AND";
+            $whereString = " `type_name` =  '$viewType' AND";
             else
                 $whereString = '';
 

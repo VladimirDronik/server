@@ -17,39 +17,40 @@ $users = [];
 // создаём ws-сервер, к которому будут подключаться все наши пользователи
 $ws_worker = new Worker("websocket://0.0.0.0:8000");
 
-
+//по умолчанию создается только один воркер
+$ws_worker->count = 1;
+$ws_worker->reloadable = true;
 
 // создаём обработчик, который будет выполняться при запуске ws-сервера
 $ws_worker->onWorkerStart = function() use (&$users)
 {
+//var_dump($users);
     // создаём локальный tcp-сервер, чтобы отправлять на него сообщения из кода нашего сайта
     $inner_tcp_worker = new Worker("tcp://127.0.0.1:5678");
+
+    //совмесное использование порта группой воркеров
+    $inner_tcp_worker->reusePort = true;
     // создаём обработчик сообщений, который будет срабатывать,
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
         $data = json_decode($data);
         global $system_message;
 
-
-
-
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
+
+            System::checkConnection();
+
             $file = 'watchdog.txt';
 
-            //Проверяем есть ли в массиве users элементы, если нет, значит по какой-то причине они не подключены
-            if ($users) {
-                //Записываем в файл что всё ок и сервер работает
-                file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
+            //Записываем в файл что всё ок и сервер работает
+            file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
 
-                if ($system_message)
-                    print_r("Watchdog is OK\n");
-            } else {
-                file_put_contents($file, 'FAIL', FILE_APPEND | LOCK_EX);
-                System::addlog('Сервер сокетов перезапущен (отсутствуют активные подключения)');
-            }
-        };
+            if ($system_message)
+               print_r("Watchdog is OK\n");
+
+        }
 
 
 
@@ -61,7 +62,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
             $webconnection = $user;
             $webconnection->send($data->message);          
 
-            } 
+            }
 
            } else {
                     if (isset($users[$data->user])) {
@@ -114,13 +115,12 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $data_array = explode(';',$objjson->{'status'});
 
 
-
         //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
         if ((($objjson->{'status'})=='itemChange')||(($objjson->{'status'})=='settingChange')||(($objjson->{'status'})=='eventChange')||(($objjson->{'status'})=='temperaturesChange')) {
 
 
             //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-            $views->res_data($data);
+            $views->resData($data);
 
             //отдаем данные об изменении всем другим зарегестрированным клиентам
             foreach ($users as $user) {
@@ -137,9 +137,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                         if ($data_array[0]=='checkuser'){
 
                             $data1 = $user->checkuser($data_array[1]);
-
                             $webconnection = $users[$data_array[1]];
-
                             $webconnection->send("$data1");
 
 
@@ -160,7 +158,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?menu') {
 
                 //отправляем пользователю меню
-                $data1 = $views->get_menu();
+                $data1 = $views->getMenu();
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send($data1);
             }
@@ -169,8 +167,8 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?dashboard') {
 
                 //Получаем данные из БД
-                $data1 = $views->get_room_items();
-                $data2 = $views->get_main_items();
+                $data1 = $views->getRoomItems();
+                $data2 = $views->getMainItems();
 
 
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
@@ -181,12 +179,21 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             }
 
+            //отвечаем температурами термостатов по запросу клиента
+            if ($data_array[0] == 'ready?updateTemp') {
+
+                $data1 = $views->getRoomItems('temp');
+
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+            }
+
 
 
             //Формируем и отвечаем на запрос на получение данных на странице термометров
             if ($data_array[0] == 'ready?temperatures'){
 
-                $data1 = $views->get_temperatures();
+                $data1 = $views->getTemperatures();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                 $webconnection = $users[$data_array[1]];
@@ -198,7 +205,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
             if ($data_array[0] == 'ready?graphs'){
 
-                $data1 = $views->get_graphs();
+                $data1 = $views->getGraphs();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                $webconnection = $users[$data_array[1]];
@@ -211,7 +218,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?scene') {
 
                 //Получаем данные из БД
-                $data1 = $views->get_scenes_items();
+                $data1 = $views->getScenesItems();
 
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
                 $webconnection = $users[$data_array[1]];
@@ -225,7 +232,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?settings') {
 
                 //Отдаем все настройки
-                $data1 = $views->get_all_settings();
+                $data1 = $views->getAllSettings();
 
                 //Формируем ответ со всеми юзерами, котоыре доступны
                 $data2 = $user->get_all_users();
@@ -242,9 +249,9 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
            if ($data_array[0] == 'ready?events') {
 
                 //Отвечаем на запрос получения всех данных страницы событий
-                $data1 = $views->get_events('w');
-                $data2 = $views->get_events('m');
-                $data3 = $views->get_events('y');
+                $data1 = $views->getEvents('w');
+                $data2 = $views->getEvents('m');
+                $data3 = $views->getEvents('y');
 
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");

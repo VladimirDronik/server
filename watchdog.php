@@ -17,7 +17,9 @@ $instance = stream_socket_client($localsocket, $errno, $errstr, 30);
 //Если сервер не откликается, то перезапускаем его
 if (!$instance) {
    $restart = true;
-}else {
+}
+
+else {
 
     //Шлем тестовое сообщеение через сокет
     fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");

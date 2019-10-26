@@ -4,8 +4,6 @@
  * контактов какого-либо порта
  */
 
-
-
 require_once 'include.php';
 flush();
 
@@ -24,6 +22,10 @@ flush();
         $port = $mega->get($pt); //взяли номер порта, который сработал - нашли нужный порт в таблице портов
 
 
+        //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
+        Action::runAction($port->method);
+
+/*
         if ($port->easy!=null)
         { // Выполняем простое действие, указанное в easy
 
@@ -46,10 +48,6 @@ flush();
                 $object->set_status($state, true, false);
             }
         }
-        elseif ($port->script!=null) {
-
-            system("cd ".$dir."/../scripts && php -f $port->script &"); //выполняем внешний скрипт
-        }
         else{ // Выполняем внешний скрипт, который находим по объекту и его методу
 
             if($port->object!=null)
@@ -66,6 +64,6 @@ flush();
                 $object->select($port->object);
                 $object->set_status($port->status, false, false);
                 */
-            }
-        }
+  //          }
+//        }
 

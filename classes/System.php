@@ -92,4 +92,15 @@ class System
     }
 
 
+    /**
+     * Проверка подключения к БД (просто эмулируем активность клиента веб сокетов для того, что бы
+     * взбодрить СУБД)
+     */
+    static function checkConnection(){
+
+        $sql = self::$db->query("SELECT `id` FROM `settings` LIMIT 1 ");
+        $setting = $sql->fetch(PDO::FETCH_OBJ);
+    }
+
+
 }

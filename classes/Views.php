@@ -3,32 +3,57 @@
 /**
  * Класс работы с визуальными элементами плана дома
  */
+
+
+
 class Views extends System
 {
 
     /** Получаем список итемов для главной страницы, упаковываем его в json и отдаем скрипту server.php, который
      отправляет этот json клиенту, запрашивающему данные
+     *
+     * @param string $viewType - указание на то, какие типы элементов ожидаются из БД, если не указано, то все загружаем
      */
-    function get_room_items()
+    function getRoomItems($viewType = null)
     {
 
+        if($viewType)
+            $whereString = " `type_name` =  '$viewType' AND";
+            else
+                $whereString = '';
+
         //Находим комнаты, кроме главной нулевой комнаты
-        $sql_rooms = parent::$db->query("SELECT * FROM `rooms` WHERE `id`!=0 ORDER BY `sort`");
+        $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
+                                         ON `view_items`.`room` = `rooms`.`id` 
+                                         WHERE `rooms`.`id`!=0 AND `view_items`.`active` = 1 
+                                         GROUP BY `rooms`.`id` 
+                                         ORDER BY `rooms`.`sort`");
+
 
         while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {
 
             unset($items_array);
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
-            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-                // Если тип объекта кнопка или переключатель
-                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE $whereString `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
 
-                // Если тип объекта термометр или гигрометр
-                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+
+                // Если тип объекта кнопка или переключатель
+                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+
+                // Если тип объекта термометр
+                if ($view_obj->type_name == 'temp') {
+
+                    $item = $this->getTermostats($view_obj);
+
+                }
+
+                // Если тип объекта гигрометр
+                if ($view_obj->type_name == 'humidity') {
+
+                }
 
                 $items_array[] = $item;
 
@@ -44,27 +69,28 @@ class Views extends System
 
     }
 
+
     /** Получаем список итемов, которые относятся к главной комнате */
-    function get_main_items()
+    function getMainItems()
     {
 
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `room` = 0 AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` = 0 AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
-                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр или гигрометр
-                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity'))
+                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 $items_array[] = $item;
 
             }
 
-
+        if(isset($items_array))
         return $json = json_encode(array('status'=>'MainItems', 'items'=>$items_array));
 
     }
@@ -72,11 +98,8 @@ class Views extends System
 
 
 
-
-
-
     /** Получаем список итемов, которые относятся к сценам */
-    function get_scenes_items()
+    function getScenesItems()
     {
 
         //Находим сцены в таблице сцен, у которых статус=активен
@@ -85,7 +108,7 @@ class Views extends System
 
             unset($items_array);
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='i' AND `scene` = $scenes_obj->id AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `scene` = $scenes_obj->id AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
@@ -95,24 +118,30 @@ class Views extends System
                 if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
                     $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
+                //if(isset($item))
                 $items_array[] = $item;
 
+                //if(isset($items_array))
                 $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image, 'backgroung-color' => $scenes_obj->backgroung_color, 'label' => $scenes_obj->label, 'items' => $items_array);
 
             }
 
+           if (isset($scenes))
             $scenes_array[] = $scenes;
 
         }
 
+        if (isset($scenes_array))
         return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
 
     }
 
 
 
-    //Получаем все пункты меню
-    function get_menu()
+    /**
+     * Получаем все пункты меню
+     */
+    function getMenu()
     {
 
         $sql = parent::$db->query("SELECT `id`, `name`, `title`, `link`, `image` FROM `menu` WHERE `active`=1 ORDER BY `sort`");
@@ -128,8 +157,10 @@ class Views extends System
 
 
 
-    /** Получаем список элементов для отображения температуры */
-    function get_temperatures()
+    /** 
+     * Получаем список элементов и отдаем для отображения пресетов температуры
+     */
+    function getTemperatures()
     {
 
         $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `temperatures`.`normal`,
@@ -148,11 +179,37 @@ class Views extends System
     }
 
 
+    /**
+     * Отдаем значение темпеатуры визуальному отображению термостата
+     * @param object $view -  итем с термостатом
+     */
+    function getTermostats($view)
+    {
+        $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, `termostats`.`gisteresis` 
+                                    FROM `termostats` INNER JOIN view_items 
+                                    ON termostats.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $view->id");
+
+        while ($termostat = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
+            $curTemp = round($termostat->current);
+            $newTemp = $termostat->optimal + $termostat->gisteresis;
 
-    /** Получаем данные из таблицы графиков */
-    function get_graphs()
+            $item = array('id' => (int)$view->id, 'name' => $view->type_name, 'on_image' => $view->on_image,
+                'off_image' => $view->off_image, 'curTemp' => $curTemp,  'newTemp' => $newTemp,
+                'left' => $view->position_left, 'top' => $view->position_top);
+
+            return $item;
+        }
+
+    }
+
+    
+    /** 
+     * Получаем данные из таблицы графиков
+     * */
+    function getGraphs()
     {
 
         //Перебираем комнаты в, которых установлены термостаты
@@ -180,8 +237,10 @@ class Views extends System
 
 
 
-    /** Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php */
-    function get_all_settings()
+    /** 
+     * Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php
+     */
+    function getAllSettings()
     {/*
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ))
@@ -218,9 +277,13 @@ class Views extends System
 
 
 
-
-    /** Получаем список ных событий, упаковываем в json и отправляем клиенту, через скрипт server.php */
-    function get_events($period)
+    /** 
+     * Получаем список событий, упаковываем в json и отправляем клиенту, через скрипт server.php
+     *
+     * @var string $period буквенный элемент для обозначения периода события
+     * @return array json
+     */
+    function getEvents($period)
     {
 
 
@@ -236,18 +299,16 @@ class Views extends System
             $events[] = $events_array;
         }
 
-
+        if (isset($events))
         return $json = json_encode(array('status'=>$period.'_eventsLoad', 'events'=>$events));
     }
 
 
 
-
-
-
-
-    /**  Получаем данные от клиента и выполняем действия в зависимости от этого  */
-    function res_data($data)
+    /**
+     * Получаем данные от клиента и выполняем действия в зависимости от этого
+     */
+    function resData($data)
     {
 
         $data_array = json_decode($data);
@@ -284,12 +345,13 @@ class Views extends System
             $item_value = $data_array->items[0]->value;
 
             //Получаем id объекта из таблицы представлений
-            $object = new Objects();
-            $id_object = $object->id = $object->view_oject($item_id);
-            $object->view = $item_id;
+            $object = $this->getObjectAndMethod($item_id);
+
+            $idObject = $object->id_object;
+            $idMethod = $object->id_method;
 
             //Если объект у итема существует
-            if ($id_object!=null){
+            if ($idObject!=null){
 
                 //Если объект является термостатом или гигрометром
                 if(($item_name=='temp')||($item_name=='humidity')){
@@ -302,28 +364,24 @@ class Views extends System
 
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
-                    $termostat->set_temperature($id_object,$item_value);
+                    $termostat->set_temperature($idObject, $item_value);
+
 
                 } else { //Если объект является обычной кнопкой
 
+                    $newObject = new Objects();
+                    $newObject->select($idObject);
 
-                    //Меняем состояние итема, состояние объекта не меняем, физическим портом не управляем
-                    //$object->set_status($item_status, false, false);
+                    //Меняем состояние итема и состояние объекта, физическим портом не управляем
+                    $newObject->setStatus($item_status, true, false);
 
-                    //Запускаем соответствующий скрипт на выполнение.
-                    $script = new Scripts();
-                    $sciptisrun = $script->runscript($id_object, null, $item_status);
+                    //Выполняем действие для данного объекта
+                    Action::runAction($idMethod);
 
-                    //Если скрипт не был запущен - меняем статус объекта и меняем состояние порта на основе связанного с
-                    //объектом порта
-                    if (!$sciptisrun) {
-                        $object->select($id_object);
-                        $object->set_status($item_status, true, true);
-                    }else
-                        //Меняем состояние итема
-                        $this->update_item($item_id,$item_status);
 
                 }
+
+                //TODO: проверить является ли объект виртуальным
 
             }
 
@@ -334,21 +392,26 @@ class Views extends System
     }
 
 
-    /** Обновление состояния итема в таблице представлений и у клиентов*/
-    function update_item($id_item, $item_status)
+    /**
+     * Обновление состояния итема в таблице представлений и у клиентов
+     *
+     * @var int idItem - ид итема у которого будем менять статус
+     * @var string itemStatus - значение статуса для итема
+     */
+    function updateItem($idItem, $itemStatus)
     {
 
         global $localsocket;
 
-        $item_status = mb_strtolower($item_status);
+        $itemStatus = mb_strtolower($itemStatus);
 
         // Обновляем данные в таблице представлений
-        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`name`='temp', `status`, '$item_status'),
-                            `value` = IF(`name`='temp', '$item_status', `value`) WHERE `view_items`.`id` = $id_item");
+        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type_name`='temp', `status`, '$itemStatus'),
+                            `value` = IF(`type_name`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
 
         // Получаем необходимые данные из таблицы представлений для итемов, которые связаны с данным объектом
 
-        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `id`= $id_item");
+        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `id`= $idItem");
 
         while ($ret_item = $sql->fetch(PDO::FETCH_OBJ)) {
 
@@ -357,7 +420,7 @@ class Views extends System
            // $message = array('status' => 'itemChange', 'items'=>[$item]);
 
             $message = '{ "status": "itemChange", "items": [{"id":'.$ret_item->id.',
-            "name":"'.$ret_item->name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
+            "name":"'.$ret_item->type_name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
             "on_image":"'.$ret_item->on_image.'","off_image":"'.$ret_item->off_image.'",
             "on_title":"'.$ret_item->on_title.'","off_title":"'.$ret_item->off_title.'",
             "left":"'.$ret_item->position_left.'","top":"'.$ret_item->position_top.'"}]}';
@@ -375,6 +438,20 @@ class Views extends System
 
         }
 
+    }
+
+
+    /**
+     * получение бъекта и метода, которые соответвуют представлению
+     *
+     * @param  int $item_id - ид метода
+     * @return object
+     */
+    function getObjectAndMethod($idItem)
+    {
+
+        $sql = parent::$db->query("SELECT `id_object`, `id_method`  FROM `view_items` WHERE `id`= $idItem");
+        return $sql->fetch(PDO::FETCH_OBJ);
     }
 
 

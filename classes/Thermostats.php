@@ -21,7 +21,7 @@ class Thermostats extends Objects
      * Конструктор определяет рабочие параметры у выбранного термостата
      *
      * @param int $id_termost
-    */
+     */
     function __construct($id_termost=null)
     {
 
@@ -63,7 +63,7 @@ class Thermostats extends Objects
             if ($this->termostat->current >=($this->termostat->optimal))
             {
                 // Вызываем метод off
-                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
+                Action::runAction($this->termostat->method_off);
                 return 0;
 
             }
@@ -71,7 +71,7 @@ class Thermostats extends Objects
             if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод on
-                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
+                Action::runAction($this->termostat->method_on);
                 return 1;
             }
 
@@ -81,7 +81,7 @@ class Thermostats extends Objects
             if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод off
-                $this->script->runscript($this->termostat->object,$this->termostat->method_off);
+                Action::runAction($this->termostat->method_off);
                 return 0;
             }
 
@@ -89,7 +89,7 @@ class Thermostats extends Objects
             if ($this->termostat->current > $this->termostat->optimal)
             {
                 // Вызываем метод on
-                $this->script->runscript($this->termostat->object,$this->termostat->method_on);
+                Action::runAction($this->termostat->method_on);
                 return 1;
             }
 
@@ -146,6 +146,8 @@ class Thermostats extends Objects
             //Проверка на пороговые значения
         } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
 
+        //TODO: проверка на слишком резкое изменеие значения
+
         if (!$error) {
             //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
@@ -155,6 +157,9 @@ class Thermostats extends Objects
                                       VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
         }
 
+        //Отдаем значение визуальному компоненту
+
+
     }
 
 
@@ -163,14 +168,14 @@ class Thermostats extends Objects
     /**
      * Заносим в таблицу термостатов данные об установленной пользователем температуре
      *
-     * @param int $id_object - id объекта с которым связан термостат
+     * @param int $idObject - id термостата
      * @param float $value - Значение выбраной темпертуры
      */
-    function set_temperature($id_object, $value){
+    function set_temperature($idObject, $value){
 
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE termostats SET `optimal` = $value
-                                         WHERE id_object='$id_object'");
+                                         WHERE id_object='$idObject'");
 
     }
 
@@ -179,25 +184,28 @@ class Thermostats extends Objects
      * Установка режима отопления для термостата и изменение связанного графического элемента
      *
      * @param string $mode - режим, коорый хотим установить
-     * @param int $id_object - id объекта с которым работаем
+     * @param int $idObject - id объекта, к которому привязан термостат
      * @return void
      */
-    static function set_temperature_mode($mode, $id_object){
+    static function set_temperature_mode($mode, $idObject){
 
         //Берем температуру у выбранного режима
-        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature, `objects`.`view` AS view  FROM `temperatures` 
+        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
                                        INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
-                                       WHERE `termostats`.`id_object` = $id_object");
+                                       LEFT JOIN `view_items` ON `view_items`.`id_object` = `termostats`.`id_object`
+                                       WHERE `termostats`.`id_object` = $idObject");
 
         $result = $modesql->fetch(PDO::FETCH_OBJ);
 
 
         //Заносим значение в БД для выбранного термостата
-        self::set_temperature($id_object, $result->temperature);
+        self::set_temperature($idObject, $result->temperature);
 
-        $view = new Views();
-        $view->update_item($result->view, $result->temperature);
+        if($result->view) {
+            $view = new Views();
+            $view->updateItem($result->view, $result->temperature);
+        }
     }
 
 

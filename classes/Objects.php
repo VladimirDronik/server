@@ -97,13 +97,13 @@ class Objects extends System
 
         if ($object == null) {
 
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
                                     `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
 
         }else
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, `objects`.`view`, 
+            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, 
                                     `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `objects`.`id`= $object");
@@ -129,10 +129,10 @@ class Objects extends System
      * @param string $status
      * @param bool $set_object_status - при true меняем статус объекта, при false не трогаем статус
      * @param bool $portrelease
-     * $portrelease=fase - при этом параметре не меняем состояние физическог порта, а только состояние объекта
-     * @return null
+     * $portrelease=false - при этом параметре не меняем состояние физическог порта, а только состояние объекта
+     * @return bool
      */
-    function set_status($status, $set_object_status=true, $portrelease=true)
+    function setStatus($status, $set_object_status=true, $portrelease=true)
     {
 
 
@@ -149,14 +149,27 @@ class Objects extends System
 
         $this->status = $status;
 
-        //Если у объекта есть представление
+        //Если у объекта есть представление, то меняем его статус
+        $sql = parent::$db->query("SELECT id FROM view_items WHERE id_object =  $this->id");
+        $item = $sql->fetch(PDO::FETCH_OBJ);
+
+        if(isset($item->id)) {
+
+            $view = new Views();
+            $view->updateItem($item->id, $status);
+        }
+
+
+        /*
         if ($this->view!=null) {
 
             //меняем представление объекта
             $view = new Views();
-            $view->update_item($this->view, $status);
+            $view->updateItem($this->view, $status);
 
         }
+*/
+        return $status;
 
     }
 
@@ -191,6 +204,8 @@ class Objects extends System
      * @param int $item_id
      * @return int
      */
+
+/*
     function view_oject($item_id)
     {
 
@@ -199,6 +214,8 @@ class Objects extends System
         return $id_object = $view_obj->id;
 
     }
+*/
+
 
 
     /**

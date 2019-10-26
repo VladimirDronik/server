@@ -29,69 +29,45 @@ class Scripts extends Megad
 
 
 
-    /** Ищем и выполняем скрипты, которые сответсвуют объектам и их методам, содержащимся в таблице cron
-     и подходящим по текущему периоду времени */
+    /** Ищем и выполняем скрипты, которые сответсвуют объектам и их методам,
+     подходящим по текущему периоду времени */
 
     function cron(int $time)
     {
-
-        $sql = parent::$db->query("SELECT scripts.link, methods.id_object, cron.method FROM cron 
-                                    INNER JOIN methods ON cron.method = methods.id 
-                                    INNER JOIN scripts ON methods.script = scripts.id 
-                                    WHERE cron.period=$time");
-
-        while ($script = $sql->fetch(PDO::FETCH_OBJ))
-        {
-            system("cd scripts && php -f {$script->link} &"); //выполняем внешний скрипт
-            System::addlog('Script "'.$script->link.'" is running');
-        }
-
+        $this->scheduler('',$time,'c');
     }
 
 
 
 
-
-
     /**
-     * Ищем и выполняем скрипты, которые соответсвуют объектам и их методам из таблицы расписаний
+     * Ищем и выполняем скрипты или методы обекта методам из таблицы расписаний
      *
      * @param string $day - день недели, месяца или дата выполнния скрипта
      * @param string $time - время выполнения скрипта
-     * @param string $type - тип, по которому отбираем данные
+     * @param string $type - тип, по которому отбираем данные d - ежедневные, w - еженедельные, m - ежемесячные, c - ежеминутные
      * @return void
      */
 
-    function scheduler(string $day, string $time, string $type)
+    function scheduler($day, $time, $type)
     {
 
-       // if ($script->id_script!=null)
-            $sql = parent::$db->query("SELECT scripts.link, scheduler_tasks.method, scheduler_tasks.script 
-                                    AS id_script  FROM scheduler_tasks 
+
+        $sql = parent::$db->query("SELECT  scheduler_tasks.method AS method, scheduler_tasks.script AS script 
+                                    FROM scheduler_tasks        
                                     INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
-                                    INNER JOIN scripts ON scheduler_tasks.script = scripts.id
-                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' 
+                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time'
                                     AND `scheduler_points`.`type` = '$type' ");
 
-        /*
-        else
-             $sql = parent::$db->query("SELECT scripts.link, methods.id_object, scheduler_tasks.method, scheduler_tasks.script 
-                                    AS id_script  FROM scheduler_tasks 
-                                    INNER JOIN methods ON scheduler_tasks.method = methods.id 
-                                    INNER JOIN scripts ON methods.script = scripts.id
-                                    INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
-                                    WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time' 
-                                    AND `scheduler_points`.`type` = '$type' ");
 
-*/
-
-
-        while ($script = $sql->fetch(PDO::FETCH_OBJ))
+        while ($action = $sql->fetch(PDO::FETCH_OBJ))
         {
-            $script = $script->link;
+            //Выполняем действие для метода, если он указан. Если не указан, то для скрипта
+            if($action->method != null)
+            Action::runAction($action->method);
+            else
+                $this->runscript($action->script);
 
-            system("cd scripts && php -f $script &"); //выполняем внешний скрипт
-            System::addlog('Script "'.$script->link.'" is running');
         }
 
     }
@@ -101,26 +77,34 @@ class Scripts extends Megad
 
 
     /**
-     * Выполняем нужный скрипт для выбранного объекта
+     * Выполняем нужный скрипт
      *
      * @param int $id_object
      */
-    function runscript($id_object, $id_method, $method=null)
+    function runscript($idScript, $method = null)
     {
 
-       $script = $this->object->get($id_object, $id_method); //Получаем ссылку на скрипт
+        $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
+                                         WHERE scripts.id = $idScript");
 
-       //Если у объекта есть скрипт
-       if ($script!=null) {
+        $script = $scriptsql->fetch(PDO::FETCH_OBJ);
+
 
            //$dir = str_replace(' ', '\ ', __DIR__);
            system("cd scripts && php -f {$script} {$method} &"); //выполняем внешний скрипт
 
+<<<<<<< HEAD
            System::addlog('Script "' . $script . ' ' . $method . '" is running');
        }else{
            //Если скрипта нет
            return false;
        }
+=======
+           System::addlog('Script "' . $script->link . ' ' . $method . '" is running');
+
+           return true;
+
+>>>>>>> develop
 
     }
 

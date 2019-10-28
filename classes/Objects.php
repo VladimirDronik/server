@@ -154,19 +154,11 @@ class Objects extends System
         if(isset($item->id)) {
 
             $view = new Views();
+
             $view->updateItem($item->id, $status);
         }
 
 
-        /*
-        if ($this->view!=null) {
-
-            //меняем представление объекта
-            $view = new Views();
-            $view->updateItem($this->view, $status);
-
-        }
-*/
         return $status;
 
     }

@@ -413,22 +413,26 @@ class Views extends System
 
         $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `id`= $idItem");
 
-        while ($ret_item = $sql->fetch(PDO::FETCH_OBJ)) {
+        while ($viewItem = $sql->fetch(PDO::FETCH_OBJ)) {
 
-            // Формируем json строку для отправки клиентам
-           // $item = array( 'id' => $ret_item->id, 'name' => $ret_item->name, 'status' => $ret_item->status, 'left' => $ret_item->position_left, 'top' => $ret_item->position_top);
-           // $message = array('status' => 'itemChange', 'items'=>[$item]);
+           //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
+            if($viewItem->type_name == 'temp'){
 
-            $message = '{ "status": "itemChange", "items": [{"id":'.$ret_item->id.',
-            "name":"'.$ret_item->type_name.'","status":"'.$ret_item->status.'","value":"'.$ret_item->value.'",
-            "on_image":"'.$ret_item->on_image.'","off_image":"'.$ret_item->off_image.'",
-            "on_title":"'.$ret_item->on_title.'","off_title":"'.$ret_item->off_title.'",
-            "left":"'.$ret_item->position_left.'","top":"'.$ret_item->position_top.'"}]}';
+                $itemTermostat = getTermostats($viewItem);
+                $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
+
+            }  else
+
+                $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
+            "name":"'.$viewItem->type_name.'","status":"'.$viewItem->status.'","value":"'.$viewItem->value.'",
+            "on_image":"'.$viewItem->on_image.'","off_image":"'.$viewItem->off_image.'",
+            "on_title":"'.$viewItem->on_title.'","off_title":"'.$viewItem->off_title.'",
+            "left":"'.$viewItem->position_left.'","top":"'.$viewItem->position_top.'"}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);
             $res_json = json_encode($res_json);
-
+            
 
             //Отправляем клиенту измененные данные
             // connect to a local tcp-server

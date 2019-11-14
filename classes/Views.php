@@ -418,7 +418,7 @@ class Views extends System
            //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
             if($viewItem->type_name == 'temp'){
 
-                $itemTermostat = getTermostats($viewItem);
+                $itemTermostat = $this->getTermostats($viewItem);
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
 
             }  else
@@ -432,7 +432,7 @@ class Views extends System
 
             $res_json = (['user' => 'all', 'message' => $message]);
             $res_json = json_encode($res_json);
-            
+
 
             //Отправляем клиенту измененные данные
             // connect to a local tcp-server

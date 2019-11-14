@@ -115,19 +115,37 @@ class Thermostats extends Objects
         do {
 
             do {
+
+                //Если id термометра задан, то тогда это массив с термометрами
+                if($termostat->id_termometr) {
+
                 //вызываем status(int $port, int $id_device=null)
                 $termometrs = Megad::status($termostat->port, 'list', $termostat->id_device);
 
-                /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-                  e2b5d7020000:23.62;1fa3d7020000:23.62*/
-                $termometrsarray = explode(';', $termometrs);
 
-                foreach ($termometrsarray as $termometr) {
-                    $termarray = explode(':', $termometr);
-                    if ($termarray[0] == $termostat->id_termometr)
-                        $id_termometr = $termarray[0];
-                    $termometr_value = $termarray[1];
+                    /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                      e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                    $termometrsarray = explode(';', $termometrs);
+
+
+                    foreach ($termometrsarray as $termometr) {
+                        $termarray = explode(':', $termometr);
+
+                        if ($termarray[0] == $termostat->id_termometr)
+                            $id_termometr = $termarray[0];
+
+                        $termometr_value = $termarray[1];
+                    }
+
                 }
+                else //термометр висит прямо на порту
+                {
+                    $termometrs = Megad::status($termostat->port, 'get', $termostat->id_device);
+                    $termometrsarray = explode(':', $termometrs);
+                    $id_termometr = $termostat->id_termometr;
+                    $termometr_value = $termometrsarray[1];
+                }
+
 
                 $alarm_cnt++;
 

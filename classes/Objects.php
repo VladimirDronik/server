@@ -154,7 +154,6 @@ class Objects extends System
         if(isset($item->id)) {
 
             $view = new Views();
-
             $view->updateItem($item->id, $status);
         }
 

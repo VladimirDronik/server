@@ -3,7 +3,7 @@
 /**
 Класс для работы с отображением информации на демостенде. В работе на реальном устройстве не используется
  */
-class demostand
+class Demostand
 {
 
     private static $socketserver = 'localhost:5678';

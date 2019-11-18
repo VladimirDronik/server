@@ -11,9 +11,7 @@ flush();
         /* Определяем какой мегадевайс вызвал скрипт */
         $ip_device = $_SERVER['REMOTE_ADDR'];
         $pt = $_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
-        //$state = file_get_contents("http://$ip_device/sec/?pt=$pt&cmd=get"); //Получаем состояние порта, который активировал скрипт
 
-        //$state = explode('/',$state);
 
         Megad::$ip_device = $ip_device;
 
@@ -25,45 +23,4 @@ flush();
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         Action::runAction($port->method);
 
-/*
-        if ($port->easy!=null)
-        { // Выполняем простое действие, указанное в easy
-
-            $porteasy = explode(';',$port->easy);
-
-            $device = $mega->ip_address($porteasy[0]);
-            $ip_device = $device->ip_address;
-
-            //Меняем статус порта на физическом устройстве
-            if($device->active) {
-                file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
-
-                //Меняем состояние связанного итема
-                $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get"); //Получаем состояние порта, на который воздействуем
-
-                $state = explode('/', $state)[0];
-                $object = new Objects();
-
-                $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
-                $object->set_status($state, true, false);
-            }
-        }
-        else{ // Выполняем внешний скрипт, который находим по объекту и его методу
-
-            if($port->object!=null)
-            {
-
-                //Запускаем связанный скрипт
-                $script = new Scripts();
-                $script->runscript($port->object, $port->method);
-
-                //Устанавливаем новый статус объекту, который связан с портом, вызвавшим скрипт
-                //Эту реализацию сделать только для объектов, которые могут иметь статус
-               /*
-                $object = new Objects();
-                $object->select($port->object);
-                $object->set_status($port->status, false, false);
-                */
-  //          }
-//        }
 

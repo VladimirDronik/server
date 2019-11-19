@@ -4,6 +4,8 @@
  * Класс работы с термостатами
  */
 
+use Graphs;
+
 class Thermostats extends Objects
 {
 
@@ -171,8 +173,7 @@ class Thermostats extends Objects
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id_termometr='$id_termometr'");
 
-            parent::$db->query("INSERT INTO graph_termostats (`id`, `id_termostat`, `datetime`, `value`)
-                                      VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
+            Graphs::insertToTermostats($this->id_termostat, $termometr_value);
         }
 
         //Отдаем значение визуальному компоненту
@@ -235,8 +236,7 @@ class Thermostats extends Objects
      */
     static function deleteGraphOldValues(){
 
-        $days = parent::read_setting('graphdate');
-        parent::$db->query("DELETE FROM `graph_termostats` WHERE `datetime` <= (now() - INTERVAL $days DAY)");
+        Graphs::deleteOldValues('graph_termostats');
     }
 
 }

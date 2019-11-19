@@ -30,5 +30,6 @@ require_once __DIR__.'/classes/Views.php';
 require_once __DIR__.'/classes/Users.php';
 require_once __DIR__.'/classes/Demostand.php';
 require_once __DIR__.'/classes/Action.php';
+require_once __DIR__.'/classes/Graphs.php';
 
 System::db_connect($dbname, $dbuser, $dbpass);

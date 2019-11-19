@@ -1,5 +1,6 @@
 <?php
 
+use Graphs;
 
 class Counts extends Megad
 {
@@ -32,13 +33,9 @@ class Counts extends Megad
                                 `today_value` = $currentValue,
                                 `total_value` = `total_value`+$currentValue
                                 WHERE id = $idCount");
-            
-            
-        //Заносим значение счетчика в таблицу с графиками
-            parent::$db->query("INSERT INTO graph_counts (`date`, `id_count`, `value`)
-                                VALUES (CURDATE(), $idCount, $currentValue)
-                                ON DUPLICATE KEY UPDATE `id_count` = $idCount, `value` = $currentValue
-                                ");
+
+            Graphs::insertToCounts($idCount, $currentValue);
+
 
         }
 

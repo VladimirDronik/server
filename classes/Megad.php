@@ -36,13 +36,19 @@ class Megad extends System
     }
 
 
-    /** Получение значения порта. На входе номер порта $port и возможно $id_device*/
-      static function status($port, $command, $id_device=null)
+    /** Получение значения порта.
+     *
+     * @param int $port - номер порта меги, у которого хотим получить статус
+     * @param string $command - команда на чтение параметра get, list, ...
+     * @param int $id_device - ид мегадевайса из таблицы устройств
+     * @param int $param - какой по счету параметр будем брать из строки, которую получим от устройства
+     **/
+      static function status($port, $command, $id_device = null, $param = 0)
     {
 
         $state = file_get_contents("http://".self::ip_address($id_device)->ip_address."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
-        return $state[0];
+        return $state[$param];
     }
 
 

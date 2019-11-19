@@ -171,7 +171,7 @@ class Thermostats extends Objects
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id_termometr='$id_termometr'");
 
-            parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
+            parent::$db->query("INSERT INTO graph_termostats (`id`, `id_termostat`, `datetime`, `value`)
                                       VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
         }
 
@@ -233,10 +233,10 @@ class Thermostats extends Objects
      *
      * @return void
      */
-    static function delete_old_values(){
+    static function deleteGraphOldValues(){
 
         $days = parent::read_setting('graphdate');
-        parent::$db->query("DELETE FROM `graph` WHERE `datetime` <= (now() - INTERVAL $days DAY)");
+        parent::$db->query("DELETE FROM `graph_termostats` WHERE `datetime` <= (now() - INTERVAL $days DAY)");
     }
 
 }

@@ -222,9 +222,9 @@ class Views extends System
             unset($temperatureLog);
 
             //Ищем данные в таблице графиков, которые относятся к данным термостатам
-            $sql_graph = parent::$db->query("SELECT `graph`.`datetime` AS `date`, `graph`.`value` AS `value` FROM `graph` 
-                                              INNER JOIN `termostats` ON `graph`.`id_termostat` = `termostats`.`id` 
-                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph`.`datetime`)='00' ");
+            $sql_graph = parent::$db->query("SELECT `graph_termostats`.`datetime` AS `date`, `graph_termostats`.`value` AS `value` FROM `graph` 
+                                              INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
+                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' ");
             while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
                 $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
             }

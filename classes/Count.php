@@ -2,7 +2,7 @@
 
 use Graphs;
 
-class Counts extends Megad
+class Count extends Megad
 {
 
     /**
@@ -24,14 +24,13 @@ class Counts extends Megad
 
 
         //Читаем текущее количество импульсов
-        $countImpulse = parent::status($idPort,'get',$idDevice,1);
+        $countImpulse = 500;//parent::status($idPort,'get',$idDevice,1);
 
         $currentValue = $countImpulse*$impulse;
 
         //Заносим количество импульсов в таблицу счетчиков
             parent::$db->query("UPDATE counts SET 
-                                `today_value` = $currentValue,
-                                `total_value` = `total_value`+$currentValue
+                                `today_value` = $currentValue
                                 WHERE id = $idCount");
 
             Graphs::insertToCounts($idCount, $currentValue);
@@ -48,7 +47,9 @@ class Counts extends Megad
      */
     static function resetCount($idCount)
         {
-            parent::$db->query("UPDATE counts SET `today_value` = 0 WHERE id = $idCount");
+            parent::$db->query("UPDATE counts SET 
+                                `total_value` = `total_value`+`today_value`,
+                                `today_value` = 0 WHERE id = $idCount");
         }
 
 }

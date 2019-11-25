@@ -93,6 +93,7 @@ class Objects extends System
     function select($object, $id_device=null, $num_port=null)
     {
 
+        //Если объект не указан явно, то пробуем искать его у порта на устройстве
         if ($object == null) {
 
             $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
@@ -106,16 +107,19 @@ class Objects extends System
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `objects`.`id`= $object");
 
-        $obj = $sql->fetch(PDO::FETCH_OBJ);
+        if ($sql->rowCount() != 0) {
+            $obj = $sql->fetch(PDO::FETCH_OBJ);
 
-        $this->id = $obj->id;
-        $this->type = $obj->type;
-        $this->status = $obj->status;
-        $this->view = $obj->view;
-        $this->port = $obj->port;
-        $this->portstate = $obj->portstate;
-        $this->device = (int)$obj->device;
-        return true;
+            $this->id = $obj->id;
+            $this->type = $obj->type;
+            $this->status = $obj->status;
+            $this->view = $obj->view;
+            $this->port = $obj->port;
+            $this->portstate = $obj->portstate;
+            $this->device = (int)$obj->device;
+            return true;
+        } else return false;
+
     }
 
 

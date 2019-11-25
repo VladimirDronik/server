@@ -73,7 +73,7 @@ class Action extends Megad
             $object->setStatus($state);
 
             //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
-            $object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]);
+            if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
             $object->setStatus($state, true, false);
 
         }

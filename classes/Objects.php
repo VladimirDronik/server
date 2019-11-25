@@ -139,7 +139,7 @@ class Objects extends System
 
 
         //Если статус объекта переключатель, то определяем текущее значение
-        $status = $this->check_switch_state($status);
+        $status = $this->checkSwitchState($status);
 
         //Выполняем по умолчанию смену состояния связанного порта
         if($portrelease)
@@ -180,7 +180,7 @@ class Objects extends System
 
         $script = new Scripts();
 
-        $status = $this->check_switch_state($status);
+        $status = $this->checkSwitchState($status);
 
         if ($status=='on') $statusport=1;
         if ($status=='off') $statusport=0;
@@ -217,7 +217,7 @@ class Objects extends System
      * @param string $status
      * @return string
      */
-    function check_switch_state($status)
+    function checkSwitchState($status)
     {
 
         //Если статус объекта переключатель, то определяем текущее значение

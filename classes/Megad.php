@@ -63,7 +63,7 @@ class Megad extends System
     {
         $ip_device = self::$ip_device;
 
-        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `method`, `status`, `longclick`, `doubleclick` FROM ports 
+        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `method`, `status`, `dc_method`, `lc_method` FROM ports 
                                   INNER JOIN devices ON ports.id_device = devices.id 
                                   WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
 

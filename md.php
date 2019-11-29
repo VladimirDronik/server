@@ -12,7 +12,9 @@ flush();
         $ip_device = $_SERVER['REMOTE_ADDR'];
         $pt = $_GET['pt']; //Получаем номер входного порта, котоырй активировал скрипт
         $click = $_GET['click']; //Одинарный (1) или двойной (2) клик
-        $long = $_GET['click']; // При удержании передается 2, при отпускании 1
+        $long = $_GET['m']; // При удержании передается 2, при отпускании 1
+
+        System::addlog('сработал порт:'.$pt.',click='.$click.', long='.$long);
 
         Megad::$ip_device = $ip_device;
 
@@ -22,9 +24,11 @@ flush();
 
         //Определяем сработал одинарый, двойной клик или длительное нажатие
         if($click == 2)
-            $method = $port->method;
-        else
             $method = $port->dc_method;
+        elseif ($m = 2)
+            $method = $port->lc_method;
+        else
+            $method = $port->method;
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         Action::runAction($method);

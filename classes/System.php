@@ -45,7 +45,7 @@ class System
      */
     static function addLog($typeLog, $string){
 
-        $date = date('m/d/Y H:i:s', time());
+        $date = date('Y-m-d H:i:s', time());
 
         if(self::readSetting('logging') == 'file') {
 

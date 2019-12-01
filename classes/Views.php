@@ -25,7 +25,7 @@ class Views extends System
         //Находим комнаты, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
                                          ON `view_items`.`room` = `rooms`.`id` 
-                                         WHERE `rooms`.`id`!=0 AND `view_items`.`active` = 1 
+                                         WHERE `rooms`.`id`!=NULL AND `view_items`.`active` = 1 
                                          GROUP BY `rooms`.`id` 
                                          ORDER BY `rooms`.`sort`");
 
@@ -76,7 +76,7 @@ class Views extends System
 
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` = 0 AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` = NULL AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))

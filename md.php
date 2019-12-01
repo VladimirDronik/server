@@ -25,10 +25,11 @@ flush();
         //Определяем сработал одинарый, двойной клик или длительное нажатие
         if($click == 2)
             $method = $port->dc_method;
-        elseif ($m = 2)
-            $method = $port->lc_method;
-        else
+        elseif ($click == 1)
             $method = $port->method;
+        elseif ($long == 2)
+            $method = $port->lc_method;
+
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         Action::runAction($method);

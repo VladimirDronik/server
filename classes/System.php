@@ -25,7 +25,7 @@ class System
      * @param string $dbpass "password of database"
      * @return  null
      */
-    static function db_connect($dbname, $dbuser, $dbpass)
+    static function dbConnect($dbname, $dbuser, $dbpass)
     {
         $db = new PDO("mysql:host=localhost;dbname=$dbname", $dbuser, $dbpass);
         Self::$db = $db;
@@ -39,13 +39,24 @@ class System
     /**
      * Add new string to log-file
      *
-     * @param string $string
+     * @param string $typelog - тип логгирования
+     * @param string $string - строка с логом
      * @return null
      */
-    static function addlog($string){
+    static function addLog($typeLog, $string){
+
         $date = date('m/d/Y H:i:s', time());
-        $file = ROOT_DIR.'/server.log';
-        file_put_contents($file, $date.':   '.$string."\n", FILE_APPEND | LOCK_EX);
+
+        if(self::readSetting('logging') == 'file') {
+
+            $file = ROOT_DIR.'/server.log';
+            file_put_contents($file, $date.'___'.$typeLog.':   '.$string."\n", FILE_APPEND | LOCK_EX);
+
+        } else
+            self::$db->query("INSERT INTO `logs` (`id`, `date`, `type`, `message`)
+                              VALUES (NULL, '$date', '$typeLog', '$string');");
+
+
     }
 
 
@@ -57,7 +68,7 @@ class System
      * @param string $sound "name of sound file"
      * @return null
      */
-    function play_sound($sound)
+    function playSound($sound)
     {
         exec("aplay /var/www/smarthome/sounds/$sound");
     }
@@ -70,7 +81,7 @@ class System
      * @param string $value "value setting to update"
      * @return null
      */
-    static function set_setting($setting, $value)
+    static function setSetting($setting, $value)
     {
 
         self::$db->query("UPDATE settings SET `value` = '$value'
@@ -83,7 +94,7 @@ class System
      * @param string $setting "Название свойства"
      * @return strings
     */
-    static function read_setting($setting){
+    static function readSetting($setting){
 
         $sql = self::$db->query("SELECT `value` FROM `settings` WHERE `name`= '$setting'");
         $setting = $sql->fetch(PDO::FETCH_OBJ);

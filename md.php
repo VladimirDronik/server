@@ -14,7 +14,7 @@ flush();
         $click = $_GET['click']; //Одинарный (1) или двойной (2) клик
         $long = $_GET['m']; // При удержании передается 2, при отпускании 1
 
-        System::addlog('сработал порт:'.$pt.',click='.$click.', long='.$long);
+        System::addLog('device', 'сработал порт:'.$pt.',click='.$click.', long='.$long);
 
         Megad::$ip_device = $ip_device;
 

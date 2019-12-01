@@ -32,7 +32,7 @@ class Megad extends System
         if($device->active)
         file_get_contents("http://$device->ip_address/sec/?cmd=$num:$val");
         else
-            system::addlog("Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
     }
 
 

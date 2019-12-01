@@ -43,7 +43,7 @@ class Graphs extends System
      */
     static function deleteOldValues($table)
     {
-        $days = parent::read_setting('graphdate');
+        $days = parent::readSetting('graphdate');
         parent::$db->query("DELETE FROM $table WHERE `datetime` <= (now() - INTERVAL $days DAY)");
     }
 }

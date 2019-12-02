@@ -43,7 +43,7 @@ class System
      * @param string $string - строка с логом
      * @return null
      */
-    static function addLog($typeLog, $string){
+    static function addLog($typeLog, $string) {
 
         $date = date('Y-m-d H:i:s', time());
 
@@ -56,7 +56,12 @@ class System
             self::$db->query("INSERT INTO `logs` (`id`, `date`, `type`, `message`)
                               VALUES (NULL, '$date', '$typeLog', '$string');");
 
+    }
 
+    static function deleteLog() {
+
+        $days = self::readSetting('storage_logs');
+        parent::$db->query("DELETE FROM logs WHERE `datetime` <= (now() - INTERVAL $days DAY)");
     }
 
 

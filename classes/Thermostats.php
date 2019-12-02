@@ -108,7 +108,7 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
 
-        //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
+        //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
         $termostatsql = parent::$db->query("SELECT ports.id_device AS device, 
                                                    ports.num_port AS port, 
                                                    id_termometr 

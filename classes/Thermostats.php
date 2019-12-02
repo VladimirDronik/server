@@ -109,8 +109,13 @@ class Thermostats extends Objects
         $alarm_cnt = 0;
 
         //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
-        $termostatsql = parent::$db->query("SELECT id_device, port, id_termometr FROM termostats
-                                         WHERE id=$this->id_termostat");
+        $termostatsql = parent::$db->query("SELECT ports.id_device AS, 
+                                                   ports.num_port AS port, 
+                                                   id_termometr 
+                                              FROM termostats
+                                              INNER JOIN ports     
+                                              ON ports.object = termostats.id_object      
+                                              WHERE termostats.id=$this->id_termostat");
 
         $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
 

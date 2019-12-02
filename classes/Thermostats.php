@@ -109,7 +109,7 @@ class Thermostats extends Objects
         $alarm_cnt = 0;
 
         //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
-        $termostatsql = parent::$db->query("SELECT ports.id_device AS, 
+        $termostatsql = parent::$db->query("SELECT ports.id_device AS device, 
                                                    ports.num_port AS port, 
                                                    id_termometr 
                                               FROM termostats
@@ -126,8 +126,8 @@ class Thermostats extends Objects
                 //Если id термометра задан, то тогда это массив с термометрами
                 if($termostat->id_termometr) {
 
-                //вызываем status(int $port, int $id_device=null)
-                $termometrs = Megad::status($termostat->port, 'list', $termostat->id_device);
+                //вызываем status(int $port, int $device=null)
+                $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
 
 
                     /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
@@ -147,7 +147,7 @@ class Thermostats extends Objects
                 }
                 else //термометр висит прямо на порту
                 {
-                    $termometrs = Megad::status($termostat->port, 'get', $termostat->id_device);
+                    $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
                     $termometrsarray = explode(':', $termometrs);
                     $id_termometr = $termostat->id_termometr;
                     $termometr_value = $termometrsarray[1];

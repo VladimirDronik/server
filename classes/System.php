@@ -58,10 +58,10 @@ class System
 
     }
 
-    static function deleteLog() {
+    static function deleteLogs() {
 
         $days = self::readSetting('storage_logs');
-        parent::$db->query("DELETE FROM logs WHERE `datetime` <= (now() - INTERVAL $days DAY)");
+        self::$db->query("DELETE FROM logs WHERE `date` <= (now() - INTERVAL $days DAY)");
     }
 
 

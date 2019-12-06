@@ -5,6 +5,26 @@ use Graphs;
 class Count extends Megad
 {
 
+
+    /**
+     * Узнаем на каком девайсе и на каком порту висит счетчик
+     *
+     * @param int $idCount - id счетчика
+     */
+    static function getDevicePort($idCount)
+    {
+        $sql = parent::$db->query("SELECT ports.`id_device` AS device,
+                                       ports.num_port AS port,
+                                       `impulse`   
+                                       FROM counts
+                                       INNER JOIN ports     
+                                       ON ports.object = counts.id_object
+                                       WHERE counts.id = $idCount");
+
+        return $sql->fetch(PDO::FETCH_OBJ);
+    }
+
+
     /**
      * Считываем показания счетчика и заносим в БД
      *
@@ -12,23 +32,20 @@ class Count extends Megad
      **/
     static function getCount($idCount)
         {
-        //Узнаем на каком девайсе и на каком порту висит счетчик
-            $sql = parent::$db->query("SELECT `id_device`, `id_port`, `impulse` 
-                                       FROM counts
-                                       WHERE id = $idCount");
 
-            $count = $sql->fetch(PDO::FETCH_OBJ);
-            $idPort = $count->id_port;
-            $idDevice = $count->id_device;
+            $count = self::getDevicePort($idCount);
+
+            $idPort = $count->port;
+            $idDevice = $count->device;
             $impulse = $count->impulse;
 
 
         //Читаем текущее количество импульсов
-        $countImpulse = 500;//parent::status($idPort,'get',$idDevice,1);
+            $countImpulse = parent::status($idPort,'get',$idDevice,1);
 
         $currentValue = $countImpulse*$impulse;
 
-        //Заносим количество импульсов в таблицу счетчиков
+        //Заносим количество единиц счетчика в таблицу счетчиков
             parent::$db->query("UPDATE counts SET 
                                 `today_value` = $currentValue
                                 WHERE id = $idCount");
@@ -47,9 +64,27 @@ class Count extends Megad
      */
     static function resetCount($idCount)
         {
+            $sql = parent::$db->query("SELECT `type`, `today_value` FROM counts WHERE id = $idCount");
+            $count = $sql->fetch(PDO::FETCH_OBJ);
+
+            //Если счетчик воды, то значение преобразовываем в м3
+            if($count->type == 'water')
+                $today = $count->today_value / 1000;
+            else
+                $today = $count->today_value;
+
             parent::$db->query("UPDATE counts SET 
-                                `total_value` = `total_value`+`today_value`,
+                                `total_value` = `total_value`+$today,
                                 `today_value` = 0 WHERE id = $idCount");
+
+
+            $count = self::getDevicePort($idCount);
+
+            $idPort = $count->port;
+            $idDevice = $count->device;
+
+            //Обнуление значения счетчика порта
+            parent::resetCount($idDevice, $idPort);
         }
 
 }

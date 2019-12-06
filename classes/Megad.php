@@ -43,12 +43,23 @@ class Megad extends System
      * @param int $id_device - ид мегадевайса из таблицы устройств
      * @param int $param - какой по счету параметр будем брать из строки, которую получим от устройства
      **/
-      static function status($port, $command, $id_device = null, $param = 0)
+      static function status($port, $command, $idDevice = null, $param = 0)
     {
 
-        $state = file_get_contents("http://".self::ip_address($id_device)->ip_address."/sec/?pt=$port&cmd=$command");
+        $state = file_get_contents("http://".self::ip_address($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[$param];
+    }
+
+    /**
+     * Обнуление счетчика порта
+     *
+     * @param int $idDevice - id устройства
+     * @param int $port - порт устройства на который воздействуем
+     */
+    static function resetCount($idDevice, $port)
+    {
+        file_get_contents("http://".self::ip_address($idDevice)->ip_address."/sec/?pt=$port&cnt=0");
     }
 
 

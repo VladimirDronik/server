@@ -37,6 +37,8 @@ class Action extends Megad
         self::$easy = $method->easy;
         self::$idScript = $method->script;
 
+        // TODO: добавить проверку на системный метод. Если системный, то выполняем системный скрытый скрипт с параметром, который не фигурирует в таблице скриптов, но есть в папке скриптов
+
 
         if (self::$easy)
             self::easy($method->id_object);

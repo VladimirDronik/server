@@ -41,7 +41,7 @@ class Views extends System
 
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр
                 if ($view_obj->type_name == 'temp') {
@@ -80,11 +80,16 @@ class Views extends System
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
                 if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $item = array('id' => (int)$view_obj->id,
+                                  'type' => $view_obj->type_name,
+                                  'icon' =>  $view_obj->on_image,
+                                  'title' => $view_obj->on_title,
+                                  'status' => $view_obj->status);
+
 
                 // Если тип объекта термометр или гигрометр
                 if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 $items_array[] = $item;
 
@@ -111,12 +116,12 @@ class Views extends System
             $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `scene` = $scenes_obj->id AND `active` = 1 ORDER BY `sort`");
             while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
                 // Если тип объекта кнопка или переключатель
-                if (($view_obj->name == 'button') || ($view_obj->name == 'light') || ($view_obj->name == 'light-own') || ($view_obj->name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                if (($view_obj->type == 'button') || ($view_obj->type == 'light') || ($view_obj->type == 'light-own') || ($view_obj->type == 'socket'))
+                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 // Если тип объекта термометр или гигрометр
-                if (($view_obj->name == 'temp') || ($view_obj->name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'name' => $view_obj->name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                if (($view_obj->type == 'temp') || ($view_obj->type == 'humidity'))
+                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
 
                 //if(isset($item))
                 $items_array[] = $item;
@@ -196,7 +201,7 @@ class Views extends System
             $curTemp = round($termostat->current);
             $newTemp = $termostat->optimal + $termostat->gisteresis;
 
-            $item = array('id' => (int)$view->id, 'name' => $view->type_name, 'on_image' => $view->on_image,
+            $item = array('id' => (int)$view->id, 'type' => $view->type_name, 'on_image' => $view->on_image,
                 'off_image' => $view->off_image, 'curTemp' => $curTemp,  'newTemp' => $newTemp,
                 'left' => $view->position_left, 'top' => $view->position_top);
 
@@ -295,7 +300,7 @@ class Views extends System
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
             unset($days_array);
             $days_array = explode(',',$view_obj->days);
-            $events_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
+            $events_array = array('id'=>(int)$view_obj->id, 'type'=>$view_obj->type_name, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
             $events[] = $events_array;
         }
 
@@ -340,7 +345,7 @@ class Views extends System
         if ($data_array->status=='itemChange'){
 
             $item_id = $data_array->items[0]->id;
-            $item_name = $data_array->items[0]->name;
+            $item_name = $data_array->items[0]->type;
             $item_status = $data_array->items[0]->status;
             $item_value = $data_array->items[0]->value;
 
@@ -424,7 +429,7 @@ class Views extends System
             }  else
 
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
-            "name":"'.$viewItem->type_name.'","status":"'.$viewItem->status.'","value":"'.$viewItem->value.'",
+            "type":"'.$viewItem->type_name.'","status":"'.$viewItem->status.'","value":"'.$viewItem->value.'",
             "on_image":"'.$viewItem->on_image.'","off_image":"'.$viewItem->off_image.'",
             "on_title":"'.$viewItem->on_title.'","off_title":"'.$viewItem->off_title.'",
             "left":"'.$viewItem->position_left.'","top":"'.$viewItem->position_top.'"}]}';

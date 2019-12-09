@@ -16,7 +16,7 @@ class Graphs extends System
     static function insertToCounts($idCount, $currentValue)
     {
     //Заносим значение счетчика в таблицу с графиками
-    parent::$db->query("INSERT INTO graph_counts (`date`, `id_count`, `value`)
+    parent::$db->query("INSERT INTO graph_counts (`datetime`, `id_count`, `value`)
                                 VALUES (CURDATE(), $idCount, $currentValue)
                                 ON DUPLICATE KEY UPDATE `id_count` = $idCount, `value` = $currentValue
                                 ");

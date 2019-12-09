@@ -22,10 +22,10 @@ class Views extends System
             else
                 $whereString = '';
 
-        //Находим комнаты, кроме главной нулевой комнаты
+        //Находим итемы, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
                                          ON `view_items`.`room` = `rooms`.`id` 
-                                         WHERE `rooms`.`id`!=NULL AND `view_items`.`active` = 1 
+                                         WHERE  `view_items`.`active` = 1 
                                          GROUP BY `rooms`.`id` 
                                          ORDER BY `rooms`.`sort`");
 
@@ -35,64 +35,37 @@ class Views extends System
             unset($items_array);
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE $whereString `room` = $rooms_obj->id AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` 
+                                       WHERE $whereString `room` = $rooms_obj->id 
+                                       AND `active` = 1 ORDER BY `sort`");
 
-            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
+            while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
 
-                // Если тип объекта кнопка или переключатель
-                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'switch') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                $items_array[] = self::getItem($viewObject);
 
-                // Если тип объекта термометр
-                if ($view_obj->type_name == 'temp') {
-
-                    $item = $this->getTermostats($view_obj);
-
-                }
-
-                // Если тип объекта гигрометр
-                if ($view_obj->type_name == 'humidity') {
-
-                }
-
-                $items_array[] = $item;
-
-                $room = array('id' => (int)$rooms_obj->id,'name' => $rooms_obj->name,'image' => $rooms_obj->image,'style' => $rooms_obj->style, 'items' => $items_array);
-
+                $room = array('id' => (int)$rooms_obj->id,
+                              'name' => $rooms_obj->name,
+                              'image' => $rooms_obj->image,
+                              'style' => $rooms_obj->style,
+                              'items' => $items_array);
             }
 
             $room_array[] = $room;
-
         }
 
         return $json = json_encode(array('status'=>'RoomItems', 'items'=>$room_array));
-
     }
 
 
     /** Получаем список итемов, которые относятся к главной комнате */
     function getMainItems()
     {
-
-
             //Отдаем элементы
             $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` = NULL AND `active` = 1 ORDER BY `sort`");
-            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-                // Если тип объекта кнопка или переключатель
-                if (($view_obj->type_name == 'button') || ($view_obj->type_name == 'light') || ($view_obj->type_name == 'light-own') || ($view_obj->type_name == 'socket'))
-                    $item = array('id' => (int)$view_obj->id,
-                                  'type' => $view_obj->type_name,
-                                  'icon' =>  $view_obj->on_image,
-                                  'title' => $view_obj->on_title,
-                                  'status' => $view_obj->status);
 
+            while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
 
-                // Если тип объекта термометр или гигрометр
-                if (($view_obj->type_name == 'temp') || ($view_obj->type_name == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
-
-                $items_array[] = $item;
-
+                $items_array[] = self::getItem($viewObject);
             }
 
         if(isset($items_array))
@@ -114,14 +87,16 @@ class Views extends System
             unset($items_array);
             //Отдаем элементы
             $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `scene` = $scenes_obj->id AND `active` = 1 ORDER BY `sort`");
-            while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
-                // Если тип объекта кнопка или переключатель
-                if (($view_obj->type == 'button') || ($view_obj->type == 'light') || ($view_obj->type == 'light-own') || ($view_obj->type == 'socket'))
-                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'on_title' => $view_obj->on_title, 'off_title' => $view_obj->off_title, 'status' => $view_obj->status, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+            while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
+
+                $item = self::getItem($viewObject);
 
                 // Если тип объекта термометр или гигрометр
-                if (($view_obj->type == 'temp') || ($view_obj->type == 'humidity'))
-                    $item = array('id' => (int)$view_obj->id, 'type' => $view_obj->type_name, 'on_image' => $view_obj->on_image, 'off_image' => $view_obj->off_image, 'value' => $view_obj->value, 'left' => $view_obj->position_left, 'top' => $view_obj->position_top);
+                if (($viewObject->type == 'temp') || ($viewObject->type == 'humidity'))
+                    $item = array('id' => (int)$viewObject->id,
+                                  'type' => $viewObject->type_name,
+                                  'on_image' => $viewObject->on_image,
+                                  'off_image' => $viewObject->off_image, 'value' => $viewObject->value, 'left' => $viewObject->position_left, 'top' => $viewObject->position_top);
 
                 //if(isset($item))
                 $items_array[] = $item;
@@ -185,10 +160,10 @@ class Views extends System
 
 
     /**
-     * Отдаем значение темпеатуры визуальному отображению термостата
+     * Отдаем значение температуры визуальному отображению термостата
      * @param object $view -  итем с термостатом
      */
-    function getTermostats($view)
+    static private function getTermostats($view)
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, `termostats`.`gisteresis` 
                                     FROM `termostats` INNER JOIN view_items 
@@ -246,38 +221,8 @@ class Views extends System
      * Получаем список итемов для страницы настроек, упаковываем в json и отправляем клиенту, через скрипт server.php
      */
     function getAllSettings()
-    {/*
-        $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `type`='s'  ORDER BY `id`");
-        while ($view_obj = $sql->fetch(PDO::FETCH_OBJ))
-        {
-
-            if (($view_obj->name=='setting1')||($view_obj->name=='message')||($view_obj->name=='plan'))
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'status'=>$view_obj->status);
-
-            // Если тип объекта термометр или гигрометр
-            if (($view_obj->name=='temp')||($view_obj->name=='humidity'))
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value);
-
-            if ($view_obj->name=='checkbox')
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'status'=>$view_obj->status, 'title'=>$view_obj->on_title);
-
-            if ($view_obj->name=='eco')
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$view_obj->status, 'title'=>$view_obj->on_title);
-
-            if (($view_obj->name=='radio')){
-                $status = explode(',',$view_obj->status);
-                $settings_array = array('id'=>(int)$view_obj->id, 'name'=>$view_obj->name, 'value'=>$view_obj->value, 'status'=>$status, 'title'=>$view_obj->on_title);
-
-            }
-
-
-            $settings[] = $settings_array;
-        }
-
-         $json = json_encode(array('status'=>'settingsLoad', 'settings'=>$settings));
-
-        return $json;
-    */
+    {
+        
     }
 
 
@@ -451,7 +396,7 @@ class Views extends System
 
 
     /**
-     * получение бъекта и метода, которые соответвуют представлению
+     * получение объекта и метода, которые соответвуют представлению
      *
      * @param  int $item_id - ид метода
      * @return object
@@ -464,5 +409,31 @@ class Views extends System
     }
 
 
+    /**
+     * Формирование массива с параметрами итема
+     *
+     * @param object $viewObject
+     * @return array
+     */
+    static private function getItem($viewObject)
+    {
 
+        // Если тип объекта кнопка или переключатель
+        if (($viewObject->type_name == 'button') ||
+            ($viewObject->type_name == 'switch') ||
+            ($viewObject->type_name == 'light') ||
+            ($viewObject->type_name == 'light-own') ||
+            ($viewObject->type_name == 'socket'))
+
+            return array('id' => (int)$viewObject->id,
+                'type' => $viewObject->type_name,
+                'icon' => $viewObject->on_image,
+                'title' => $viewObject->on_title,
+                'status' => $viewObject->status);
+
+        // Если тип объекта термометр
+        if ($viewObject->type_name == 'temp') {
+            return self::getTermostats($viewObject);
+        }
+    }
 }

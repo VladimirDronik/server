@@ -81,7 +81,7 @@ class Scripts extends Megad
      *
      * @param int $id_object
      */
-    function runscript($idScript, $method = null)
+    function runscript($idScript, $param = null)
     {
 
         $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
@@ -91,9 +91,9 @@ class Scripts extends Megad
 
 
            $dir = str_replace(' ', '\ ', __DIR__);
-           system("cd " . $dir . "/../scripts && php -f {$script->link} {$method} &"); //выполняем внешний скрипт
+           system("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
-           System::addLog('system', 'Script "' . $script->link . ' ' . $method . '" is running');
+           System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running');
 
            return true;
 

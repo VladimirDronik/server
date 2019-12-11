@@ -222,7 +222,7 @@ class Views extends System
      */
     function getAllSettings()
     {
-        
+
     }
 
 

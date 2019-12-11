@@ -31,15 +31,15 @@ class Action extends Megad
      */
     static public function runAction($idMethod)
     {
-        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object` FROM `methods` WHERE `methods`.`id`=$idMethod");
+        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, name is_system FROM `methods` WHERE `methods`.`id`=$idMethod");
         $method = $sql->fetch(PDO::FETCH_OBJ);
 
         self::$easy = $method->easy;
         self::$idScript = $method->script;
 
-        // TODO: добавить проверку на системный метод. Если системный, то выполняем системный скрытый скрипт с параметром, который не фигурирует в таблице скриптов, но есть в папке скриптов
-
-
+        if($method->is_system)
+            self::runSystem($method->id_object);
+        else
         if (self::$easy)
             self::easy($method->id_object);
         else
@@ -98,6 +98,17 @@ class Action extends Megad
         $script = new Scripts();
         $script->runscript(self::$idScript);
 
+    }
+
+    /**
+     * Запуск системного скрипта на выполнение
+     * @param int idObject id объекта счетчика
+     */
+    static private function runSystem($idObject)
+    {
+        //Запускаем связанный скрипт
+        $script = new Scripts();
+        $script->runscript(self::$idScript, $idObject);
     }
 
 

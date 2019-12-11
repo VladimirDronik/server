@@ -11,15 +11,16 @@ class Count extends Megad
      *
      * @param int $idCount - id счетчика
      */
-    static function getDevicePort($idCount)
+    static function getDevicePort($idCountObject)
     {
         $sql = parent::$db->query("SELECT ports.`id_device` AS device,
                                        ports.num_port AS port,
+                                       counts.id AS id,
                                        `impulse`   
                                        FROM counts
                                        INNER JOIN ports     
                                        ON ports.object = counts.id_object
-                                       WHERE counts.id = $idCount");
+                                       WHERE counts.id_object = $idCount");
 
         return $sql->fetch(PDO::FETCH_OBJ);
     }
@@ -30,10 +31,10 @@ class Count extends Megad
      *
      * @param int $idCount - ИД счетчика, с которым будем работать
      **/
-    static function getCount($idCount)
+    static function getCount($idCountObject)
         {
 
-            $count = self::getDevicePort($idCount);
+            $count = self::getDevicePort($idCountObject);
 
             $idPort = $count->port;
             $idDevice = $count->device;
@@ -48,9 +49,9 @@ class Count extends Megad
         //Заносим количество единиц счетчика в таблицу счетчиков
             parent::$db->query("UPDATE counts SET 
                                 `today_value` = $currentValue
-                                WHERE id = $idCount");
+                                WHERE id_object = $idCountObject");
 
-            Graphs::insertToCounts($idCount, $currentValue);
+            Graphs::insertToCounts($count->id, $currentValue);
 
 
         }

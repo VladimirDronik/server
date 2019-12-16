@@ -165,7 +165,8 @@ class Views extends System
      */
     static private function getTermostats($view)
     {
-        $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, `termostats`.`gisteresis` 
+        $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
+                                            `termostats`.`gisteresis`, `view_items`.`on_title` AS `title`, 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
@@ -176,8 +177,8 @@ class Views extends System
             $curTemp = round($termostat->current);
             $newTemp = $termostat->optimal + $termostat->gisteresis;
 
-            $item = array('id' => (int)$view->id, 'type' => $view->type_name, 'on_image' => $view->on_image,
-                'off_image' => $view->off_image, 'curTemp' => $curTemp,  'newTemp' => $newTemp,
+            $item = array('id' => (int)$view->id, 'type' => $view->type_name,
+                'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $view->title,
                 'left' => $view->position_left, 'top' => $view->position_top);
 
             return $item;
@@ -374,10 +375,9 @@ class Views extends System
             }  else
 
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
-            "type":"'.$viewItem->type_name.'","status":"'.$viewItem->status.'","value":"'.$viewItem->value.'",
-            "on_image":"'.$viewItem->on_image.'","off_image":"'.$viewItem->off_image.'",
-            "on_title":"'.$viewItem->on_title.'","off_title":"'.$viewItem->off_title.'",
-            "left":"'.$viewItem->position_left.'","top":"'.$viewItem->position_top.'"}]}';
+            "type":"'.$viewItem->type_name.'","status":"'.$viewItem->status.'",
+            "icon":"'.$viewItem->on_image.'",
+            "title":"'.$viewItem->on_title.'"}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);

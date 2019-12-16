@@ -2,7 +2,7 @@
 
 use Graphs;
 
-class Count extends Megad
+class Count extends Device
 {
 
 
@@ -20,7 +20,7 @@ class Count extends Megad
                                        FROM counts
                                        INNER JOIN ports     
                                        ON ports.object = counts.id_object
-                                       WHERE counts.id_object = $idCount");
+                                       WHERE counts.id_object = $idCountObject");
 
         return $sql->fetch(PDO::FETCH_OBJ);
     }

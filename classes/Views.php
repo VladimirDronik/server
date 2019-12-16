@@ -166,7 +166,7 @@ class Views extends System
     static private function getTermostats($view)
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
-                                            `termostats`.`gisteresis`, `view_items`.`on_title` AS `title`, 
+                                            `termostats`.`gisteresis`, `view_items`.`on_title` AS `title` 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");

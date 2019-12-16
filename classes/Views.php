@@ -61,7 +61,7 @@ class Views extends System
     function getMainItems()
     {
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` = NULL AND `active` = 1 ORDER BY `sort`");
+            $sql = parent::$db->query("SELECT * FROM `view_items` WHERE `room` IS NULL AND `active` = 1 ORDER BY `sort`");
 
             while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
 

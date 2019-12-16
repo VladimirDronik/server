@@ -5,7 +5,7 @@
  */
 
 
-abstract class Device extends System
+class Device extends System
 {
 
 }

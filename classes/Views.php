@@ -24,8 +24,9 @@ class Views extends System
 
         //Находим итемы, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
-                                         ON `view_items`.`room` = `rooms`.`id` 
+                                         ON `view_items`.`room_group` = `rooms`.`id` 
                                          WHERE  `view_items`.`active` = 1 
+                                         AND `view_items`.`room_group` IS NOT NULL
                                          GROUP BY `rooms`.`id` 
                                          ORDER BY `rooms`.`sort`");
 
@@ -36,7 +37,7 @@ class Views extends System
 
             //Отдаем элементы
             $sql = parent::$db->query("SELECT * FROM `view_items` 
-                                       WHERE $whereString `room` = $rooms_obj->id 
+                                       WHERE $whereString `room_group` = $rooms_obj->id 
                                        AND `active` = 1 ORDER BY `sort`");
 
             while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
@@ -178,7 +179,7 @@ class Views extends System
             $newTemp = $termostat->optimal + $termostat->gisteresis;
 
             $item = array('id' => (int)$view->id, 'type' => $view->type_name,
-                'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $view->title,
+                'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
                 'left' => $view->position_left, 'top' => $view->position_top);
 
             return $item;

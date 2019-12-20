@@ -32,14 +32,14 @@ class Action extends Megad
     static public function runAction($idMethod)
     {
 
-        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system` FROM `methods` WHERE `methods`.`id`=$idMethod");
+        $sql = parent::$db->query("SELECT `easy`, `script`, `param`, `id_object`, `name`, `is_system` FROM `methods` WHERE `methods`.`id`=$idMethod");
         $method = $sql->fetch(PDO::FETCH_OBJ);
 
         self::$easy = $method->easy;
         self::$idScript = $method->script;
 
         if($method->is_system)
-            self::runSystem($method->id_object);
+            self::runSystem($method->id_object, $method->param);
         else
         if (self::$easy)
             self::easy($method->id_object);
@@ -103,13 +103,16 @@ class Action extends Megad
 
     /**
      * Запуск системного скрипта на выполнение
-     * @param int idObject id объекта счетчика
+     * @param int $idObject id объекта счетчика
+     * @param string $param передаваемый в скрипт параметр
      */
-    static private function runSystem($idObject)
+    static private function runSystem($idObject, $param)
     {
+        $param = $idObject . ' ' .$param;
+
         //Запускаем связанный скрипт
         $script = new Scripts();
-        $script->runscript(self::$idScript, $idObject);
+        $script->runscript(self::$idScript, $param);
     }
 
 

@@ -23,18 +23,41 @@ class Megad extends System
     }
 
 
-    /** Установка значения порта. На входе номер порта $num и значение, которое устанавливаем $val */
-    function set($num, $val, $id_device=null)
+    /**
+     * Установка значения порта для устройства.
+     * @param int $num номер порта, на котором устанавливаем значение
+     * @param int $val значение для порта
+     */
+    function set($numPort, $val, $id_device=null)
     {
         $device = $this->ip_address($id_device);
 
-        //Если ip адрес равен 0, то не выполняем действие
+        //Если устройство не активно, то не выполняем действие
         if($device->active)
-        file_get_contents("http://$device->ip_address/sec/?cmd=$num:$val");
+        file_get_contents("http://$device->ip_address/sec/?cmd=$numPort:$val");
         else
             system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
     }
 
+    /**
+     * Установка значения PWM на порту
+     * @param int $num номер порта, на котором устанавливаем значение
+     * @param int $val значение для порта
+     * @param int $speed скорость изменения диммера
+     */
+    function setPWM($numPort, $val, $id_device, $speed=0)
+    {
+        $device = $this->ip_address($id_device);
+
+        if ($speed != 0)
+            $speedParam = '&cnt='.$speed;
+
+        //Если устройство не активно, то не выполняем действие
+        if($device->active)
+            file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm=$val $speedParam");
+        else
+            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+    }
 
     /** Получение значения порта.
      *
@@ -70,7 +93,7 @@ class Megad extends System
      * @param int $port - физический порт устройства, который сработал
      * @return object
     */
-    function get(int $port)
+    function get($port)
     {
         $ip_device = self::$ip_device;
 

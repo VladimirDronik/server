@@ -80,6 +80,7 @@ class Scripts extends Megad
      * Выполняем нужный скрипт
      *
      * @param int $id_object
+     * @param int $object ид объекта, который передается
      */
     function runscript($idScript, $param = null)
     {

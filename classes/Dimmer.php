@@ -7,11 +7,17 @@
 
 class Dimmer extends Device
 {
-    private static $idObject;
+    private static $idObject; // id объекта диммера
+    private static $speed; // скорость изменения диммера
+
 
     function __construct($idObject)
     {
         self::$idObject = $idObject;
+
+        $sql = parent::$db->query("SELECT `speed` FROM `dimmers` WHERE id_object = $idObject");
+        $dimmer = $sql->fetch(PDO::FETCH_OBJ);
+        self::$speed = $dimmer->speed;
     }
 
     /**
@@ -31,9 +37,18 @@ class Dimmer extends Device
      */
     public function setValue($value)
     {
-        //Определяем id устройства
+        $object = new Objects();
+        $object->select(self::$idObject);
+        $object->device;
+        $object->port;
+
+        $value = round(255*$value/100);
+
+        //Отправляем данные устройству
         $mega = new Megad();
-//        $mega->ip_address()
+        $mega->setPWM($object->port, $value, $object->device, self::$speed);
+
+        //Заносим текущее состояние в таблицу
     }
 
     /**

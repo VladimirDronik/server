@@ -42,7 +42,7 @@ class Count extends Device
 
 
         //Читаем текущее количество импульсов
-            $countImpulse = parent::status($idPort,'get',$idDevice,1);
+            $countImpulse = Megad::status($idPort,'get',$idDevice,1);
 
         $currentValue = $countImpulse*$impulse;
 
@@ -61,11 +61,14 @@ class Count extends Device
     /**
      * Обнуляем текущее значение счетчика
      *
-     * @param int $idCount - ИД счетчика, с которым будем работать
+     * @param int $idCountObject - ИД счетчика, с которым будем работать
      */
-    static function resetCount($idCount)
+    static function resetCount($idCountObject)
         {
-            $sql = parent::$db->query("SELECT `type`, `today_value` FROM counts WHERE id = $idCount");
+            $sql = parent::$db->query("SELECT `counts`.`id` AS id, `counts`.`type`, `today_value` FROM counts 
+                                       INNER JOIN `objects` ON `objects`.`id` = `counts`.`id_object` 
+                                       WHERE `objects`.`id` = $idCountObject");
+            
             $count = $sql->fetch(PDO::FETCH_OBJ);
 
             //Если счетчик воды, то значение преобразовываем в м3
@@ -76,10 +79,10 @@ class Count extends Device
 
             parent::$db->query("UPDATE counts SET 
                                 `total_value` = `total_value`+$today,
-                                `today_value` = 0 WHERE id = $idCount");
+                                `today_value` = 0 WHERE id = $count->id");
 
 
-            $count = self::getDevicePort($idCount);
+            $count = self::getDevicePort($idCountObject);
 
             $idPort = $count->port;
             $idDevice = $count->device;

@@ -68,7 +68,7 @@ class Count extends Device
             $sql = parent::$db->query("SELECT `counts`.`id` AS id, `counts`.`type`, `today_value` FROM counts 
                                        INNER JOIN `objects` ON `objects`.`id` = `counts`.`id_object` 
                                        WHERE `objects`.`id` = $idCountObject");
-            
+
             $count = $sql->fetch(PDO::FETCH_OBJ);
 
             //Если счетчик воды, то значение преобразовываем в м3
@@ -88,7 +88,7 @@ class Count extends Device
             $idDevice = $count->device;
 
             //Обнуление значения счетчика порта
-            parent::resetCount($idDevice, $idPort);
+            Megad::resetCount($idDevice, $idPort);
         }
 
 }

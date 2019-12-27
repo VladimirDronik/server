@@ -24,21 +24,24 @@ class Thermostats extends Objects
      *
      * @param int $id_termost
      */
-    function __construct($id_termost=null)
+    function __construct($idObjectTermost=null)
     {
 
-        if($id_termost!=null) {
+        if($idObjectTermost!=null) {
             $this->script = new Scripts();
 
-            $this->id_termostat = $id_termost;
+
 
             //Получаем все данные термостата
-            $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, 
+            $scriptsql = parent::$db->query("SELECT id, current, optimal, gisteresis, thermostat, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` 
-                                            FROM termostats WHERE id=$this->id_termostat");
+                                            FROM termostats WHERE id_object=$idObjectTermost");
+
+
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
+            $this->id_termostat = $scriptsql->id;
             $this->min_threshold = $termostat->min_threshold;
             $this->max_threshold = $termostat->max_threshold;
             $this->min_alarm = $termostat->min_alarm;

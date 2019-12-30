@@ -41,7 +41,7 @@ class Thermostats extends Objects
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
-            $this->id_termostat = $scriptsql->id;
+            $this->id_termostat = $termostat->id;
             $this->min_threshold = $termostat->min_threshold;
             $this->max_threshold = $termostat->max_threshold;
             $this->min_alarm = $termostat->min_alarm;
@@ -114,7 +114,8 @@ class Thermostats extends Objects
         //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
         $termostatsql = parent::$db->query("SELECT ports.id_device AS device, 
                                                    ports.num_port AS port, 
-                                                   id_termometr 
+                                                   id_termometr,
+                                                   `name`
                                               FROM termostats
                                               INNER JOIN ports     
                                               ON ports.object = termostats.id_object      
@@ -163,6 +164,8 @@ class Thermostats extends Objects
                 if ($alarm_cnt>=10)
                 {
                     //Здесь сделать вызов обработчика аварии и выходим из цикла
+                    System::addLog('device', 'Термостат "' . $this->name . '" не доступен');
+
 
                     $error = true;
                     break 2;
@@ -179,7 +182,7 @@ class Thermostats extends Objects
         if (!$error) {
             //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
-                                         WHERE id_termometr='$id_termometr'");
+                                         WHERE id=$this->id_termostat");
 
             Graphs::insertToTermostats($this->id_termostat, $termometr_value);
         }

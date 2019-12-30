@@ -106,7 +106,7 @@ class Action extends Megad
      * @param int $idObject id объекта счетчика
      * @param string $param передаваемый в скрипт параметр
      */
-    static private function runSystem($idObject, $param)
+    static private function runSystem($idObject, $param=null)
     {
         $param = $idObject . ' ' .$param;
 

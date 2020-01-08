@@ -359,8 +359,12 @@ class Views extends System
         $itemStatus = mb_strtolower($itemStatus);
 
         // Обновляем данные в таблице представлений
-        parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='temp', `status`, '$itemStatus'),
-                            `value` = IF(`type`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
+       // parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='temp', `status`, '$itemStatus'),
+         //                   `value` = IF(`type`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
+        
+        parent::$db->exec("UPDATE `view_items` SET `status` = $itemStatus
+                            WHERE `view_items`.`id` = $idItem");
+
 
         // Получаем необходимые данные из таблицы представлений для итемов, которые связаны с данным объектом
 

@@ -33,6 +33,7 @@ require_once __DIR__.'/classes/Demostand.php';
 require_once __DIR__.'/classes/Action.php';
 require_once __DIR__.'/classes/Graphs.php';
 require_once __DIR__.'/classes/Count.php';
+require_once __DIR__.'/classes/Dimmer.php';
 
 
 

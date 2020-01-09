@@ -88,8 +88,7 @@ class Scripts extends Megad
         $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
                                          WHERE scripts.id = $idScript");
 
-        $script = $scriptsql->fetch(PDO::FETCH_OBJ);
-
+        $script = $scriptsql->fetch(PDO::FETCH_OBJ); 
 
            $dir = str_replace(' ', '\ ', __DIR__);
            system("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт

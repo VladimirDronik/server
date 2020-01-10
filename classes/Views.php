@@ -329,7 +329,7 @@ class Views extends System
                     $newObject->setStatus($item_status, true, false);
 
                     //Выполняем действие для данного объекта
-                    Action::runAction($idMethod);
+                    Action::runAction($idMethod, 'view', $item_id);
 
 
                 }
@@ -362,7 +362,7 @@ class Views extends System
        // parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='temp', `status`, '$itemStatus'),
          //                   `value` = IF(`type`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
 
-        parent::$db->exec("UPDATE `view_items` SET `status` = $itemStatus
+        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus'
                             WHERE `view_items`.`id` = $idItem");
 
 

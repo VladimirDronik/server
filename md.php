@@ -33,7 +33,7 @@ flush();
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         if($method)
-        Action::runAction($method);
+        Action::runAction($method, 'device');
 
 
 

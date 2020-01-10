@@ -53,7 +53,7 @@ class Scripts extends Megad
     {
 
 
-        $sql = parent::$db->query("SELECT  scheduler_tasks.method AS method, scheduler_tasks.script AS script 
+        $sql = parent::$db->query("SELECT  scheduler_tasks.id AS id_task, scheduler_tasks.method AS method, scheduler_tasks.script AS script 
                                     FROM scheduler_tasks        
                                     INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
                                     WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time'
@@ -64,7 +64,7 @@ class Scripts extends Megad
         {
             //Выполняем действие для метода, если он указан. Если не указан, то для скрипта
             if($action->method != null)
-            Action::runAction($action->method);
+            Action::runAction($action->method, 'scheduler', $action->id_task );
             else
                 $this->runscript($action->script);
 

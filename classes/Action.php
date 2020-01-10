@@ -28,8 +28,11 @@ class Action extends Megad
 
     /**
      * Определяем по методу какое действие необходимо выполнить и выполняем его
+     * @param $idMethod - метод, который выполняем
+     * @param $whence - откуда был вызван скрипт
+     * @param $idCausing - id сущности, которая вызывала действие
      */
-    static public function runAction($idMethod)
+    static public function runAction($idMethod, $whence=null, $idCausing=null)
     {
 
         $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system` FROM `methods` WHERE `methods`.`id`=$idMethod");
@@ -38,8 +41,9 @@ class Action extends Megad
         self::$easy = $method->easy;
         self::$idScript = $method->script;
 
+
         if($method->is_system)
-            self::runSystem($method->id_object, $method->param);
+            self::runSystem($method->id_object, self::params($whence, $idCausing));
         else
         if (self::$easy)
             self::easy($method->id_object);
@@ -106,15 +110,51 @@ class Action extends Megad
      * @param int $idObject id объекта счетчика
      * @param string $param передаваемый в скрипт параметр
      */
-    static private function runSystem($idObject, $param=null)
+    static private function runSystem($idObject, $params=null)
     {
-        $param = $idObject . ' ' .$param;
+        $params = $idObject . ' ' .$params;
 
         //Запускаем связанный скрипт
         $script = new Scripts();
-        $script->runscript(self::$idScript, $param);
+        $script->runscript(self::$idScript, $params);
     }
 
+
+    /**
+     * Определение параметров, с которыми должен вызываться скрипт
+     * @param $method
+     * @param $whence
+     */
+    static private function params($whence, $idCausing)
+    {
+
+        if ($whence) {
+
+            switch ($whence) {
+
+                case 'view' :
+                    $sql = parent::$db->query("SELECT `id_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    $method = $sql->fetch(PDO::FETCH_OBJ);
+                    break;
+
+                case 'device':
+                    //TODO : Исправить запрос, что бы параметры двойного и длительного нажатия тоже передавались
+                    $sql = parent::$db->query("SELECT `id_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    $method = $sql->fetch(PDO::FETCH_OBJ);
+                    break;
+
+                case 'scheduler':
+                    $sql = parent::$db->query("SELECT `method_params` AS param FROM `scheduler_tasks` WHERE `id`=$idCausing");
+                    $method = $sql->fetch(PDO::FETCH_OBJ);
+                    break;
+
+            }
+
+            $paramsArray = explode(';', $method->param);
+            return implode(' ', $paramsArray);
+
+        } else return null;
+    }
 
 
 }

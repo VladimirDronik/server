@@ -196,8 +196,10 @@ class Thermostats extends Objects
         $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $termostat->id_object");
         $viewItem = $sql->fetch(PDO::FETCH_OBJ);
 
-        $view = new Views();
-        $view->updateItem($viewItem->id);
+        if($viewItem->id) {
+            $view = new Views();
+            $view->updateItem($viewItem->id);
+        }
     }
 
 

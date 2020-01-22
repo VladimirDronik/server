@@ -116,7 +116,8 @@ class Thermostats extends Objects
         $alarm_cnt = 0;
 
         //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
-        $termostatsql = parent::$db->query("SELECT ports.id_device AS device, 
+        $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
+                                                   ports.id_device AS device, 
                                                    ports.num_port AS port, 
                                                    id_termometr,
                                                    `name`
@@ -192,8 +193,11 @@ class Thermostats extends Objects
         }
 
         //Отдаем значение визуальному компоненту
+        $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $termostat->id_object");
+        $viewItem = $sql->fetch(PDO::FETCH_OBJ);
 
-
+        $view = new Views();
+        $view->updateItem($viewItem->id);
     }
 
 

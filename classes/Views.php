@@ -351,7 +351,7 @@ class Views extends System
      * @var int idItem - ид итема у которого будем менять статус
      * @var string itemStatus - значение статуса для итема
      */
-    function updateItem($idItem, $itemStatus)
+    function updateItem($idItem, $itemStatus = null)
     {
 
         global $localsocket;

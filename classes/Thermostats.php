@@ -115,6 +115,8 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
 
+        //TODO:: смотрим какой объект у термостата, если это термометр, тогда действия ниже, если это универсальный датчик, тогда берем информацию о температуре у этого датчика
+
         //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
         $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
                                                    ports.id_device AS device, 

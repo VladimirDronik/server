@@ -91,7 +91,7 @@ class Scripts extends Megad
         $script = $scriptsql->fetch(PDO::FETCH_OBJ); 
 
            $dir = str_replace(' ', '\ ', __DIR__);
-           system("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
+           exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
            System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running');
 

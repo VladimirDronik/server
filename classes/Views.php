@@ -42,7 +42,10 @@ class Views extends System
 
             while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
 
-                $items_array[] = self::getItem($viewObject);
+                $item = self::getItem($viewObject);
+
+                if($item)
+                $items_array[] = $item;
 
                 $room = array('id' => (int)$rooms_obj->id,
                               'name' => $rooms_obj->name,
@@ -171,7 +174,7 @@ class Views extends System
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
-
+        if($sql->rowCount() > 0)
         while ($termostat = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
@@ -183,7 +186,7 @@ class Views extends System
                 'left' => $view->position_left, 'top' => $view->position_top);
 
             return $item;
-        }
+        } else return false;
 
     }
 
@@ -330,7 +333,6 @@ class Views extends System
 
                     //Выполняем действие для данного объекта
                     Action::runAction($idMethod, 'view', $item_id);
-
 
                 }
 

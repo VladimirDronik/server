@@ -178,7 +178,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             }
-
+/*
             //отвечаем температурами термостатов по запросу клиента
             if ($data_array[0] == 'ready?dashboard_termostat') {
 
@@ -187,7 +187,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send($data1);
             }
-
+*/
 
 
             //Формируем и отвечаем на запрос на получение данных на странице термометров
@@ -203,17 +203,18 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
-            if ($data_array[0] == 'ready?graphs'){
+            if ($data_array[0] == 'getTempLog'){
 
-                $data1 = $views->getGraphs();
+                $data1 = $views->getGraphs($data_array[2]);
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                $webconnection = $users[$data_array[1]];
                $webconnection->send("$data1");
+
             }
 
 
-
+/*
             //формируем и отвечаем на запрос на получение всех данных для любой сцены
             if ($data_array[0] == 'ready?scene') {
 
@@ -226,8 +227,8 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection->send("$data1");
 
             }
-
-
+*/
+/*
             //формируем и отвечаем на запрос на получение всех данных страницы настроек
             if ($data_array[0] == 'ready?settings') {
 
@@ -244,7 +245,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             }
-
+*/
             //Формируем и отвечаем на запрос на получение всех данных для страницы события
            if ($data_array[0] == 'ready?events') {
 

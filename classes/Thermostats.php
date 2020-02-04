@@ -17,6 +17,7 @@ class Thermostats extends Objects
     private $min_alarm;
     private $max_alarm;
     private $termostat;
+    private $idObject;
 
 
     /**
@@ -41,6 +42,7 @@ class Thermostats extends Objects
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
+            $this->idObject = $idObjectTermost;
             $this->id_termostat = $termostat->id;
             $this->min_threshold = $termostat->min_threshold;
             $this->max_threshold = $termostat->max_threshold;
@@ -195,7 +197,7 @@ class Thermostats extends Objects
         }
 
         //Отдаем значение визуальному компоненту
-        $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $termostat->id_object");
+        $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $this->idObject");
         $viewItem = $sql->fetch(PDO::FETCH_OBJ);
 
         if($viewItem->id) {

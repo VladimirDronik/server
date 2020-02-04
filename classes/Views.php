@@ -167,7 +167,7 @@ class Views extends System
      * Отдаем значение температуры визуальному отображению термостата
      * @param object $view -  итем с термостатом
      */
-    static private function getTermostats($view)
+    static private function getTermostats($view, $typeOutput = 'array')
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
                                             `termostats`.`gisteresis`, `view_items`.`title` AS `title` 
@@ -181,9 +181,19 @@ class Views extends System
             $curTemp = round($termostat->current);
             $newTemp = $termostat->optimal + $termostat->gisteresis;
 
+            if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type,
                 'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
                 'left' => $view->position_left, 'top' => $view->position_top);
+            else
+
+            $item = '{"id":'.$view->id.',
+            "type":"'.$view->type.'","cur_value":"'.$curTemp.'",
+            "set_value":"'.$newTemp.'",
+            "title":"'.$view->title.'",
+            "left":"'.$view->position_left.'",
+            "top":"'.$view->position_top.'"
+            }';
 
             return $item;
         } else return false;
@@ -194,8 +204,12 @@ class Views extends System
     /** 
      * Получаем данные из таблицы графиков
      * */
-    function getGraphs()
+    function getGraphs($params)
     {
+
+        $paramsArray = explode('&',$params);
+        $startDate = explode("=",$paramsArray[0])[1];
+        $endDate = explode("=", $paramsArray[1])[1];
 
         //Перебираем комнаты в, которых установлены термостаты
         $sql = parent::$db->query("SELECT `temperatures`.`id_room` AS id, `rooms`.`name` AS name, `rooms`.`style`  
@@ -207,9 +221,11 @@ class Views extends System
             unset($temperatureLog);
 
             //Ищем данные в таблице графиков, которые относятся к данным термостатам
-            $sql_graph = parent::$db->query("SELECT `graph_termostats`.`datetime` AS `date`, `graph_termostats`.`value` AS `value` FROM `graph` 
+            $sql_graph = parent::$db->query("SELECT `graph_termostats`.`datetime` AS `date`, `graph_termostats`.`value` AS `value` FROM `graph_termostats` 
                                               INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
-                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' ");
+                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' 
+                                              AND datetime > '$startDate' AND datetime < '$endDate'
+                                              ");
             while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
                 $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
             }
@@ -377,7 +393,7 @@ class Views extends System
            //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
             if($viewItem->type == 'temp'){
 
-                $itemTermostat = $this->getTermostats($viewItem);
+                $itemTermostat = $this->getTermostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
 
             }  else
@@ -441,7 +457,7 @@ class Views extends System
 
         // Если тип объекта термометр
         if ($viewObject->type == 'temp') {
-            return self::getTermostats($viewObject);
+            return self::getTermostats($viewObject, 'array');
         }
     }
 }

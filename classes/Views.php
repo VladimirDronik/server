@@ -220,12 +220,30 @@ class Views extends System
 
             unset($temperatureLog);
 
+            if ($startDate == $endDate) {
+
+                $datetimeString = " `graph_termostats`.`datetime` ";
+                $valueString = " `graph_termostats`.`value` ";
+                $whereString = " datetime > '$startDate' ";
+                $groupString = "";
+
+            } else {
+
+                $datetimeString = " date_format(`graph_termostats`.`datetime`, '%Y-%m-%d') ";
+                $valueString = " avg( `graph_termostats`.`value`) ";
+                $whereString = " datetime > '$startDate' AND datetime < '$endDate' ";
+                $groupString = " GROUP BY date_format(`graph_termostats`.`datetime`, '%Y-%m-%d') ";
+            }
+
+
             //Ищем данные в таблице графиков, которые относятся к данным термостатам
-            $sql_graph = parent::$db->query("SELECT `graph_termostats`.`datetime` AS `date`, `graph_termostats`.`value` AS `value` FROM `graph_termostats` 
+            $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
                                               INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
                                               WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' 
-                                              AND datetime > '$startDate' AND datetime < '$endDate'
+                                              AND $whereString
+                                              $groupString
                                               ");
+
             while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
                 $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
             }
@@ -320,7 +338,8 @@ class Views extends System
             $object = $this->getObjectAndMethod($item_id);
 
             $idObject = $object->id_object;
-            $idMethod = $object->id_method;
+            $onMethod = $object->on_method;
+            $offMethod = $object->off_method;
 
             //Если объект у итема существует
             if ($idObject!=null){
@@ -339,13 +358,18 @@ class Views extends System
                     $termostat->set_temperature($idObject, $set_value);
 
 
-                } else { //Если объект является обычной кнопкой
+                } elseif ($item_name=='switch') { //Если объект является переключателем
 
                     $newObject = new Objects();
                     $newObject->select($idObject);
 
                     //Меняем состояние итема и состояние объекта, физическим портом не управляем
                     $newObject->setStatus($item_status, true, false);
+
+                    if($item_status == 'on')
+                        $idMethod = $onMethod;
+                    else
+                        $idMethod = $offMethod;
 
                     //Выполняем действие для данного объекта
                     Action::runAction($idMethod, 'view', $item_id);
@@ -428,7 +452,7 @@ class Views extends System
     function getObjectAndMethod($idItem)
     {
 
-        $sql = parent::$db->query("SELECT `id_object`, `id_method`  FROM `view_items` WHERE `id`= $idItem");
+        $sql = parent::$db->query("SELECT `id_object`, `on_method`, `off_method`  FROM `view_items` WHERE `id`= $idItem");
         return $sql->fetch(PDO::FETCH_OBJ);
     }
 

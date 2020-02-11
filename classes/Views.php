@@ -14,7 +14,7 @@ class Views extends System
      *
      * @param string $viewType - указание на то, какие типы элементов ожидаются из БД, если не указано, то все загружаем
      */
-    function getRoomItems($viewType = null)
+    function getGroupItems($viewType = null)
     {
 
         if($viewType)
@@ -36,9 +36,17 @@ class Views extends System
             unset($items_array);
 
             //Отдаем элементы
-            $sql = parent::$db->query("SELECT * FROM `view_items` 
+            $sql = parent::$db->query("SELECT `view_items`.`id`,
+                                              `view_items`.`type`, 
+                                              `view_items`.`description`, 
+                                              `view_items`.`icon`,
+                                              `view_items`.`status`, 
+                                              `rooms`.`id` AS room_id,
+                                              `rooms`.`name` AS room_name
+                                       FROM `view_items` 
+                                       INNER JOIN `rooms` ON `rooms`.`id` = `view_items`.`room` 
                                        WHERE $whereString `room_group` = $rooms_obj->id 
-                                       AND `active` = 1 ORDER BY `sort`");
+                                       AND `active` = 1 ORDER BY `view_items`.`sort`");
 
             while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
 
@@ -47,19 +55,59 @@ class Views extends System
                 if($item)
                 $items_array[] = $item;
 
-                $room = array('id' => (int)$rooms_obj->id,
-                              'name' => $rooms_obj->name,
-                              'image' => $rooms_obj->image,
-                              'style' => $rooms_obj->style,
-                              'items' => $items_array);
+                $roomsArray[$viewObject->room_id] = $viewObject->room_name;
+
+
             }
 
-            $room_array[] = $room;
+            foreach($roomsArray as $key => $value)
+            $roomsInGroup[] = array('id' => (int)$key, 'name' => $value);
+
+
+            $room = array('id' => (int)$rooms_obj->id,
+                'name' => $rooms_obj->name,
+                'image' => $rooms_obj->image,
+                'style' => $rooms_obj->style,
+                'items' => $items_array,
+                'roomsInGroup' => $roomsInGroup);
+
+            $groupRoomsArray[] = $room;
         }
 
-        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$room_array));
+        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$groupRoomsArray));
     }
 
+
+    /**
+     * Получаем список элементов выбранной комнаты
+     * @param $idRoom - ид выбранной комнаты
+     */
+    function getRoomItems($idRoom) {
+
+        //Отдаем элементы
+        $sql = parent::$db->query("SELECT `view_items`.`id`,
+                                              `view_items`.`type`, 
+                                              `view_items`.`description`, 
+                                              `view_items`.`icon`,
+                                              `view_items`.`status`, 
+                                              `rooms`.`id` AS room_id,
+                                              `rooms`.`name` AS room_name
+                                       FROM `view_items` 
+                                       INNER JOIN `rooms` ON `rooms`.`id` = `view_items`.`room` 
+                                       WHERE `room` = $idRoom 
+                                       AND `active` = 1 ORDER BY `view_items`.`sort`");
+
+        while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
+
+            $item = self::getItem($viewObject);
+
+            if($item)
+                $items_array[] = $item;
+
+        }
+
+        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$items_array));
+    }
 
     /** Получаем список итемов, которые относятся к главной комнате */
     function getMainItems()
@@ -329,6 +377,7 @@ class Views extends System
         if ($data_array->status=='itemChange'){
 
             $item_id = $data_array->items[0]->id;
+            $itemDescription = $data_array->items[0]->description;
             $item_name = $data_array->items[0]->type;
             $item_status = $data_array->items[0]->status;
             $item_value = $data_array->items[0]->value;
@@ -371,8 +420,12 @@ class Views extends System
                     else
                         $idMethod = $offMethod;
 
+                    if($idMethod)
                     //Выполняем действие для данного объекта
                     Action::runAction($idMethod, 'view', $item_id);
+                    else
+                        System::addlog('Метод для кнопки "'.$itemDescription.'"" не определен');
+
 
                 }
 

@@ -167,7 +167,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if ($data_array[0] == 'ready?dashboard') {
 
                 //Получаем данные из БД
-                $data1 = $views->getRoomItems();
+                $data1 = $views->getGroupItems();
                 $data2 = $views->getMainItems();
 
 
@@ -177,6 +177,14 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection->send("$data2");
 
 
+            }
+
+            if ($data_array[0] == 'ready?room') {
+                //Получаем данные из БД
+                $data1 = $views->getRoomItems($data_array[2]);
+
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
             }
 /*
             //отвечаем температурами термостатов по запросу клиента

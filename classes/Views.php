@@ -91,6 +91,8 @@ class Views extends System
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
                                               `rooms`.`id` AS room_id,
+                                              `rooms`.`image` AS room_image,
+                                              `rooms`.`style` AS room_style,
                                               `rooms`.`name` AS room_name
                                        FROM `view_items` 
                                        INNER JOIN `rooms` ON `rooms`.`id` = `view_items`.`room` 
@@ -104,9 +106,16 @@ class Views extends System
             if($item)
                 $items_array[] = $item;
 
+            $roomID = $viewObject->room_id;
+            $roomImage = $viewObject->room_image;
+            $roomStyle = $viewObject->room_style;
         }
 
-        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$items_array));
+        return $json = json_encode(array('status'=>'singleRoom',
+                                        'id' => $roomID,
+                                        'name' => $roomImage,
+                                        'style' => $roomStyle,
+                                        'items' => $items_array));
     }
 
     /** Получаем список итемов, которые относятся к главной комнате */
@@ -424,7 +433,7 @@ class Views extends System
                     //Выполняем действие для данного объекта
                     Action::runAction($idMethod, 'view', $item_id);
                     else
-                        System::addlog('Метод для кнопки "'.$itemDescription.'"" не определен');
+                        System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен');
 
 
                 }

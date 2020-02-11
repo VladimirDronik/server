@@ -84,19 +84,22 @@ class Scripts extends Megad
      */
     function runscript($idScript, $param = null)
     {
-
-        $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
+        if($idScript) {
+            $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
                                          WHERE scripts.id = $idScript");
 
-        $script = $scriptsql->fetch(PDO::FETCH_OBJ); 
+            $script = $scriptsql->fetch(PDO::FETCH_OBJ);
 
-           $dir = str_replace(' ', '\ ', __DIR__);
-           exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
+            $dir = str_replace(' ', '\ ', __DIR__);
+            exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
-           System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running');
+            System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running');
 
-           return true;
-
+            return true;
+        }else {
+            System::addLog('error', 'Вызван метод, у которого не указан скрипт');
+            return false;
+        }
 
     }
 

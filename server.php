@@ -201,7 +201,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Формируем и отвечаем на запрос на получение данных на странице термометров
             if ($data_array[0] == 'ready?temperatures'){
 
-                $data1 = $views->getTemperatures();
+                $data1 = $views->getTemperatures($data_array[2]);
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                 $webconnection = $users[$data_array[1]];

@@ -200,14 +200,15 @@ class Views extends System
 
     /** 
      * Получаем список элементов и отдаем для отображения пресетов температуры
+     * $idRoom - id помещения, для которого получаем значение температуры
      */
-    function getTemperatures()
+    function getTemperatures($idroom)
     {
 
         $sql = parent::$db->query("SELECT `temperatures`.`id` AS id, `rooms`.`name` AS name, `temperatures`.`normal`,
                                    `temperatures`.`night`, `temperatures`.`eco`
                                    FROM `temperatures` INNER JOIN rooms 
-                                   ON `temperatures`.`id_room` = `rooms`.`id` ORDER BY `temperatures`.`sort`");
+                                   ON `temperatures`.`id_room` = `rooms`.`id` WHERE `rooms`.`id` = $idroom ORDER BY `temperatures`.`sort`");
 
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 

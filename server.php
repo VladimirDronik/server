@@ -213,7 +213,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
             if ($data_array[0] == 'getTempLog'){
 
-                $data1 = $views->getGraphs($data_array[2]);
+                $data1 = $views->getGraphs($data_array[2], $data_array[3]);
 
                 // Получаем id клиента, который делает запрос и отправляем ему json
                $webconnection = $users[$data_array[1]];

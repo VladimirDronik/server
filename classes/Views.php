@@ -33,7 +33,8 @@ class Views extends System
 
         while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {
 
-            unset($items_array);
+            unset($items_array, $roomsArray, $roomsInGroup);
+
 
             //Отдаем элементы
             $sql = parent::$db->query("SELECT `view_items`.`id`,
@@ -59,6 +60,8 @@ class Views extends System
 
 
             }
+
+
 
             foreach($roomsArray as $key => $value)
             $roomsInGroup[] = array('id' => (int)$key, 'name' => $value);
@@ -262,7 +265,7 @@ class Views extends System
     /** 
      * Получаем данные из таблицы графиков
      * */
-    function getGraphs($params)
+    function getGraphs($idRoom, $params)
     {
 
         $paramsArray = explode('&',$params);
@@ -272,7 +275,7 @@ class Views extends System
         //Перебираем комнаты в, которых установлены термостаты
         $sql = parent::$db->query("SELECT `temperatures`.`id_room` AS id, `rooms`.`name` AS name, `rooms`.`style`  
                                    FROM `temperatures` INNER JOIN rooms 
-                                   ON `temperatures`.`id_room` = `rooms`.`id` ORDER BY `temperatures`.`sort`");
+                                   ON `temperatures`.`id_room` = `rooms`.`id` WHERE `rooms`.`id`=$idRoom ORDER BY `temperatures`.`sort`");
 
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 
@@ -369,7 +372,7 @@ class Views extends System
             $item_key = $data_array->item->key;
 
             //Обновляем данные в таблице температур
-            parent::$db->exec("UPDATE `temperatures` SET  `$item_key` = $item_value  WHERE `id` = $item_id");
+            parent::$db->exec("UPDATE `temperatures` SET  `$item_key` = $item_value  WHERE `id_room` = $item_id");
 
         }
 

@@ -43,7 +43,7 @@ else {
 }
 
 if ($restart) {
-    System::addlog('Server is restarted from the watchdog');
+    System::addLog('socket', 'Server is restarted from the watchdog');
     system("php server.php restart");
 }
 

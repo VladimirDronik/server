@@ -95,6 +95,7 @@ class Objects extends System
     function select($object, $id_device=null, $num_port=null)
     {
 
+        //Если объект не указан явно, то пробуем искать его у порта на устройстве
         if ($object == null) {
 
             $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
@@ -108,16 +109,19 @@ class Objects extends System
                                     FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
                                     WHERE `objects`.`id`= $object");
 
-        $obj = $sql->fetch(PDO::FETCH_OBJ);
+        if ($sql->rowCount() != 0) {
+            $obj = $sql->fetch(PDO::FETCH_OBJ);
 
-        $this->id = $obj->id;
-        $this->type = $obj->type;
-        $this->status = $obj->status;
-        $this->view = $obj->view;
-        $this->port = $obj->port;
-        $this->portstate = $obj->portstate;
-        $this->device = (int)$obj->device;
-        return true;
+            $this->id = $obj->id;
+            $this->type = $obj->type;
+            $this->status = $obj->status;
+            $this->view = $obj->view;
+            $this->port = $obj->port;
+            $this->portstate = $obj->portstate;
+            $this->device = (int)$obj->device;
+            return true;
+        } else return false;
+
     }
 
 
@@ -137,7 +141,7 @@ class Objects extends System
 
 
         //Если статус объекта переключатель, то определяем текущее значение
-        $status = $this->check_switch_state($status);
+        $status = $this->checkSwitchState($status);
 
         //Выполняем по умолчанию смену состояния связанного порта
         if($portrelease)
@@ -160,15 +164,6 @@ class Objects extends System
         }
 
 
-        /*
-        if ($this->view!=null) {
-
-            //меняем представление объекта
-            $view = new Views();
-            $view->updateItem($this->view, $status);
-
-        }
-*/
         return $status;
 
     }
@@ -187,7 +182,7 @@ class Objects extends System
 
         $script = new Scripts();
 
-        $status = $this->check_switch_state($status);
+        $status = $this->checkSwitchState($status);
 
         if ($status=='on') $statusport=1;
         if ($status=='off') $statusport=0;
@@ -224,7 +219,7 @@ class Objects extends System
      * @param string $status
      * @return string
      */
-    function check_switch_state($status)
+    function checkSwitchState($status)
     {
 
         //Если статус объекта переключатель, то определяем текущее значение

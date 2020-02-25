@@ -4,6 +4,8 @@
  * Класс работы с термостатами
  */
 
+use Graphs;
+
 class Thermostats extends Objects
 {
 
@@ -15,6 +17,7 @@ class Thermostats extends Objects
     private $min_alarm;
     private $max_alarm;
     private $termostat;
+    private $idObject;
 
 
     /**
@@ -22,21 +25,25 @@ class Thermostats extends Objects
      *
      * @param int $id_termost
      */
-    function __construct($id_termost=null)
+    function __construct($idObjectTermost=null)
     {
 
-        if($id_termost!=null) {
+        if($idObjectTermost!=null) {
             $this->script = new Scripts();
 
-            $this->id_termostat = $id_termost;
+
 
             //Получаем все данные термостата
-            $scriptsql = parent::$db->query("SELECT current, optimal, gisteresis, thermostat, object, method_on, 
+            $scriptsql = parent::$db->query("SELECT id, current, optimal, gisteresis, thermostat, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` 
-                                            FROM termostats WHERE id=$this->id_termostat");
+                                            FROM termostats WHERE id_object=$idObjectTermost");
+
+
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
+            $this->idObject = $idObjectTermost;
+            $this->id_termostat = $termostat->id;
             $this->min_threshold = $termostat->min_threshold;
             $this->max_threshold = $termostat->max_threshold;
             $this->min_alarm = $termostat->min_alarm;
@@ -63,7 +70,8 @@ class Thermostats extends Objects
             if ($this->termostat->current >=($this->termostat->optimal))
             {
                 // Вызываем метод off
-                Action::runAction($this->termostat->method_off);
+                if($this->termostat->method_off)
+                Action::runAction($this->termostat->method_off, 'termostat');
                 return 0;
 
             }
@@ -71,7 +79,8 @@ class Thermostats extends Objects
             if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод on
-                Action::runAction($this->termostat->method_on);
+                if($this->termostat->method_on)
+                Action::runAction($this->termostat->method_on, 'termostat');
                 return 1;
             }
 
@@ -81,7 +90,8 @@ class Thermostats extends Objects
             if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
             {
                 // Вызываем метод off
-                Action::runAction($this->termostat->method_off);
+                if($this->termostat->method_off)
+                Action::runAction($this->termostat->method_off, 'termostat');
                 return 0;
             }
 
@@ -89,7 +99,8 @@ class Thermostats extends Objects
             if ($this->termostat->current > $this->termostat->optimal)
             {
                 // Вызываем метод on
-                Action::runAction($this->termostat->method_on);
+                if($this->termostat->method_on)
+                Action::runAction($this->termostat->method_on, 'termostat');
                 return 1;
             }
 
@@ -106,28 +117,55 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
 
-        //Ищем к какому порту и устройствву принадлежит термостат, а также его id термометра
-        $termostatsql = parent::$db->query("SELECT id_device, port, id_termometr FROM termostats
-                                         WHERE id=$this->id_termostat");
+        //TODO:: смотрим какой объект у термостата, если это термометр, тогда действия ниже, если это универсальный датчик, тогда берем информацию о температуре у этого датчика
+
+        //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
+        $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
+                                                   ports.id_device AS device, 
+                                                   ports.num_port AS port, 
+                                                   id_termometr,
+                                                   `name`
+                                              FROM termostats
+                                              INNER JOIN ports     
+                                              ON ports.object = termostats.id_object      
+                                              WHERE termostats.id=$this->id_termostat");
 
         $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
 
         do {
 
             do {
-                //вызываем status(int $port, int $id_device=null)
-                $termometrs = Megad::status($termostat->port, 'list', $termostat->id_device);
 
-                /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-                  e2b5d7020000:23.62;1fa3d7020000:23.62*/
-                $termometrsarray = explode(';', $termometrs);
+                //Если id термометра задан, то тогда это массив с термометрами
+                if($termostat->id_termometr) {
 
-                foreach ($termometrsarray as $termometr) {
-                    $termarray = explode(':', $termometr);
-                    if ($termarray[0] == $termostat->id_termometr)
-                        $id_termometr = $termarray[0];
-                    $termometr_value = $termarray[1];
+                //вызываем status(int $port, int $device=null)
+                $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
+
+
+                    /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                      e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                    $termometrsarray = explode(';', $termometrs);
+
+
+                    foreach ($termometrsarray as $termometr) {
+                        $termarray = explode(':', $termometr);
+
+                        if ($termarray[0] == $termostat->id_termometr)
+                            $id_termometr = $termarray[0];
+
+                        $termometr_value = $termarray[1];
+                    }
+
                 }
+                else //термометр висит прямо на порту
+                {
+                    $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
+                    $termometrsarray = explode(':', $termometrs);
+                    $id_termometr = $termostat->id_termometr;
+                    $termometr_value = $termometrsarray[1];
+                }
+
 
                 $alarm_cnt++;
 
@@ -135,6 +173,8 @@ class Thermostats extends Objects
                 if ($alarm_cnt>=10)
                 {
                     //Здесь сделать вызов обработчика аварии и выходим из цикла
+                    System::addLog('device', 'Термостат "' . $this->name . '" не доступен');
+
 
                     $error = true;
                     break 2;
@@ -151,15 +191,19 @@ class Thermostats extends Objects
         if (!$error) {
             //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
             parent::$db->query("UPDATE termostats SET `current` = $termometr_value
-                                         WHERE id_termometr='$id_termometr'");
+                                         WHERE id=$this->id_termostat");
 
-            parent::$db->query("INSERT INTO graph (`id`, `id_termostat`, `datetime`, `value`)
-                                      VALUES (null, '$this->id_termostat',CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termometr_value')");
+            Graphs::insertToTermostats($this->id_termostat, $termometr_value);
         }
 
         //Отдаем значение визуальному компоненту
+        $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $this->idObject");
+        $viewItem = $sql->fetch(PDO::FETCH_OBJ);
 
-
+        if($viewItem->id) {
+            $view = new Views();
+            $view->updateItem($viewItem->id);
+        }
     }
 
 
@@ -215,10 +259,9 @@ class Thermostats extends Objects
      *
      * @return void
      */
-    static function delete_old_values(){
+    static function deleteGraphOldValues(){
 
-        $days = parent::read_setting('graphdate');
-        parent::$db->query("DELETE FROM `graph` WHERE `datetime` <= (now() - INTERVAL $days DAY)");
+        Graphs::deleteOldValues('graph_termostats');
     }
 
 }

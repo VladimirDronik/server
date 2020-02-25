@@ -22,6 +22,7 @@ $dbpass = 'Alli80ed!';
 
 
 require_once __DIR__.'/classes/System.php';
+require_once __DIR__.'/classes/Device.php';
 require_once __DIR__.'/classes/Objects.php';
 require_once __DIR__.'/classes/Megad.php';
 require_once __DIR__.'/classes/Scripts.php';
@@ -30,5 +31,13 @@ require_once __DIR__.'/classes/Views.php';
 require_once __DIR__.'/classes/Users.php';
 require_once __DIR__.'/classes/Demostand.php';
 require_once __DIR__.'/classes/Action.php';
+require_once __DIR__.'/classes/Graphs.php';
+require_once __DIR__.'/classes/Count.php';
+require_once __DIR__.'/classes/Dimmer.php';
 
-System::db_connect($dbname, $dbuser, $dbpass);
+//i2c drivers
+require_once __DIR__.'/libs/mod_i2c_htu21d.php';
+
+
+
+System::dbConnect($dbname, $dbuser, $dbpass);

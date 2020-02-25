@@ -221,6 +221,17 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             }
 
+            //Отвечаем на запрос: предоставление информации о конкретном димере
+            if ($data_array[0] == 'getDimer'){
+
+                $data1 = $views->getDimer($data_array[2]);
+
+                // Получаем id клиента, который делает запрос и отправляем ему json
+                $webconnection = $users[$data_array[1]];
+                $webconnection->send("$data1");
+
+            }
+
 
 /*
             //формируем и отвечаем на запрос на получение всех данных для любой сцены

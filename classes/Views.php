@@ -550,4 +550,38 @@ class Views extends System
             return self::getTermostats($viewObject, 'array');
         }
     }
+
+    /** Функция отдает параметры выбранного димера
+     *
+     * @param int $idDimer
+     * @return json
+     */
+    function getDimer($idDimer) {
+
+        $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
+                                   `view_items`.`description` AS description 
+                                   FROM `dimmers`
+                                   INNER JOIN objects ON objects.id = dimmers.id_object 
+                                   INNER JOIN view_items ON view_items.id_object = objects.id 
+                                   WHERE view_items.id = $idDimer");
+
+        if($sql->rowCount() > 0) {
+
+            $dimer = $sql->fetch(PDO::FETCH_OBJ);
+
+            if ($dimer->value > 0)
+                $status = 'OFF';
+            else
+                $status = 'ON';
+
+
+           return $json = json_encode(array('response' => 'dimerLoad',
+                'id' => $idDimer,
+                'name' => $dimer->description,
+                'status' => $status,
+                'value' => $dimer->value));
+
+        }  else System::addlog('error','Данные для отображения"'.$idDimer.'"" не найдены');
+
+    }
 }

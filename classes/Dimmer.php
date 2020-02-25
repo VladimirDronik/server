@@ -16,18 +16,18 @@ class Dimmer extends Device
         self::$idObject = $idObject;
 
         $sql = parent::$db->query("SELECT `speed` FROM `dimmers` WHERE id_object = $idObject");
-        $dimmer = $sql->fetch(PDO::FETCH_OBJ);
-        self::$speed = $dimmer->speed;
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        self::$speed = $dimer->speed;
     }
 
     /**
      * Установка скорости смены порта диммера
      * @param int @value - значение скорости, которое хотим установить
      */
-    public function setSpeed($value)
+    public function setSpeed($speed)
     {
         parent::$db->query("UPDATE dimmers SET 
-                                `speed` = $value
+                                `speed` = $speed
                                 WHERE id_object = self::$idObject");
     }
 
@@ -49,6 +49,10 @@ class Dimmer extends Device
         $mega->setPWM($object->port, $value, $object->device, self::$speed);
 
         //Заносим текущее состояние в таблицу
+        if($value != 0)
+            parent::$db->query("UPDATE dimmers SET 
+                                `value` = $value
+                                WHERE id_object = self::$idObject");
     }
 
     /**
@@ -57,6 +61,9 @@ class Dimmer extends Device
     public function getValue()
     {
 
+        $sql = parent::$db->query("SELECT `value` FROM `dimmers` WHERE id_object = self::$idObject");
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        return $dimer->value;
     }
 
 }

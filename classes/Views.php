@@ -388,17 +388,17 @@ class Views extends System
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status=='itemChange'){
 
-            $itemID = $data_array->items[0]->id;
-            $itemDescription = $data_array->items[0]->description;
-            $itemType = $data_array->items[0]->type;
-            $itemStatus = $data_array->items[0]->status;
-            $itemValue = $data_array->items[0]->value;
-            $set_value = $data_array->items[0]->set_value;
+            $itemID = $data_array->items->id;
+            $itemDescription = $data_array->items->description;
+            $itemType = $data_array->items->type;
+            $itemStatus = $data_array->items->status;
+            $itemValue = $data_array->items->value;
+            $set_value = $data_array->items->set_value;
 
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
 
-            if (!$object) {
+            if ($object != false) {
 
             $idObject = $object->id_object;
             $onMethod = $object->on_method;
@@ -407,7 +407,7 @@ class Views extends System
             $newObject = new Objects();
             $newObject->select($idObject);
 
-            //Если объект у итема существует
+
 
 
                 //Если объект является термостатом или гигрометром
@@ -430,7 +430,7 @@ class Views extends System
                     System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен');
 
 
-                } elseif  ($itemType == 'Dimmer') {
+                } elseif  ($itemType == 'dimmer') {
 
                     $dimmer = new Dimmer($idObject);
 
@@ -438,7 +438,7 @@ class Views extends System
                     if ($itemValue == null) {
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID))
-                            System::addlog('error','Метод для димера "'.$itemDescription.'"" не определен');
+                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен');
 
                     } else { //пришло конкретное значение диммера
 

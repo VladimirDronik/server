@@ -39,5 +39,10 @@ require_once __DIR__ . '/classes/Dimmer.php';
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';
 
 
+//Classes for user scripts
+require_once __DIR__ . '/classes/Scriptlang/MyObject.php';
+require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
+require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
+
 
 System::dbConnect($dbname, $dbuser, $dbpass);

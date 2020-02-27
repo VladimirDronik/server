@@ -5,12 +5,6 @@
  */
 class Scripts extends Megad
 {
-    private $object;
-
-    function __construct()
-    {
-        $this->object =  new Objects();
-    }
 
 
     function playSound($sound)
@@ -79,8 +73,8 @@ class Scripts extends Megad
     /**
      * Выполняем нужный скрипт
      *
-     * @param int $id_object
-     * @param int $object ид объекта, который передается
+     * @param int $id_script ид скрипта
+     * @param int $param параметры выполнения скрипта
      */
     function runscript($idScript, $param = null)
     {

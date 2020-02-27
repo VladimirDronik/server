@@ -3,5 +3,6 @@ server.log
 /vendor
 /workerman
 /scripts
+/userscripts
 /sounds
 server.code-workspace

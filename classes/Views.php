@@ -556,7 +556,7 @@ class Views extends System
         if (($viewObject->type == 'button') ||
             ($viewObject->type == 'switch') ||
             ($viewObject->type == 'light') ||
-            ($viewObject->type == 'Dimmer') ||
+            ($viewObject->type == 'dimmer') ||
             ($viewObject->type == 'light-own') ||
             ($viewObject->type == 'socket'))
 

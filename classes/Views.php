@@ -596,6 +596,7 @@ class Views extends System
                 $state = 'ON';
 
             $items = array('id' => $idDimmer,
+                'type' => 'dimmer',
                 'name' => $dimmer->description,
                 'status' => $state,
                 'value' => $dimmer->value);

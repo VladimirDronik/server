@@ -388,12 +388,12 @@ class Views extends System
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status=='itemChange'){
 
-            $itemID = $data_array->items->id;
-            $itemDescription = $data_array->items->description;
-            $itemType = $data_array->items->type;
-            $itemStatus = $data_array->items->status;
-            $itemValue = $data_array->items->value;
-            $set_value = $data_array->items->set_value;
+            $itemID = $data_array->items[0]->id;
+            $itemDescription = $data_array->items[0]->description;
+            $itemType = $data_array->items[0]->type;
+            $itemStatus = $data_array->items[0]->status;
+            $itemValue = $data_array->items[0]->value;
+            $set_value = $data_array->items[0]->set_value;
 
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
@@ -580,7 +580,8 @@ class Views extends System
     function getDimmer($idDimmer) {
 
         $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
-                                   `view_items`.`description` AS description 
+                                   `view_items`.`description` AS description,
+                                    `objects`.`status` AS state
                                    FROM `dimmers`
                                    INNER JOIN objects ON objects.id = dimmers.id_object 
                                    INNER JOIN view_items ON view_items.id_object = objects.id 
@@ -590,15 +591,18 @@ class Views extends System
 
             $dimmer = $sql->fetch(PDO::FETCH_OBJ);
 
+            //Если нужно отправлять статус ON, когда value > 0
+            /*
             if ($dimmer->value > 0)
                 $state = 'OFF';
             else
                 $state = 'ON';
+            */
 
             $items = array('id' => $idDimmer,
                 'type' => 'dimmer',
                 'name' => $dimmer->description,
-                'status' => $state,
+                'status' => $dimmer->state,
                 'value' => $dimmer->value);
 
           return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));

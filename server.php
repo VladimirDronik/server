@@ -11,6 +11,22 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/include.php';
 use Workerman\Worker;
 
+
+
+//Включение debug mode
+if ($argv[2] == 'debug')
+    $debugmode = true;
+else
+    $system_message = false;
+
+
+
+if ($debugmode) print_r("\n\n\n
+====================================================================
+============= SERVER IS RUNNING ON DEBUG MODE ======================
+====================================================================\n\n\n");
+
+
 // массив для связи соединения пользователя и необходимого нам параметра
 $users = [];
 
@@ -34,11 +50,12 @@ $ws_worker->onWorkerStart = function() use (&$users)
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
         $data = json_decode($data);
-        global $system_message;
+
 
         //Если отправили сообщение от скрипта watchdog
         if( $data->message == 'watchdog'){
 
+            global $system_message;
 
             System::checkConnection();
 
@@ -106,7 +123,9 @@ $ws_worker->onConnect = function($connection) use (&$users)
 /** Получение данных от клиента */
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
-    print_r("=====================================\n");
+    global $debugmode;
+
+   if ($debugmode) print_r("=====================================\n");
 
         $views = new Views();
         $user = new Users();
@@ -120,7 +139,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
 
             //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-            $views->resData($data);
+            if ($debugmode) $views->resData($data);
+            else
+                passthru("(php -f thread.php views resData $data & ) >> /dev/null 2>&1");
+
 
             //отдаем данные об изменении всем другим зарегестрированным клиентам
             foreach ($users as $user) {
@@ -154,7 +176,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                         }
             } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
-
+/*
             if ($data_array[0] == 'ready?menu') {
 
                 //отправляем пользователю меню
@@ -162,6 +184,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send($data1);
             }
+*/
 
             //формируем и отвечаем на запрос на получение всех данных с главной страницы
             if ($data_array[0] == 'ready?dashboard') {
@@ -175,10 +198,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");
                 $webconnection->send("$data2");
-
-
             }
 
+
+            //Получаем комнаты и элементы внутри них
             if ($data_array[0] == 'ready?room') {
                 //Получаем данные из БД
                 $data1 = $views->getRoomItems($data_array[2]);
@@ -265,6 +288,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             }
 */
+/*
             //Формируем и отвечаем на запрос на получение всех данных для страницы события
            if ($data_array[0] == 'ready?events') {
 
@@ -280,7 +304,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                 }
             };
-
+*/
 };
 
 

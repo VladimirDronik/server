@@ -4,7 +4,6 @@
  * Класс работы с термостатами
  */
 
-use Graphs;
 
 class Thermostats extends Objects
 {

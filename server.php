@@ -185,6 +185,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection->send($data1);
             }
 */
+
             //формируем и отвечаем на запрос на получение всех данных с главной страницы
             if ($data_array[0] == 'ready?dashboard') {
 
@@ -197,10 +198,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection = $users[$data_array[1]];
                 $webconnection->send("$data1");
                 $webconnection->send("$data2");
-
-
             }
 
+
+            //Получаем комнаты и элементы внутри них
             if ($data_array[0] == 'ready?room') {
                 //Получаем данные из БД
                 $data1 = $views->getRoomItems($data_array[2]);
@@ -287,6 +288,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
             }
 */
+/*
             //Формируем и отвечаем на запрос на получение всех данных для страницы события
            if ($data_array[0] == 'ready?events') {
 
@@ -301,6 +303,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 $webconnection->send("$data3");
 
                 }
+*/
             };
 
 };

@@ -1,6 +1,5 @@
 <?php
 
-use Graphs;
 
 class Count extends Device
 {

@@ -1,2 +1,2 @@
-# server
-server for touchon project
+# CORE for TouchOn project 
+current ver 1.0

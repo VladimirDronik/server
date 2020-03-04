@@ -305,7 +305,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 }
 */
             };
-*/
+
 };
 
 

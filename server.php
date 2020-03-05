@@ -148,7 +148,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
             if ($debugmode) $views->resData($data);
             else
-                passthru("(php -f thread.php views resData $data & ) >> /dev/null 2>&1");
+                passthru("(php -f thread.php views resData '$data'' & ) >> /dev/null 2>&1");
 
 
             //отдаем данные об изменении всем другим зарегестрированным клиентам

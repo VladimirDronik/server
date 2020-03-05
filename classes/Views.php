@@ -426,7 +426,7 @@ class Views extends System
 
                 } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
 
-                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID))
+                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                     System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен');
 
 
@@ -437,7 +437,7 @@ class Views extends System
                     //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
                     if ($itemValue == null) {
 
-                        if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID))
+                        if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                             System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен');
 
                     } else { //пришло конкретное значение диммера
@@ -614,15 +614,20 @@ class Views extends System
     /**
      * Функция выполняет метод кнопки в зависимости от состоятиния
      */
-    static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId) {
+    static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId, $itemType) {
 
-        //Меняем состояние итема и состояние объекта, физическим портом не управляем
-        $newObject->setStatus($itemStatus, true, false);
+        //Для кнопки без фиксации не выполняем действий по смене статуса
+        if($itemType != 'button') {
+            //Меняем состояние итема и состояние объекта, физическим портом не управляем
+            $newObject->setStatus($itemStatus, true, false);
 
-        if($itemStatus == 'on')
-            $idMethod = $onMethod;
-        else
-            $idMethod = $offMethod;
+            if ($itemStatus == 'on')
+                $idMethod = $onMethod;
+            else
+                $idMethod = $offMethod;
+
+        } else $idMethod = $onMethod;
+
 
         if($idMethod) {
             //Выполняем действие для данного объекта

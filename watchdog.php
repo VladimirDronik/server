@@ -21,6 +21,19 @@ if (!$instance) {
 
 else {
 
+    //Читаем файл первый раз на предмет ошибок
+    $handle = @fopen("watchdog.txt", "r");
+    if ($handle) {
+        while (($buffer = fgets($handle, 4096)) !== false) {
+            if ($buffer != 'OK') $restart = true;
+        }
+        if (!feof($handle)) {
+            $restart = true;
+        }
+        fclose($handle);
+    }
+
+
     //Шлем тестовое сообщеение через сокет
     fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
 

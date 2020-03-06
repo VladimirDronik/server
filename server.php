@@ -64,15 +64,25 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
             global $system_message;
 
-            System::checkConnection();
+            $state = 'OK';
+
+            try {
+
+                System::checkConnection();
+
+            }  catch (\Throwable $e) {
+
+                $state = 'ERROR';
+            }
+
 
             $file = 'watchdog.txt';
 
             //Записываем в файл что всё ок и сервер работает
-            file_put_contents($file, 'OK', FILE_APPEND | LOCK_EX);
+            file_put_contents($file, $state, FILE_APPEND | LOCK_EX);
 
             if ($system_message)
-               print_r("Watchdog is OK\n");
+               print_r("Watchdog is $state\n");
 
         }
 
@@ -196,15 +206,33 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             //формируем и отвечаем на запрос на получение всех данных с главной страницы
             if ($data_array[0] == 'ready?dashboard') {
 
-                //Получаем данные из БД
-                $data1 = $views->getGroupItems();
-                $data2 = $views->getMainItems();
+                try {
+
+                    //Получаем данные из БД
+                    $data1 = $views->getGroupItems();
+                    $data2 = $views->getMainItems();
+
+                } catch (\Throwable $e) {
+                    $errorFlag = true;
+                }
+
+                if (isset($users[$data_array[1]])) {
+
+                    // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
+                    $webconnection = $users[$data_array[1]];
+                    $webconnection->send("$data1");
+                    $webconnection->send("$data2");
+
+                } else  $errorFlag = true;
+
+                //Если где-то что-то пошло не так, то ставим флаг ошибки для скрипта watchdog
+                if ($errorFlag == true)
+                {
+                    $file = 'watchdog.txt';
+                    file_put_contents($file, 'ERROR', FILE_APPEND | LOCK_EX);
+                }
 
 
-                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
-                $webconnection = $users[$data_array[1]];
-                $webconnection->send("$data1");
-                $webconnection->send("$data2");
             }
 
 

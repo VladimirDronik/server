@@ -223,7 +223,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $webconnection->send("$data1");
                     $webconnection->send("$data2");
 
-                } else  $errorFlag = true;
+                } //else  $errorFlag = true;
 
                 //Если где-то что-то пошло не так, то ставим флаг ошибки для скрипта watchdog
                 if ($errorFlag == true)

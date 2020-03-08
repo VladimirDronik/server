@@ -56,8 +56,8 @@ else {
 }
 
 if ($restart) {
-    System::addLog('socket', 'Server is restarted from the watchdog');
-    system("php server.php restart");
+    System::addLog('error', 'Server is restarted from the watchdog', 'socket_server');
+    passthru("(php -f server.php restart & ) >> /dev/null 2>&1");
 }
 
 return true;

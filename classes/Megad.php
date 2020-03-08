@@ -36,7 +36,7 @@ class Megad extends System
         if($device->active)
         file_get_contents("http://$device->ip_address/sec/?cmd=$numPort:$val");
         else
-            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+            system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }
 
     /**
@@ -56,7 +56,7 @@ class Megad extends System
         if($device->active)
             file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm=$val $speedParam");
         else
-            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+            system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }
 
     /** Получение значения порта.

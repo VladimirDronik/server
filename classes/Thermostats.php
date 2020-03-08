@@ -172,7 +172,7 @@ class Thermostats extends Objects
                 if ($alarm_cnt>=10)
                 {
                     //Здесь сделать вызов обработчика аварии и выходим из цикла
-                    System::addLog('device', 'Термостат "' . $this->name . '" не доступен');
+                    System::addLog('error', 'Термостат "' . $this->name . '" не доступен', 'sensor');
 
 
                     $error = true;

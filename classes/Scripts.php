@@ -86,13 +86,14 @@ class Scripts extends Megad
 
             $dir = str_replace(' ', '\ ', __DIR__);
 
-            exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
+            passthru("(cd {$dir}/../scripts && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
+           // exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
-            System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running');
+            System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running', 'scripts');
 
             return true;
         }else {
-            System::addLog('error', 'Вызван метод, у которого не указан скрипт');
+            System::addLog('error', 'Вызван метод, у которого не указан скрипт', 'scripts');
             return false;
         }
 

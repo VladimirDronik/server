@@ -43,20 +43,12 @@ class System
      * @param string $string - строка с логом
      * @return null
      */
-    static function addLog($typeLog, $string) {
+    static function addLog($typeLog, $string, $loggingPoint = null) {
 
-        $date = date('Y-m-d H:i:s', time());
-
-        if(self::readSetting('logging') == 'file') {
-
-            $file = ROOT_DIR.'/server.log';
-            file_put_contents($file, $date.'___'.$typeLog.':   '.$string."\n", FILE_APPEND | LOCK_EX);
-
-        } else
-            self::$db->query("INSERT INTO `logs` (`id`, `date`, `type`, `message`)
-                              VALUES (NULL, '$date', '$typeLog', '$string');");
+        passthru("(cd .. && php -f logging.php {$typeLog} '{$string}' {$loggingPoint} &) >> /dev/null 2>&1");
 
     }
+
 
     static function deleteLogs() {
 
@@ -64,7 +56,19 @@ class System
         self::$db->query("DELETE FROM logs WHERE `date` <= (now() - INTERVAL $days DAY)");
     }
 
+    /**
+     * Функция определяет логгировать данное действие или нет
+     */
+    static function loggingPoint($point) {
 
+        if($point) {
+            $sql = self::$db->query("SELECT `value` FROM `logging` WHERE `point`= '$point'");
+            $logging = $sql->fetch(PDO::FETCH_OBJ);
+            return $logging->value;
+        } else return true;
+
+
+    }
 
 
     /**

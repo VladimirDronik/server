@@ -427,7 +427,7 @@ class Views extends System
                 } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
 
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                    System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен');
+                    System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');
 
 
                 } elseif  ($itemType == 'dimmer') {
@@ -438,7 +438,7 @@ class Views extends System
                     if ($itemValue == null) {
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен');
+                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен', 'dimmer');
 
                     } else { //пришло конкретное значение диммера
 
@@ -607,7 +607,7 @@ class Views extends System
 
           return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));
 
-        }  else System::addlog('error','Данные для отображения"'.$idDimmer.'"" не найдены');
+        }  else System::addlog('error','Данные для отображения"'.$idDimmer.'"" не найдены', 'dimmer');
 
     }
 

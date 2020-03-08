@@ -33,23 +33,24 @@ else {
         fclose($handle);
     }
 
+   if (!$restart) {
+       //Шлем тестовое сообщеение через сокет
+       fwrite($instance, json_encode(['user' => $user, 'message' => $message]) . "\n");
 
-    //Шлем тестовое сообщеение через сокет
-    fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
+       sleep(1);
 
-    sleep(1);
-
-    //Читаем строку из файла
-    $handle = @fopen("watchdog.txt", "r");
-    if ($handle) {
-        while (($buffer = fgets($handle, 4096)) !== false) {
-            if ($buffer != 'OK') $restart = true;
-        }
-        if (!feof($handle)) {
-            $restart = true;
-        }
-        fclose($handle);
-    }
+       //Читаем строку из файла
+       $handle = @fopen("watchdog.txt", "r");
+       if ($handle) {
+           while (($buffer = fgets($handle, 4096)) !== false) {
+               if ($buffer != 'OK') $restart = true;
+           }
+           if (!feof($handle)) {
+               $restart = true;
+           }
+           fclose($handle);
+       }
+   }
 
     if (file_exists('watchdog.txt'))
     unlink('watchdog.txt');

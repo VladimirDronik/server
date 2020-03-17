@@ -240,7 +240,7 @@ class Views extends System
 
 
             $curTemp = round($termostat->current);
-            $newTemp = $termostat->optimal + $termostat->gisteresis;
+            $newTemp = (float)$termostat->optimal;
 
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type,

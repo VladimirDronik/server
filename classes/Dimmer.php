@@ -48,7 +48,7 @@ class Dimmer extends Device
         $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
 
         //Заносим текущее состояние в таблицу
-        if($value != 0)
+        //if($value != 0)
             parent::$db->query("UPDATE dimmers SET 
                                 `value` = $value
                                 WHERE id_object =".self::$idObject);

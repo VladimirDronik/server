@@ -272,13 +272,14 @@ class Views extends System
         $startDate = explode("=",$paramsArray[0])[1];
         $endDate = explode("=", $paramsArray[1])[1];
 
+        /*
         //Перебираем комнаты в, которых установлены термостаты
         $sql = parent::$db->query("SELECT `temperatures`.`id_room` AS id, `rooms`.`name` AS name, `rooms`.`style`  
                                    FROM `temperatures` INNER JOIN rooms 
                                    ON `temperatures`.`id_room` = `rooms`.`id` WHERE `rooms`.`id`=$idRoom ORDER BY `temperatures`.`sort`");
 
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
-
+*/
             unset($temperatureLog);
 
             if ($startDate == $endDate) {
@@ -300,7 +301,7 @@ class Views extends System
             //Ищем данные в таблице графиков, которые относятся к данным термостатам
             $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
                                               INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
-                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' 
+                                              WHERE `termostats`.`room`=$idRoom AND MINUTE(`graph_termostats`.`datetime`)='00' 
                                               AND $whereString
                                               $groupString
                                               ");
@@ -309,8 +310,8 @@ class Views extends System
                 $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
             }
 
-            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>$temperatureLog);
-        }
+            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>round($temperatureLog,2));
+ //       }
 
         return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));
     }
@@ -435,7 +436,7 @@ class Views extends System
                     $dimmer = new Dimmer($idObject);
 
                     //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                    if ($itemValue == null) {
+                    if ($itemValue === null) {
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                             System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен', 'dimmer');

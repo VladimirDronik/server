@@ -307,10 +307,10 @@ class Views extends System
                                               ");
 
             while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
-                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
+                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>round($temperatures->value,1));
             }
 
-            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>round($temperatureLog,2));
+            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>$temperatureLog);
  //       }
 
         return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));

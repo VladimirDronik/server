@@ -62,7 +62,7 @@ class Action extends Megad
 
         $porteasy = explode(';',self::$easy);
 
-        $device = parent::ip_address($porteasy[0]);
+        $device = parent::getDeviceParams($porteasy[0]);
         $ip_device = $device->ip_address;
 
 

@@ -18,6 +18,8 @@ class Thermostats extends Objects
     private $termostat;
     private $idObject;
     private $typeObject;
+    private $placetype;
+    private $usensor;
 
 
     /**
@@ -35,7 +37,8 @@ class Thermostats extends Objects
 
             //Получаем все данные термостата
             $scriptsql = parent::$db->query("SELECT  termostats.id AS id, current, optimal, gisteresis, thermostat, object, method_on, 
-                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`
+                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
+                                            `placetype`, `usensor_id`
                                             FROM termostats 
                                             INNER JOIN objects ON  id_object=objects.id
                                             WHERE id_object=$idObjectTermost");
@@ -51,6 +54,8 @@ class Thermostats extends Objects
             $this->min_alarm = $termostat->min_alarm;
             $this->max_alarm = $termostat->max_alarm;
             $this->typeObject = $termostat->type_object;
+            $this->placetype = $termostat->placetype;
+            $this->usensor = $termostat->usensor_id;
 
         }
 
@@ -121,9 +126,8 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
 
-        //смотрим какой объект у термостата, если это термометр, тогда действия ниже,
-        // если это универсальный датчик, тогда опрашиваем универсальный датчик
-        if($this->typeObject == 'termostat') {
+
+        if(($this->placetype == 'port') || ($this->placetype == '1wire')) {
 
             //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
             $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
@@ -143,7 +147,7 @@ class Thermostats extends Objects
                 do {
 
                     //Если id термометра задан, то тогда это массив с термометрами
-                    if ($termostat->id_termometr) {
+                    if ($this->placetype == '1wire') {
 
                         //вызываем status(int $port, int $device=null)
                         $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
@@ -192,7 +196,7 @@ class Thermostats extends Objects
 
         } else { //Термостат входит в состав унивесального датчика
 
-            $result = Usensors::checkI2C($this->idObject);
+            $result = Usensors::checkI2C($this->usensor);
             $termometr_value = $result['temp'];
 
         }

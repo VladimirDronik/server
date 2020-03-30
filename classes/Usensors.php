@@ -13,8 +13,7 @@ class Usensors extends Objects
      */
     static function checkI2C($idObject) {
 
-
-        $sql = parent::$db->query("SELECT devices.ip_address AS deviece_ip, devices.type AS device_type, 
+        $sql = parent::$db->query("SELECT devices.ip_address AS device_ip, devices.type AS device_type, 
                                    devices.id AS device_id , portsSCL.num_port AS SCL , portsSDA.num_port AS SDA 
                                    FROM `usensors` 
                                    INNER JOIN devices ON devices.id = usensors.device_id 
@@ -26,10 +25,16 @@ class Usensors extends Objects
 
         if ($sensor->device_type == 1) {
 
+            $cnt = 0;
+
             do {
-           echo     $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 0);
-           echo     $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 1);
+                $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 0);
+                $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 1);
                 $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'max44009', 0);
+
+            $cnt++;
+            if ($cnt>5) break;
+
             } while ($humidity == 'NA' AND $temperature == 'NA' AND $lux == 'NA');
 
         } else {

@@ -122,5 +122,19 @@ class System
         $setting = $sql->fetch(PDO::FETCH_OBJ);
     }
 
+    /**
+     * Првоерка доступности устройства
+     *
+     * @param $host - ip адрес устройства
+     * @return bool
+     */
+    static function ping($host) {
+
+        exec("ping -c 1 $host",$output, $status);
+        if ($status==0)
+            return true;
+        else
+            return false;
+    }
 
 }

@@ -79,14 +79,19 @@ class Scripts extends Megad
     function runscript($idScript, $param = null)
     {
         if($idScript) {
-            $scriptsql = parent::$db->query("SELECT scripts.link AS link FROM scripts 
+            $scriptsql = parent::$db->query("SELECT scripts.link AS link, system FROM scripts 
                                          WHERE scripts.id = $idScript");
 
             $script = $scriptsql->fetch(PDO::FETCH_OBJ);
 
             $dir = str_replace(' ', '\ ', __DIR__);
 
-            passthru("(cd {$dir}/../scripts && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
+            if($script->system)
+                $folder = '/../scripts';
+            else
+                $folder = '/../userscripts';
+
+            passthru("(cd {$dir}{$folder} && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
            // exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
             System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running', 'scripts');

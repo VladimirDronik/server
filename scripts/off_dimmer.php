@@ -10,3 +10,9 @@ $dimmer = new Dimmer($argv[1]);
 
 $dimmer->setValue(0);
 
+//Отображение у объекта приводим в состояние "выключено"
+
+$object = new Objects();
+
+$object->select($argv[1]);
+$object->setStatus('OFF');

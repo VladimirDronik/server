@@ -7,8 +7,16 @@
 require_once '../include.php';
 
 $dimmer = new Dimmer($argv[1]);
+$object = new Objects();
 
-if($dimmer->getValue() == 0)
+$object->select($argv[1]);
+
+
+if($dimmer->getValue() == 0) {
     $dimmer->setValue($dimmer->getOldValue());
-else
+    $object->setStatus('ON');
+}
+else {
     $dimmer->setValue(0);
+    $object->setStatus('OFF');
+}

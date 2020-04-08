@@ -8,6 +8,5 @@ require_once '../include.php';
 
 $dimmer = new Dimmer($argv[1]);
 
-//Включаем последний режим у диммера
 $dimmer->setValue(0);
 

@@ -47,11 +47,41 @@ class Dimmer extends Device
         $mega = new Megad();
         $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
 
+
+        if($value != 0) $oldvalue = " ,`oldvalue` = $value";
+
         //Заносим текущее состояние в таблицу
-        //if($value != 0)
             parent::$db->query("UPDATE dimmers SET 
-                                `value` = $value
+                                `value` = $value $oldvalue
                                 WHERE id_object =".self::$idObject);
+    }
+
+    public function setEasy($command)
+    {
+        $object = new Objects();
+        $object->select(self::$idObject);
+        $object->device;
+        $object->port;
+
+        //Отправляем данные устройству
+        $mega = new Megad();
+        $mega->set($object->port, $command, $object->device);
+
+        if ($command == 'x') {
+
+            //считываем реальное состояние порта
+            $realPWM = $mega->status($object->port, 'get');
+
+            //Вычисляем значение в процентах и заносим в таблицу
+            $value = round($realPWM*100/255);
+
+            if($value != 0) $oldvalue = " ,`oldvalue` = $value";
+
+            //Заносим текущее состояние в таблицу
+            parent::$db->query("UPDATE dimmers SET 
+                                `value` = $value $oldvalue
+                                WHERE id_object =".self::$idObject);
+        }
     }
 
     /**
@@ -62,6 +92,17 @@ class Dimmer extends Device
         $sql = parent::$db->query('SELECT `value` FROM `dimmers` WHERE id_object ='.self::$idObject);
         $dimer = $sql->fetch(PDO::FETCH_OBJ);
         return $dimer->value;
+    }
+
+    /**
+     * Получение значения предыдущего состояния диммера
+     * @return mixed
+     */
+    public function getOldValue()
+    {
+        $sql = parent::$db->query('SELECT `oldvalue` FROM `dimmers` WHERE id_object ='.self::$idObject);
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        return $dimer->oldvalue;
     }
 
 }

@@ -153,7 +153,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
         if($objjson->{'status'} == 'ping') {
 
-            $message = '{ "status": "pong")';
+            $message = '{"status": "pong"}';
 
             $webconnection = $users[$data_array[1]];
             $webconnection->send($message);

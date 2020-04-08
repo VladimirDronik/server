@@ -31,8 +31,9 @@ class Action extends Megad
      * @param $idMethod - метод, который выполняем
      * @param $whence - откуда был вызван скрипт
      * @param $idCausing - id сущности, которая вызывала действие
+     * @param $params - передаваемые параметры
      */
-    static public function runAction($idMethod, $whence=null, $idCausing=null)
+    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null)
     {
 
         $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system` 
@@ -44,7 +45,7 @@ class Action extends Megad
 
 
         if($method->is_system)
-            self::runSystem($method->id_object, self::params($whence, $idCausing));
+            self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
         else
         if (self::$easy)
             self::easy($method->id_object);
@@ -125,8 +126,9 @@ class Action extends Megad
      * Определение параметров, с которыми должен вызываться скрипт
      * @param $method
      * @param $whence
+     * @param $params - дополнителные параметры
      */
-    static private function params($whence, $idCausing)
+    static private function params($whence, $idCausing, $params = null)
     {
 
         if ($whence) {
@@ -152,7 +154,8 @@ class Action extends Megad
             }
 
             $paramsArray = explode(';', $method->param);
-            return implode(' ', $paramsArray);
+            $resParams = implode(' ', $paramsArray).' '.$params;
+            return $resParams;
 
         } else return null;
     }

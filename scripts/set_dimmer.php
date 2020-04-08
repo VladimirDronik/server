@@ -9,12 +9,6 @@ require_once '../include.php';
 
 $dimmer = new Dimmer($argv[1]);
 
-//Включаем последний режим у диммера
 $dimmer->setValue($argv[2]);
 
-//Работа с диммерами
-$dimmer = new Dimmer($argv[1]);
-//$dimmer->setSpeed(2); //Задаем значение скорости изменения значения диммера
-$dimmer->setValue($argv[2]); //Задаем значение диммера в процентах
-//$dimmer->getValue(); //Считываем текущее значение диммера при каждом отпускании физической кнопки
 

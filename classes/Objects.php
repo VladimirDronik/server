@@ -227,4 +227,12 @@ class Objects extends System
         return $status;
     }
 
+    /**
+     * Получение состояния порта
+     */
+    function getPortState()
+    {
+       return Megad::status($this->port,'get',$this->device);
+    }
+
 }

@@ -70,7 +70,7 @@ class Dimmer extends Device
         if ($command == 'x') {
 
             //считываем реальное состояние порта
-            $realPWM = $mega->status($object->port, 'get');
+            $realPWM = $mega->status($object->port, 'get', $object->device);
 
             //Вычисляем значение в процентах и заносим в таблицу
             $value = round($realPWM*100/255);
@@ -81,6 +81,12 @@ class Dimmer extends Device
             parent::$db->query("UPDATE dimmers SET 
                                 `value` = $value $oldvalue
                                 WHERE id_object =".self::$idObject);
+
+            //Отображение у объекта приводим в состояние "включено" или выключено
+            if ($value>0)
+            $object->setStatus('ON');
+            else
+                $object->setStatus('OFF');
         }
     }
 

@@ -128,10 +128,10 @@ class Action extends Megad
      * @param $whence
      * @param $params - дополнителные параметры
      */
-    static private function params($whence, $idCausing, $params = null)
+    static private function params($whence, $idCausing = null, $params = null)
     {
 
-        if ($whence) {
+        if (($whence)&&($idCausing)) {
 
             switch ($whence) {
 

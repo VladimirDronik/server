@@ -27,7 +27,7 @@ flush();
         //Определяем сработал одинарый, двойной клик или длительное нажатие
         if ($click == 2)
             $method = $port->dc_method;
-        elseif ($long == 2) {
+        elseif (($long == 1)||($long == 2)) {
             $method = $port->lc_method;
             $params = $long;
         }
@@ -37,7 +37,7 @@ flush();
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         if($method)
-        Action::runAction($method, 'device', null, $params);
+        Action::runAction($method, 'device', $port->object, $params);
 
 
 

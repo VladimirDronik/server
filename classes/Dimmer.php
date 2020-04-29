@@ -14,20 +14,19 @@ class Dimmer extends Device
     function __construct($idObject)
     {
         self::$idObject = $idObject;
-
         $sql = parent::$db->query("SELECT `speed` FROM `dimmers` WHERE id_object = $idObject");
-        $dimmer = $sql->fetch(PDO::FETCH_OBJ);
-        self::$speed = $dimmer->speed;
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        self::$speed = $dimer->speed;
     }
 
     /**
      * Установка скорости смены порта диммера
      * @param int @value - значение скорости, которое хотим установить
      */
-    public function setSpeed($value)
+    public function setSpeed($speed)
     {
         parent::$db->query("UPDATE dimmers SET 
-                                `speed` = $value
+                                `speed` = $speed
                                 WHERE id_object = self::$idObject");
     }
 
@@ -42,13 +41,53 @@ class Dimmer extends Device
         $object->device;
         $object->port;
 
-        $value = round(255*$value/100);
+        $valuePWM = round(255*$value/100);
 
         //Отправляем данные устройству
         $mega = new Megad();
-        $mega->setPWM($object->port, $value, $object->device, self::$speed);
+        $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
+
+
+        if($value != 0) $oldvalue = " ,`oldvalue` = $value";
 
         //Заносим текущее состояние в таблицу
+            parent::$db->query("UPDATE dimmers SET 
+                                `value` = $value $oldvalue
+                                WHERE id_object =".self::$idObject);
+    }
+
+    public function setEasy($command)
+    {
+        $object = new Objects();
+        $object->select(self::$idObject);
+        $object->device;
+        $object->port;
+
+        //Отправляем данные устройству
+        $mega = new Megad();
+        $mega->set($object->port, $command, $object->device);
+
+        if ($command == 'x') {
+
+            //считываем реальное состояние порта
+            $realPWM = $mega->status($object->port, 'get', $object->device);
+
+            //Вычисляем значение в процентах и заносим в таблицу
+            $value = round($realPWM*100/255);
+
+            if($value != 0) $oldvalue = " ,`oldvalue` = $value";
+
+            //Заносим текущее состояние в таблицу
+            parent::$db->query("UPDATE dimmers SET 
+                                `value` = $value $oldvalue
+                                WHERE id_object =".self::$idObject);
+
+            //Отображение у объекта приводим в состояние "включено" или выключено
+            if ($value>0)
+            $object->setStatus('ON');
+            else
+                $object->setStatus('OFF');
+        }
     }
 
     /**
@@ -56,7 +95,20 @@ class Dimmer extends Device
      */
     public function getValue()
     {
+        $sql = parent::$db->query('SELECT `value` FROM `dimmers` WHERE id_object ='.self::$idObject);
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        return $dimer->value;
+    }
 
+    /**
+     * Получение значения предыдущего состояния диммера
+     * @return mixed
+     */
+    public function getOldValue()
+    {
+        $sql = parent::$db->query('SELECT `oldvalue` FROM `dimmers` WHERE id_object ='.self::$idObject);
+        $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        return $dimer->oldvalue;
     }
 
 }

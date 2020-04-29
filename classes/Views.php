@@ -240,7 +240,7 @@ class Views extends System
 
 
             $curTemp = round($termostat->current);
-            $newTemp = $termostat->optimal + $termostat->gisteresis;
+            $newTemp = (float)$termostat->optimal;
 
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type,
@@ -272,13 +272,14 @@ class Views extends System
         $startDate = explode("=",$paramsArray[0])[1];
         $endDate = explode("=", $paramsArray[1])[1];
 
+        /*
         //Перебираем комнаты в, которых установлены термостаты
         $sql = parent::$db->query("SELECT `temperatures`.`id_room` AS id, `rooms`.`name` AS name, `rooms`.`style`  
                                    FROM `temperatures` INNER JOIN rooms 
                                    ON `temperatures`.`id_room` = `rooms`.`id` WHERE `rooms`.`id`=$idRoom ORDER BY `temperatures`.`sort`");
 
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
-
+*/
             unset($temperatureLog);
 
             if ($startDate == $endDate) {
@@ -300,17 +301,17 @@ class Views extends System
             //Ищем данные в таблице графиков, которые относятся к данным термостатам
             $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
                                               INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
-                                              WHERE `termostats`.`room`=$temp->id AND MINUTE(`graph_termostats`.`datetime`)='00' 
+                                              WHERE `termostats`.`room`=$idRoom AND MINUTE(`graph_termostats`.`datetime`)='00' 
                                               AND $whereString
                                               $groupString
                                               ");
 
             while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
-                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>$temperatures->value);
+                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>round($temperatures->value,1));
             }
 
             $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>$temperatureLog);
-        }
+ //       }
 
         return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));
     }
@@ -363,16 +364,15 @@ class Views extends System
 
         $data_array = json_decode($data);
 
-
         //Если клиент отправил запрос на изменение состояния термометра на странице термометров
         if ($data_array->status=='temperaturesChange'){
 
-            $item_id = $data_array->item->id;
-            $item_value = $data_array->item->value;
+            $itemID = $data_array->item->id;
+            $itemValue = $data_array->item->value;
             $item_key = $data_array->item->key;
 
             //Обновляем данные в таблице температур
-            parent::$db->exec("UPDATE `temperatures` SET  `$item_key` = $item_value  WHERE `id_room` = $item_id");
+            parent::$db->exec("UPDATE `temperatures` SET  `$item_key` = $itemValue  WHERE `id_room` = $itemID");
 
         }
 
@@ -381,7 +381,7 @@ class Views extends System
         if ($data_array->status=='eventChange'){
 
             //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-            parent::$db->exec("UPDATE `sheduler_points` SET `status` = '$item_status', `value` = $item_value  WHERE `view_items`.`id` = $item_id");
+            parent::$db->exec("UPDATE `sheduler_points` SET `status` = '$itemStatus', `value` = $itemValue  WHERE `view_items`.`id` = $itemID");
 
         }
 
@@ -389,58 +389,77 @@ class Views extends System
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status=='itemChange'){
 
-            $item_id = $data_array->items[0]->id;
+            $itemID = $data_array->items[0]->id;
             $itemDescription = $data_array->items[0]->description;
-            $item_name = $data_array->items[0]->type;
-            $item_status = $data_array->items[0]->status;
-            $item_value = $data_array->items[0]->value;
+            $itemType = $data_array->items[0]->type;
+            $itemStatus = $data_array->items[0]->status;
+            $itemValue = $data_array->items[0]->value;
             $set_value = $data_array->items[0]->set_value;
 
             //Получаем id объекта из таблицы представлений
-            $object = $this->getObjectAndMethod($item_id);
+            $object = $this->getObjectAndMethod($itemID);
+
+            if ($object != false) {
 
             $idObject = $object->id_object;
             $onMethod = $object->on_method;
             $offMethod = $object->off_method;
 
-            //Если объект у итема существует
-            if ($idObject!=null){
+            $newObject = new Objects();
+            $newObject->select($idObject);
+
+
+
 
                 //Если объект является термостатом или гигрометром
-                if(($item_name=='temp')||($item_name=='humidity')){
+                if(($itemType=='temp')||($itemType=='humidity')){
 
 
                     if ($set_value == '') $set_value = 'NULL';
 
                     //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-                    parent::$db->exec("UPDATE `view_items` SET `status` = '$item_status', `value` = $set_value  WHERE `view_items`.`id` = $item_id");
+                    parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus', `value` = $set_value  WHERE `view_items`.`id` = $itemID");
 
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
                     $termostat->set_temperature($idObject, $set_value);
 
 
-                } elseif ($item_name=='switch') { //Если объект является переключателем
+                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
 
-                    $newObject = new Objects();
-                    $newObject->select($idObject);
+                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                    System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');
 
-                    //Меняем состояние итема и состояние объекта, физическим портом не управляем
-                    $newObject->setStatus($item_status, true, false);
 
-                    if($item_status == 'on')
-                        $idMethod = $onMethod;
-                    else
-                        $idMethod = $offMethod;
+                } elseif  ($itemType == 'dimmer') {
 
-                    if($idMethod)
-                    //Выполняем действие для данного объекта
-                    Action::runAction($idMethod, 'view', $item_id);
-                    else
-                        System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен');
+                    $dimmer = new Dimmer($idObject);
+
+                    //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                    if ($itemValue === null) {
+
+                        if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен', 'dimmer');
+
+                    } else { //пришло конкретное значение диммера
+
+                        //Устанавливаем яркость диммера
+                        $dimmer->setValue($itemValue);
+                        $status = 'ON';
+
+                        if ($itemValue == 0) {
+                            //Выключаем диммер
+                            $status = 'OFF';
+                        }
+
+                        $newObject->setStatus($status, true, false);
+
+                    }
+
 
 
                 }
+
 
                 //TODO: проверить является ли объект виртуальным
 
@@ -517,9 +536,11 @@ class Views extends System
      */
     function getObjectAndMethod($idItem)
     {
-
         $sql = parent::$db->query("SELECT `id_object`, `on_method`, `off_method`  FROM `view_items` WHERE `id`= $idItem");
+
+        if($sql->rowCount() > 0)
         return $sql->fetch(PDO::FETCH_OBJ);
+        else return false;
     }
 
 
@@ -536,6 +557,7 @@ class Views extends System
         if (($viewObject->type == 'button') ||
             ($viewObject->type == 'switch') ||
             ($viewObject->type == 'light') ||
+            ($viewObject->type == 'dimmer') ||
             ($viewObject->type == 'light-own') ||
             ($viewObject->type == 'socket'))
 
@@ -550,4 +572,70 @@ class Views extends System
             return self::getTermostats($viewObject, 'array');
         }
     }
+
+    /** Функция отдает параметры выбранного димера
+     *
+     * @param int $idDimmer
+     * @return json
+     */
+    function getDimmer($idDimmer) {
+
+        $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
+                                   `view_items`.`description` AS description,
+                                    `objects`.`status` AS state
+                                   FROM `dimmers`
+                                   INNER JOIN objects ON objects.id = dimmers.id_object 
+                                   INNER JOIN view_items ON view_items.id_object = objects.id 
+                                   WHERE view_items.id = $idDimmer");
+
+        if($sql->rowCount() > 0) {
+
+            $dimmer = $sql->fetch(PDO::FETCH_OBJ);
+
+            //Если нужно отправлять статус ON, когда value > 0
+            /*
+            if ($dimmer->value > 0)
+                $state = 'OFF';
+            else
+                $state = 'ON';
+            */
+
+            $items = array('id' => $idDimmer,
+                'type' => 'dimmer',
+                'name' => $dimmer->description,
+                'status' => $dimmer->state,
+                'value' => $dimmer->value);
+
+          return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));
+
+        }  else System::addlog('error','Данные для отображения"'.$idDimmer.'"" не найдены', 'dimmer');
+
+    }
+
+    /**
+     * Функция выполняет метод кнопки в зависимости от состоятиния
+     */
+    static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId, $itemType) {
+
+        //Для кнопки без фиксации не выполняем действий по смене статуса
+        if($itemType != 'button') {
+            //Меняем состояние итема и состояние объекта, физическим портом не управляем
+            $newObject->setStatus($itemStatus, true, false);
+
+            if ($itemStatus == 'on')
+                $idMethod = $onMethod;
+            else
+                $idMethod = $offMethod;
+
+        } else $idMethod = $onMethod;
+
+
+        if($idMethod) {
+            //Выполняем действие для данного объекта
+            Action::runAction($idMethod, 'view', $itemId);
+            return true;
+        } else return false;
+
+    }
+
 }

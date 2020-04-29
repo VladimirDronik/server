@@ -4,7 +4,6 @@
  * Класс работы с термостатами
  */
 
-use Graphs;
 
 class Thermostats extends Objects
 {
@@ -18,6 +17,9 @@ class Thermostats extends Objects
     private $max_alarm;
     private $termostat;
     private $idObject;
+    private $typeObject;
+    private $placetype;
+    private $usensor;
 
 
     /**
@@ -34,9 +36,12 @@ class Thermostats extends Objects
 
 
             //Получаем все данные термостата
-            $scriptsql = parent::$db->query("SELECT id, current, optimal, gisteresis, thermostat, object, method_on, 
-                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm` 
-                                            FROM termostats WHERE id_object=$idObjectTermost");
+            $scriptsql = parent::$db->query("SELECT  termostats.id AS id, current, optimal, gisteresis, thermostat, object, method_on, 
+                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
+                                            `placetype`, `usensor_id`
+                                            FROM termostats 
+                                            INNER JOIN objects ON  id_object=objects.id
+                                            WHERE id_object=$idObjectTermost");
 
 
 
@@ -48,6 +53,10 @@ class Thermostats extends Objects
             $this->max_threshold = $termostat->max_threshold;
             $this->min_alarm = $termostat->min_alarm;
             $this->max_alarm = $termostat->max_alarm;
+            $this->typeObject = $termostat->type_object;
+            $this->placetype = $termostat->placetype;
+            $this->usensor = $termostat->usensor_id;
+
         }
 
     }
@@ -117,10 +126,11 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
 
-        //TODO:: смотрим какой объект у термостата, если это термометр, тогда действия ниже, если это универсальный датчик, тогда берем информацию о температуре у этого датчика
 
-        //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
-        $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
+        if(($this->placetype == 'port') || ($this->placetype == '1wire')) {
+
+            //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
+            $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
                                                    ports.id_device AS device, 
                                                    ports.num_port AS port, 
                                                    id_termometr,
@@ -130,61 +140,67 @@ class Thermostats extends Objects
                                               ON ports.object = termostats.id_object      
                                               WHERE termostats.id=$this->id_termostat");
 
-        $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
-
-        do {
+            $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
 
             do {
 
-                //Если id термометра задан, то тогда это массив с термометрами
-                if($termostat->id_termometr) {
+                do {
 
-                //вызываем status(int $port, int $device=null)
-                $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
+                    //Если id термометра задан, то тогда это массив с термометрами
+                    if ($this->placetype == '1wire') {
 
-
-                    /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-                      e2b5d7020000:23.62;1fa3d7020000:23.62*/
-                    $termometrsarray = explode(';', $termometrs);
+                        //вызываем status(int $port, int $device=null)
+                        $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
 
 
-                    foreach ($termometrsarray as $termometr) {
-                        $termarray = explode(':', $termometr);
+                        /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                          e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                        $termometrsarray = explode(';', $termometrs);
 
-                        if ($termarray[0] == $termostat->id_termometr)
-                            $id_termometr = $termarray[0];
 
-                        $termometr_value = $termarray[1];
+                        foreach ($termometrsarray as $termometr) {
+                            $termarray = explode(':', $termometr);
+
+                            if ($termarray[0] == $termostat->id_termometr)
+                                $id_termometr = $termarray[0];
+
+                            $termometr_value = $termarray[1];
+                        }
+
+                    } else //термометр висит прямо на порту
+                    {
+                        $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
+                        $termometrsarray = explode(':', $termometrs);
+                        $id_termometr = $termostat->id_termometr;
+                        $termometr_value = $termometrsarray[1];
                     }
 
-                }
-                else //термометр висит прямо на порту
-                {
-                    $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
-                    $termometrsarray = explode(':', $termometrs);
-                    $id_termometr = $termostat->id_termometr;
-                    $termometr_value = $termometrsarray[1];
-                }
+
+                    $alarm_cnt++;
+
+                    //Если превышено число аварийных значений термометра
+                    if ($alarm_cnt >= 10) {
+                        //Здесь сделать вызов обработчика аварии и выходим из цикла
+                        System::addLog('error', 'Термостат "' . $this->name . '" не доступен', 'sensor');
 
 
-                $alarm_cnt++;
+                        $error = true;
+                        break 2;
+                    }
 
-                //Если превышено число аварийных значений термометра
-                if ($alarm_cnt>=10)
-                {
-                    //Здесь сделать вызов обработчика аварии и выходим из цикла
-                    System::addLog('device', 'Термостат "' . $this->name . '" не доступен');
+                    //Проверка на аварийные занчения
+                } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
 
+                //Проверка на пороговые значения
+            } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
 
-                    $error = true;
-                    break 2;
-                }
+        } else { //Термостат входит в состав унивесального датчика
 
-                //Проверка на аварийные занчения
-            } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
+            $result = Usensors::checkI2C($this->usensor);
+            $termometr_value = $result['temp'];
 
-            //Проверка на пороговые значения
-        } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
+        }
+
 
         //TODO: проверка на слишком резкое изменеие значения
 

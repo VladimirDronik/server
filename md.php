@@ -7,6 +7,8 @@
 require_once 'include.php';
 flush();
 
+        $params = null;
+
 
         /* Определяем какой мегадевайс вызвал скрипт */
         $ip_device = $_SERVER['REMOTE_ADDR'];
@@ -14,7 +16,7 @@ flush();
         $click = $_GET['click']; //Одинарный (1) или двойной (2) клик
         $long = $_GET['m']; // При удержании передается 2, при отпускании 1
 
-        System::addLog('device', 'сработал порт устройства '.$_SERVER['REMOTE_ADDR'].': '.$pt.', click='.$click.', long='.$long);
+        System::addLog('message', 'сработал порт устройства '.$_SERVER['REMOTE_ADDR'].': '.$pt.', click='.$click.', long='.$long, 'port');
 
         Megad::$ip_device = $ip_device;
 
@@ -25,15 +27,17 @@ flush();
         //Определяем сработал одинарый, двойной клик или длительное нажатие
         if ($click == 2)
             $method = $port->dc_method;
-        elseif ($long == 2)
+        elseif (($long == 1)||($long == 2)) {
             $method = $port->lc_method;
+            $params = $long;
+        }
         else
             $method = $port->method;
 
 
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         if($method)
-        Action::runAction($method, 'device');
+        Action::runAction($method, 'device', $port->object, $params);
 
 
 

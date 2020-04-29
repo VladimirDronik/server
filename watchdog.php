@@ -21,12 +21,7 @@ if (!$instance) {
 
 else {
 
-    //Шлем тестовое сообщеение через сокет
-    fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
-
-    sleep(1);
-
-    //Читаем строку из файла
+    //Читаем файл первый раз на предмет ошибок
     $handle = @fopen("watchdog.txt", "r");
     if ($handle) {
         while (($buffer = fgets($handle, 4096)) !== false) {
@@ -38,13 +33,32 @@ else {
         fclose($handle);
     }
 
+   if (!$restart) {
+       //Шлем тестовое сообщеение через сокет
+       fwrite($instance, json_encode(['user' => $user, 'message' => $message]) . "\n");
+
+       sleep(1);
+
+       //Читаем строку из файла
+       $handle = @fopen("watchdog.txt", "r");
+       if ($handle) {
+           while (($buffer = fgets($handle, 4096)) !== false) {
+               if ($buffer != 'OK') $restart = true;
+           }
+           if (!feof($handle)) {
+               $restart = true;
+           }
+           fclose($handle);
+       }
+   }
+
     if (file_exists('watchdog.txt'))
     unlink('watchdog.txt');
 }
 
 if ($restart) {
-    System::addLog('socket', 'Server is restarted from the watchdog');
-    system("php server.php restart");
+    System::addLog('error', 'Server is restarted from the watchdog', 'socket_server');
+    passthru("(php -f server.php restart & ) >> /dev/null 2>&1");
 }
 
 return true;

@@ -9,7 +9,7 @@ class Megad extends System
     static public $ip_device;
 
     /** определение ip адреса устройства */
-    function ip_address($id_device)
+    function getDeviceParams($id_device)
     {
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
@@ -30,13 +30,13 @@ class Megad extends System
      */
     function set($numPort, $val, $id_device=null)
     {
-        $device = $this->ip_address($id_device);
+        $device = $this->getDeviceParams($id_device);
 
         //Если устройство не активно, то не выполняем действие
         if($device->active)
         file_get_contents("http://$device->ip_address/sec/?cmd=$numPort:$val");
         else
-            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+            system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }
 
     /**
@@ -47,7 +47,7 @@ class Megad extends System
      */
     function setPWM($numPort, $val, $id_device, $speed=0)
     {
-        $device = $this->ip_address($id_device);
+        $device = $this->getDeviceParams($id_device);
 
         if ($speed != 0)
             $speedParam = '&cnt='.$speed;
@@ -56,7 +56,7 @@ class Megad extends System
         if($device->active)
             file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm=$val $speedParam");
         else
-            system::addLog('device', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно");
+            system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }
 
     /** Получение значения порта.
@@ -69,7 +69,7 @@ class Megad extends System
       static function status($port, $command, $idDevice = null, $param = 0)
     {
 
-        $state = file_get_contents("http://".self::ip_address($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");
+        $state = file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[$param];
     }
@@ -82,7 +82,7 @@ class Megad extends System
      */
     static function resetCount($idDevice, $port)
     {
-        file_get_contents("http://".self::ip_address($idDevice)->ip_address."/sec/?pt=$port&cnt=0");
+        file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cnt=0");
     }
 
 
@@ -102,6 +102,27 @@ class Megad extends System
                                   WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
 
         return $sth->fetch(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Получение данных с датчика I2C
+     *
+     * @param int $idDevice - ид контроллера
+     * @param int $SDA - порт SDA на котором висит датчик
+     * @param int $SCL - порт SCL на котором висит датчик
+     * @param string $sensorType - тип датчика
+     * @param string $i2cParametr - парметры, которые передаем датчику
+     *
+     * @return string $value - значение датчика
+     */
+    static function getI2C($idDevice, $SDA, $SCL, $sensorType, $i2cParametr)
+    {
+        $device = self::getDeviceParams($idDevice);
+        
+        if($device->active)
+            $value = file_get_contents("http://$device->ip_address/sec/?pt=$SDA&scl=$SCL&i2c_dev=$sensorType&i2c_par=$i2cParametr");
+
+        return $value;
     }
 
 

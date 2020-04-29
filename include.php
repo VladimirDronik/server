@@ -33,11 +33,18 @@ require_once __DIR__.'/classes/Demostand.php';
 require_once __DIR__.'/classes/Action.php';
 require_once __DIR__.'/classes/Graphs.php';
 require_once __DIR__.'/classes/Count.php';
-require_once __DIR__.'/classes/Dimmer.php';
+require_once __DIR__. '/classes/Dimmer.php';
+require_once __DIR__. '/classes/Usensors.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';
+require_once __DIR__.'/libs/mod_i2c_MAX44009.php';
 
+
+//Classes for user scripts
+require_once __DIR__ . '/classes/Scriptlang/MyObject.php';
+require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
+require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 
 System::dbConnect($dbname, $dbuser, $dbpass);

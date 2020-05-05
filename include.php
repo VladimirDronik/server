@@ -39,6 +39,7 @@ require_once __DIR__. '/classes/Usensors.php';
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';
 require_once __DIR__.'/libs/mod_i2c_MAX44009.php';
+require_once __DIR__.'/libs/mod_i2c_bh1750.php';
 
 
 //Classes for user scripts

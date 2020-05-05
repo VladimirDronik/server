@@ -53,7 +53,7 @@ class Device extends System
                                          WHERE `id`=$device->id");
 
                     //Записываем в лог информацию
-                    parent::addLog('error', 'Device "'.$device->description.'" ('.$device->host.') not availible', 'controller');
+                    parent::addLog('error', 'Device "'.$device->description.'" ('.$device->host.') is not available', 'controller');
 
                     //TODO:: Отправка сообщения пользователю о том, что устройство не доступно
                 } elseif (!$device->active) {  //Если устройство было не активно
@@ -63,7 +63,7 @@ class Device extends System
                                          WHERE `id`=$device->id");
 
                     //Записываем в лог информацию
-                    parent::addLog('message', 'Device  {$device->description} ({$device->host})  is availible', 'controller');
+                    parent::addLog('message', 'Device  {$device->description} ({$device->host})  is available', 'controller');
 
                     //TODO:: Отправка сообщения пользователю о том, что устройство снова доступно
                 }

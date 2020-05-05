@@ -23,6 +23,7 @@ class Usensors extends Objects
 
         $sensor = $sql->fetch(PDO::FETCH_OBJ);
 
+        //Для мегадевейса используем аппаратный способ чтения для датчиков  HTU21D и MAX44009
         if ($sensor->device_type == 1) {
 
             $cnt = 0;
@@ -38,6 +39,7 @@ class Usensors extends Objects
             } while ($humidity == 'NA' AND $temperature == 'NA' AND $lux == 'NA');
 
         } else {
+            //Для нашего контроллера используем программный способ чтения для датчиков  HTU21D и BH1750
 
             define("SCL", $sensor->SCL);
             define("SDA", $sensor->SDA);
@@ -49,7 +51,7 @@ class Usensors extends Objects
 
             $temperature = get_htu21d_temperature();
             $humidity = get_htu21d_humidity();
-            $lux = get_lux();
+            $lux = get_lux1750();
         }
 
         //Добавляем данные в таблицу унивесального датчика

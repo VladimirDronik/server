@@ -35,6 +35,7 @@ require_once __DIR__.'/classes/Graphs.php';
 require_once __DIR__.'/classes/Count.php';
 require_once __DIR__. '/classes/Dimmer.php';
 require_once __DIR__. '/classes/Usensors.php';
+require_once __DIR__. '/classes/SendSocket.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

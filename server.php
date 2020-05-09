@@ -147,17 +147,12 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $views = new Views();
         $user = new Users();
 
+
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
+        $send = new SendSocket($data_array, $users, $views);
 
-        if($objjson->{'status'} == 'ping') {
-
-            $message = '{"status": "pong"}';
-
-            $webconnection = $users[$data_array[1]];
-            $webconnection->send($message);
-        } else {
 
             //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
             if ((($objjson->{'status'}) == 'itemChange') || (($objjson->{'status'}) == 'settingChange') || (($objjson->{'status'}) == 'eventChange') || (($objjson->{'status'}) == 'temperaturesChange')) {
@@ -201,152 +196,43 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                 }
             } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
-                /*
-                            if ($data_array[0] == 'ready?menu') {
 
-                                //отправляем пользователю меню
-                                $data1 = $views->getMenu();
-                                $webconnection = $users[$data_array[1]];
-                                $webconnection->send($data1);
-                            }
-                */
+                if($data_array[0]  == 'ping') {
+                    $send->ping();
+                }
 
                 //формируем и отвечаем на запрос на получение всех данных с главной страницы
                 if ($data_array[0] == 'ready?dashboard') {
-
-                    try {
-
-                        //Получаем данные из БД
-                        $data1 = $views->getGroupItems();
-                        $data2 = $views->getMainItems();
-
-                    } catch (\Throwable $e) {
-                        $errorFlag = true;
-                    }
-
-                    if (isset($users[$data_array[1]])) {
-
-                        // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
-                        $webconnection = $users[$data_array[1]];
-                        $webconnection->send("$data1");
-                        $webconnection->send("$data2");
-
-                    } //else  $errorFlag = true;
-
-                    //Если где-то что-то пошло не так, то ставим флаг ошибки для скрипта watchdog
-                    if ($errorFlag == true) {
-                        $file = 'watchdog.txt';
-                        file_put_contents($file, 'ERROR', FILE_APPEND | LOCK_EX);
-                    }
-
-
+                  $send->readyDashboard();
                 }
-
 
                 //Получаем комнаты и элементы внутри них
                 if ($data_array[0] == 'ready?room') {
-                    //Получаем данные из БД
-                    $data1 = $views->getRoomItems($data_array[2]);
-
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
+                    $send->readyRoom();
                 }
-                /*
-                            //отвечаем температурами термостатов по запросу клиента
-                            if ($data_array[0] == 'ready?dashboard_termostat') {
-
-                                $data1 = $views->getRoomItems('temp');
-
-                                $webconnection = $users[$data_array[1]];
-                                $webconnection->send($data1);
-                            }
-                */
-
 
                 //Формируем и отвечаем на запрос на получение данных на странице термометров
                 if ($data_array[0] == 'ready?temperatures') {
-
-                    $data1 = $views->getTemperatures($data_array[2]);
-
-                    // Получаем id клиента, который делает запрос и отправляем ему json
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
+                $send->readyTemperatures();
                 }
-
 
                 //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
                 if ($data_array[0] == 'getTempLog') {
-
-                    $data1 = $views->getGraphs($data_array[2], $data_array[3]);
-
-                    // Получаем id клиента, который делает запрос и отправляем ему json
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
-
+                    $send->getTempLog();
                 }
 
                 //Отвечаем на запрос: предоставление информации о конкретном димере
                 if ($data_array[0] == 'getDimer') {
-
-                    $data1 = $views->getDimmer($data_array[2]);
-
-                    // Получаем id клиента, который делает запрос и отправляем ему json
-                    $webconnection = $users[$data_array[1]];
-                    $webconnection->send("$data1");
-
+                    $send->getDimmer();
                 }
 
+                //Формируем и отвечаем на запрос на получение всех данных для страницы события
+                if ($data_array[0] == 'ready?events') {
+                    $send->readyEvents();
+                }
 
-                /*
-                            //формируем и отвечаем на запрос на получение всех данных для любой сцены
-                            if ($data_array[0] == 'ready?scene') {
-
-                                //Получаем данные из БД
-                                $data1 = $views->getScenesItems();
-
-                                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
-                                $webconnection = $users[$data_array[1]];
-
-                                $webconnection->send("$data1");
-
-                            }
-                */
-                /*
-                            //формируем и отвечаем на запрос на получение всех данных страницы настроек
-                            if ($data_array[0] == 'ready?settings') {
-
-                                //Отдаем все настройки
-                                $data1 = $views->getAllSettings();
-
-                                //Формируем ответ со всеми юзерами, котоыре доступны
-                                $data2 = $user->get_all_users();
-
-                                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками //
-                                $webconnection = $users[$data_array[1]];
-                                $webconnection->send("$data1");
-                                $webconnection->send("$data2");
-
-
-                            }
-                */
-                /*
-                            //Формируем и отвечаем на запрос на получение всех данных для страницы события
-                           if ($data_array[0] == 'ready?events') {
-
-                                //Отвечаем на запрос получения всех данных страницы событий
-                                $data1 = $views->getEvents('w');
-                                $data2 = $views->getEvents('m');
-                                $data3 = $views->getEvents('y');
-
-                                $webconnection = $users[$data_array[1]];
-                                $webconnection->send("$data1");
-                                $webconnection->send("$data2");
-                                $webconnection->send("$data3");
-
-                                }
-                */
             };
-        }
+
 };
 
 

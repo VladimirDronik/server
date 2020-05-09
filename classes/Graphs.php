@@ -35,6 +35,19 @@ class Graphs extends System
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termostatValue')");
     }
 
+    /**
+     * Добавление значения в график светостатов
+     *
+     * @param $idLightstat
+     * @param $lightstatValue
+     */
+    static function insertToLightstats($idLightstat, $lightstatValue)
+    {
+        parent::$db->query("INSERT INTO graph_lightstats (`id`, `id_lightstat`, `datetime`, `value`)
+                            VALUES (null, '$idLightstat',
+                            CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$lightstatValue')");
+    }
+
 
     /**
      * Удаление старых данных из таблицы графиков

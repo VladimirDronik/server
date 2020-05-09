@@ -20,6 +20,7 @@ class Thermostats extends Objects
     private $typeObject;
     private $placetype;
     private $usensor;
+    private $name;
 
 
     /**
@@ -38,7 +39,7 @@ class Thermostats extends Objects
             //Получаем все данные термостата
             $scriptsql = parent::$db->query("SELECT  termostats.id AS id, current, optimal, gisteresis, thermostat, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
-                                            `placetype`, `usensor_id`
+                                            `placetype`, `usensor_id`, `name`
                                             FROM termostats 
                                             INNER JOIN objects ON  id_object=objects.id
                                             WHERE id_object=$idObjectTermost");
@@ -56,6 +57,7 @@ class Thermostats extends Objects
             $this->typeObject = $termostat->type_object;
             $this->placetype = $termostat->placetype;
             $this->usensor = $termostat->usensor_id;
+            $this->name = $termostat->name;
 
         }
 

@@ -155,13 +155,6 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
         $status = $data_array[0];
 
-            //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
-            if (($status == 'itemChange') || ($status == 'settingChange') ||
-                ($status == 'eventChange') || ($status == 'temperaturesChange')) {
-
-                $send->changeReseive($data, $debugmode);
-
-            }
 
             if (($status == 'adduser') || ($status == 'edituser') || ($status == 'deleteuser') || ($status == 'checkuser')) {
 
@@ -188,39 +181,41 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 }
             }
 
-                if($status  == 'ping') {
+            switch ($status) {
+
+                case 'ping':
                     $send->ping();
-                }
+                    break;
 
-                //формируем и отвечаем на запрос на получение всех данных с главной страницы
-                if ($status == 'ready?dashboard') {
-                  $send->readyDashboard();
-                }
+                case 'ready?dashboard':
+                    $send->readyDashboard();
+                    break;
 
-                //Получаем комнаты и элементы внутри них
-                if ($status == 'ready?room') {
+                case 'ready?room':
                     $send->readyRoom();
-                }
+                    break;
 
-                //Формируем и отвечаем на запрос на получение данных на странице термометров
-                if ($status == 'ready?temperatures') {
-                $send->readyTemperatures();
-                }
+                case 'ready?temperatures':
+                    $send->readyTemperatures();
+                    break;
 
-                //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
-                if ($status == 'getTempLog') {
+                case 'getTempLog':
                     $send->getTempLog();
-                }
+                    break;
 
-                //Отвечаем на запрос: предоставление информации о конкретном димере
-                if ($status == 'getDimer') {
+                case 'getDimer':
                     $send->getDimmer();
-                }
-
-                //Формируем и отвечаем на запрос на получение всех данных для страницы события
-                if ($status == 'ready?events') {
+                    break;
+                    
+                case 'ready?events'
                     $send->readyEvents();
-                }
+                    break;
+
+                default: //itemChange, settingChange, eventChange, temperaturesChange
+                    $send->changeReseive($data, $debugmode);
+                    break;
+
+            }
 
 
 

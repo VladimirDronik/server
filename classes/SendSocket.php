@@ -24,7 +24,7 @@ class SendSocket
         $this->currentUser = $data[1];
 
         $this->param1 = $data[2];
-        $this->param1 = $data[3];
+        $this->param2 = $data[3];
 
         $this->users = $users;
         $this->views = $views;
@@ -120,6 +120,26 @@ class SendSocket
             file_put_contents($file, 'ERROR', FILE_APPEND | LOCK_EX);
         }
 
+    }
+
+    /**
+     * Функция вызывается, если на мобильном устройтсве нажали. Выполняем действие и передаем имзменения
+     * всем подключенным клиентам
+     * @param $debugmode - флаг отладки вебсокетов
+     */
+    public function changeResive($debugmode)
+    {
+        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
+        if ($debugmode) $this->views->resData($this->data);
+        else
+            passthru("(php -f thread.php views resData '$this->data' & ) >> /dev/null 2>&1");
+
+        //отдаем данные об изменении всем другим зарегестрированным клиентам
+        foreach ($this->users as $user) {
+
+            $webconnection = $user;
+            $webconnection->send($this->data);
+        }
     }
 
 }

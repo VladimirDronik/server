@@ -153,26 +153,17 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
         $send = new SendSocket($data_array, $users, $views);
 
+        $status = $data_array[0];
 
             //Если клиент изменил данные и уведомил об этом сервер (например нажали кнопку)
-            if ((($objjson->{'status'}) == 'itemChange') || (($objjson->{'status'}) == 'settingChange') || (($objjson->{'status'}) == 'eventChange') || (($objjson->{'status'}) == 'temperaturesChange')) {
+            if (($status == 'itemChange') || ($status == 'settingChange') ||
+                ($status == 'eventChange') || ($status == 'temperaturesChange')) {
 
+                $send->changeResive($debugmode);
 
-                //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-                if ($debugmode) $views->resData($data);
-                else
-                    passthru("(php -f thread.php views resData '$data' & ) >> /dev/null 2>&1");
+            }
 
-
-                //отдаем данные об изменении всем другим зарегестрированным клиентам
-                foreach ($users as $user) {
-
-                    $webconnection = $user;
-                    $webconnection->send($data);
-                }
-
-                //Если клиент отправил данные на получение или изменение юзера
-            } elseif ((($objjson->{'status'}) == 'adduser') || (($objjson->{'status'}) == 'edituser') || (($objjson->{'status'}) == 'deleteuser') || ($data_array[0] == 'checkuser')) {
+            if (($status == 'adduser') || ($status == 'edituser') || ($status == 'deleteuser') || ($status == 'checkuser')) {
 
                 $method = $objjson->{'status'};
                 //Отвечаем на запрос разрешения вывода данных или запрещение
@@ -195,43 +186,43 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $webconnection->send("$data1");
 
                 }
-            } else { //Выполняется, если клиент шлет какой-то другой запрос, например на получение всех данных при загрузке страницы
+            }
 
-                if($data_array[0]  == 'ping') {
+                if($status  == 'ping') {
                     $send->ping();
                 }
 
                 //формируем и отвечаем на запрос на получение всех данных с главной страницы
-                if ($data_array[0] == 'ready?dashboard') {
+                if ($status == 'ready?dashboard') {
                   $send->readyDashboard();
                 }
 
                 //Получаем комнаты и элементы внутри них
-                if ($data_array[0] == 'ready?room') {
+                if ($status == 'ready?room') {
                     $send->readyRoom();
                 }
 
                 //Формируем и отвечаем на запрос на получение данных на странице термометров
-                if ($data_array[0] == 'ready?temperatures') {
+                if ($status == 'ready?temperatures') {
                 $send->readyTemperatures();
                 }
 
                 //Формируем и отвечаем на запрос на получение данных на странице термометров для построения графиков
-                if ($data_array[0] == 'getTempLog') {
+                if ($status == 'getTempLog') {
                     $send->getTempLog();
                 }
 
                 //Отвечаем на запрос: предоставление информации о конкретном димере
-                if ($data_array[0] == 'getDimer') {
+                if ($status == 'getDimer') {
                     $send->getDimmer();
                 }
 
                 //Формируем и отвечаем на запрос на получение всех данных для страницы события
-                if ($data_array[0] == 'ready?events') {
+                if ($status == 'ready?events') {
                     $send->readyEvents();
                 }
 
-            };
+
 
 };
 

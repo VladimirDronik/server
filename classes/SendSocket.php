@@ -127,12 +127,13 @@ class SendSocket
      * всем подключенным клиентам
      * @param $debugmode - флаг отладки вебсокетов
      */
-    public function changeResive($debugmode)
+    public function changeReseive($debugmode)
     {
+        
         //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-        if ($debugmode) $this->views->resData($this->data);
+        if ($debugmode) $this->views->resData($this->param1);
         else
-            passthru("(php -f thread.php views resData '$this->data' & ) >> /dev/null 2>&1");
+            passthru("(php -f thread.php views resData '$this->param1' & ) >> /dev/null 2>&1");
 
         //отдаем данные об изменении всем другим зарегестрированным клиентам
         foreach ($this->users as $user) {

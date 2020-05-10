@@ -206,8 +206,8 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 case 'getDimer':
                     $send->getDimmer();
                     break;
-                    
-                case 'ready?events'
+
+                case 'ready?events':
                     $send->readyEvents();
                     break;
 

@@ -159,7 +159,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             if (($status == 'itemChange') || ($status == 'settingChange') ||
                 ($status == 'eventChange') || ($status == 'temperaturesChange')) {
 
-                $send->changeReseive($debugmode);
+                $send->changeReseive($data, $debugmode);
 
             }
 

@@ -31,15 +31,14 @@ class Lightstats extends Objects
     function __construct($idObjectLightstat=null)
     {
 
-        if($$idObjectLightstat!=null) {
+        if($idObjectLightstat!=null) {
             $this->script = new Scripts();
 
 
-
             //Получаем все данные светостата
-            $scriptsql = parent::$db->query("SELECT  lightstat.id AS id, current, optimal, gisteresis, mode, object, method_on, 
+            $scriptsql = parent::$db->query("SELECT  lightstats.id AS id, current, optimal, gisteresis, mode, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
-                                            `placetype`, `usensor_id`, `name`
+                                            `placetype`, `usensor_id`, lightstats.`name`
                                             FROM lightstats 
                                             INNER JOIN objects ON  id_object=objects.id
                                             WHERE id_object=$idObjectLightstat");
@@ -49,7 +48,7 @@ class Lightstats extends Objects
             $this->lightstat = $lightstat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
             $this->idObject = $idObjectLightstat;
-            $this->id_termostat = $lightstat->id;
+            $this->id_lightstat = $lightstat->id;
             $this->min_threshold = $lightstat->min_threshold;
             $this->max_threshold = $lightstat->max_threshold;
             $this->min_alarm = $lightstat->min_alarm;
@@ -131,15 +130,19 @@ class Lightstats extends Objects
 
         if($this->placetype == 'port') {
 
+
+
             //Ищем к какому порту и устройству принадлежит светостат
             $lightstatsql = parent::$db->query("SELECT lightstats.id_object AS id_object,
-                                                  lightstats.port_SDA, lightstats.port_SCL, lightstats.`name`,
+                                                  ports_SDA.num_port AS SDA, ports_SCL.num_port AS SCL, lightstats.port_SCL, lightstats.`name`,
                                                   devices.ip_address AS ip
                                               FROM lightstats     
-                                              INNER JOIN ports
-                                              ON ports.id = lightstats.port_SCL
+                                              INNER JOIN ports AS ports_SDA
+                                              ON ports_SDA.id = lightstats.port_SDA
+                                              INNER JOIN ports AS ports_SCL
+                                              ON ports_SCL.id = lightstats.port_SCL
                                               INNER JOIN devices
-                                              ON  ports.id_device = devices.id
+                                              ON  ports_SDA.id_device = devices.id
                                               WHERE lightstats.id=$this->id_lightstat");
 
             $lightstat = $lightstatsql->fetch(PDO::FETCH_OBJ);
@@ -147,6 +150,7 @@ class Lightstats extends Objects
             do {
 
                 do {
+
                         define("SCL", $lightstat->SCL);
                         define("SDA", $lightstat->SDA);
                         define("MD", "http://{$lightstat->ip}/sec/?");
@@ -154,8 +158,7 @@ class Lightstats extends Objects
                         // Вариант реализации I2C: 1 - полностью программный; 2 - частично аппаратный (прошивка 3.43beta1 и выше)
                         define("V", "2");
 
-                        $lux = get_lux1750();
-
+                      $lux = get_lux1750();
 
                     $alarm_cnt++;
 
@@ -175,7 +178,7 @@ class Lightstats extends Objects
                 //Проверка на пороговые значения
             } while (($lux < $this->min_threshold) || ($lux > $this->max_threshold));
 
-        } else { //Термостат входит в состав унивесального датчика
+        } else { //Светостат входит в состав унивесального датчика
 
             $result = Usensors::checkI2C($this->usensor);
             $lux = $result['lux'];

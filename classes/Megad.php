@@ -54,7 +54,7 @@ class Megad extends System
 
         //Если устройство не активно, то не выполняем действие
         if($device->active)
-            file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm=$val $speedParam");
+            file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm={$val}{$speedParam}");
         else
             system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }

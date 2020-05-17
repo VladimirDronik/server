@@ -13,6 +13,14 @@ class Usensors extends Objects
      */
     static function checkI2C($idObject) {
 
+        echo "SELECT devices.ip_address AS device_ip, devices.type AS device_type, 
+                                   devices.id AS device_id , portsSCL.num_port AS SCL , portsSDA.num_port AS SDA 
+                                   FROM `usensors` 
+                                   INNER JOIN devices ON devices.id = usensors.device_id 
+                                   INNER JOIN ports AS portsSCL ON portsSCL.id = usensors.port_SCL 
+                                   INNER JOIN ports AS portsSDA ON portsSDA.id = usensors.port_SDA 
+                                   WHERE id_object = $idObject";
+
         $sql = parent::$db->query("SELECT devices.ip_address AS device_ip, devices.type AS device_type, 
                                    devices.id AS device_id , portsSCL.num_port AS SCL , portsSDA.num_port AS SDA 
                                    FROM `usensors` 

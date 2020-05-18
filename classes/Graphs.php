@@ -43,7 +43,7 @@ class Graphs extends System
      */
     static function insertToLightstats($idLightstat, $lightstatValue)
     {
-        parent::$db->query("INSERT INTO graph_lightstats (`id`, `id_lightstat`, `datetime`, `value`)
+        parent::$db->query("INSERT INTO graph_lights (`id`, `id_lightstat`, `datetime`, `value`)
                             VALUES (null, '$idLightstat',
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$lightstatValue')");
     }

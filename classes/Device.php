@@ -63,7 +63,7 @@ class Device extends System
                                          WHERE `id`=$device->id");
 
                     //Записываем в лог информацию
-                    parent::addLog('message', 'Device  {$device->description} ({$device->host})  is available', 'controller');
+                    parent::addLog('message', "Device  {$device->description} ({$device->host})  is available", 'controller');
 
                     //TODO:: Отправка сообщения пользователю о том, что устройство снова доступно
                 }

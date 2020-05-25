@@ -203,6 +203,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->getTempLog();
                     break;
 
+                case 'getMessages':
+                    $send->getMessages();
+                    break;
+
                 case 'getDimer':
                     $send->getDimmer();
                     break;

@@ -51,7 +51,7 @@ class Scripts extends Megad
                                     FROM scheduler_tasks        
                                     INNER JOIN scheduler_points ON scheduler_tasks.id =  scheduler_points.id_task
                                     WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time'
-                                    AND `scheduler_points`.`type` = '$type' ");
+                                    AND `scheduler_points`.`type` = '$type' AND scheduler_tasks.`active` = 1 ");
 
 
         while ($action = $sql->fetch(PDO::FETCH_OBJ))

@@ -14,11 +14,12 @@ class SendSocket
     private $data;
     private $users;
     private $views;
+    private $message;
     private $currentUser;
     private $param1;
     private $param2;
 
-    function __construct($data, $users, Views $views)
+    function __construct($data, $users, Views $views, Message $message)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -28,6 +29,7 @@ class SendSocket
 
         $this->users = $users;
         $this->views = $views;
+        $this->message = $message;
     }
 
     /**
@@ -57,7 +59,7 @@ class SendSocket
     }
 
     /**
-     * Получение данных со страницы термометров
+     * Отпарвка  данных со страницы термометров
      */
     public function readyTemperatures()
     {
@@ -65,7 +67,7 @@ class SendSocket
     }
 
     /**
-     * Получение данных о графиках температуру
+     * Отпарвка  данных о графиках температуру
      */
     public function getTempLog()
     {
@@ -73,7 +75,7 @@ class SendSocket
     }
 
     /**
-     * Получение данных диммера
+     * Отпарвка данных диммера
      */
     public function getDimmer()
     {
@@ -81,7 +83,15 @@ class SendSocket
     }
 
     /**
-     * Получение событий
+     * Отправка сообщений
+     */
+    public function getMessages()
+    {
+        $this->send($this->message->getMessages());
+    }
+
+    /**
+     * Отправка событий
      */
     public function readyEvents()
     {
@@ -92,7 +102,7 @@ class SendSocket
     }
 
     /**
-     * Получение всех данных для главной страницы
+     * Отпарвка  всех данных для главной страницы
      */
     public function readyDashboard()
     {

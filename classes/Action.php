@@ -36,7 +36,7 @@ class Action extends Megad
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null)
     {
 
-        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system` 
+        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
                                    FROM `methods` WHERE `methods`.`id`=$idMethod");
         $method = $sql->fetch(PDO::FETCH_OBJ);
 
@@ -52,6 +52,7 @@ class Action extends Megad
         else
             self::script($method->id_object);
 
+        Message::sendByObject($method->id_object);
     }
 
     /**

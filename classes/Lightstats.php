@@ -26,7 +26,7 @@ class Lightstats extends Objects
     /**
      * Конструктор определяет рабочие параметры у выбранного светостата
      *
-     * @param int $id_termost
+     * @param int $id_lightstat
      */
     function __construct($idObjectLightstat=null)
     {
@@ -90,7 +90,7 @@ class Lightstats extends Objects
             {
                 // Вызываем метод on
                 if($this->lightstat->method_on)
-                Action::runAction($this->termostat->method_on, 'lightstat');
+                Action::runAction($this->lightstat->method_on, 'lightstat');
                 return 1;
             }
 
@@ -205,6 +205,6 @@ class Lightstats extends Objects
             $view->updateItem($viewItem->id);
         }
     }
-    
+
 
 }

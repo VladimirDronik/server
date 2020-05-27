@@ -7,6 +7,7 @@
  * Time: 19:36
  */
 use Views;
+use Messages;
 
 class SendSocket
 {
@@ -19,7 +20,7 @@ class SendSocket
     private $param1;
     private $param2;
 
-    function __construct($data, $users, Views $views, Message $message)
+    function __construct($data, $users, Views $views, Messages $message)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -91,6 +92,22 @@ class SendSocket
     }
 
     /**
+     * Удаление всех сообщений
+     */
+    public function deleteMessages()
+    {
+        $this->send($this->message->deleteMessages());
+    }
+
+    /**
+     * Пометка сообщения прочитанным
+     */
+    public function messageRead()
+    {
+        $this->send($this->message->messageRead( $this->param1));
+    }
+
+    /**
      * Отправка событий
      */
     public function readyEvents()
@@ -107,7 +124,6 @@ class SendSocket
     public function readyDashboard()
     {
         try {
-
             //Получаем данные из БД
             $data1 = $this->views->getGroupItems();
             $data2 = $this->views->getMainItems();
@@ -118,9 +134,17 @@ class SendSocket
 
         if (isset($this->currentUser)) {
 
-            // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
-            $this->send($data1);
-            $this->send($data2);
+            //Сравниваем ID юзера с имеющимися в БД и принимаем решение о допуске
+            //Добавляем ID-push, если он не был добавлен до этого
+            if (Users::checkuser($this->currentUser, $this->param1)) {
+
+                // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
+                $this->send($data1);
+                $this->send($data2);
+            } else
+                $this->send('{ "status": "error", "errorMessage": "access denied"}');
+
+
 
         } //else  $errorFlag = true;
 

@@ -52,7 +52,7 @@ class Action extends Megad
         else
             self::script($method->id_object);
 
-        Message::sendByObject($method->id_object);
+        Messages::sendByObject($method->id_object);
     }
 
     /**

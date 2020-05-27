@@ -3,7 +3,7 @@
 /**
  * Класс для отправки push уведомлений пользователям
  */
-class Message
+class Messages
 {
     /**
      * Отправка сообщения всем зарегистрированным ползователям из таблицы devusers
@@ -57,19 +57,46 @@ class Message
     }
 
 
+    /**
+     * Функция отдет последние 30 сообщений из таблицы
+     * @return string
+     */
     public function getMessages()
     {
-        $sql = parent::$db->query("SELECT id, text, priority, date FROM `messages`  ORDER BY date DESC LIMIT 30");
+        $sql = system::$db->query("SELECT id, text, priority, date, is_read FROM `messages`  ORDER BY date DESC LIMIT 30");
 
         if($sql->rowCount()) {
 
             while ($message = $sql->fetch(PDO::FETCH_OBJ)) {
 
                 $MessageLog[] = array('id' => $message->id, 'text' => $message->text,
-                    'priority' => $message->priority, 'date' => $message->date);
+                    'priority' => $message->priority, 'date' => $message->date, 'is_read', $message->is_read);
             }
 
             return $json = json_encode(array('status'=>'messagesLoad', 'messages'=>$MessageLog));
         }
     }
+
+    /**
+     * Удаление всех сообщений
+     *
+     * @return string
+     */
+    public function deleteMessages()
+    {
+        system::$db->query("TRUNCATE messages");
+        return $json = json_encode(array('status'=>'messagesDelete', 'status' => 'success'));
+    }
+
+    /**
+     * Помечает выбранное сообщение прочитанным
+     * @param $idMessage
+     * @return string
+     */
+    public function messageRead($idMessage)
+    {
+        system::$db->query("UPDATE `messages` SET `is_read` = '1' WHERE `messages`.`id` = $idMessage");
+        return $json = json_encode(array('status'=>'messagesIsRead', 'status' => 'success'));
+    }
+
 }

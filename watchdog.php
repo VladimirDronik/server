@@ -35,7 +35,7 @@ else {
 
    if (!$restart) {
        //Шлем тестовое сообщеение через сокет
-       fwrite($instance, json_encode(['user' => $user, 'message' => $message]) . "\n");
+       fwrite($instance, json_encode(['user' => $user, 'Messages' => $message]) . "\n");
 
        sleep(1);
 

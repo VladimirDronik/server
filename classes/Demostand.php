@@ -13,7 +13,7 @@ class Demostand
     static function send($message){
 
         $instance = stream_socket_client(self::$socketserver);
-        fwrite($instance, json_encode(['user' => self::$user, 'message' => $message])  . "\n");
+        fwrite($instance, json_encode(['user' => self::$user, 'Messages' => $message])  . "\n");
 
     }
 

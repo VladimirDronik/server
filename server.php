@@ -146,12 +146,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
         $views = new Views();
         $user = new Users();
+        $messages = new Messages();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views);
+        $send = new SendSocket($data_array, $users, $views, $messages);
 
         $status = $data_array[0];
 
@@ -205,6 +206,14 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 
                 case 'getMessages':
                     $send->getMessages();
+                    break;
+
+                case 'deleteMessages':
+                    $send->deleteMessages();
+                    break;
+
+                case 'messageRead':
+                    $send->messageRead();
                     break;
 
                 case 'getDimer':

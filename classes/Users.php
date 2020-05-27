@@ -6,29 +6,34 @@ class Users extends System
 
     /** Получаем id девайса с которого делается запрос и сравниваем его с имеющимися в таблице devuser, а также отправляем
      * дефолтный дашборд */
-    function checkuser($device){
+    public static function checkuser($idDevice, $idPush = null){
 
         global $localsocket;
 
-/*
-        $sql = parent::$db->query("SELECT * FROM `devusers` WHERE `dev_id`= '$device'");
+        $sql = parent::$db->query("SELECT push_id FROM `devusers` WHERE `dev_id`= '$idDevice'");
+
 
         if ($result_dev = $sql->fetch(PDO::FETCH_OBJ)){
+
+          
+            if(!$result_dev->push_id)
+                parent::$db->query("UPDATE devusers SET `push_id` = '$idPush' WHERE `dev_id`= '$idDevice'");
+
+            return true;
             //Если нашли юзера, то шлем ему его дефолтный дашборд
 
-            $message = '{ "status": "success", "defscene":'.$result_dev->def_scene.'}';
-            $success = true;
+            //$message = '{ "status": "success", "defscene":'.$result_dev->def_scene.'}';
+            //$success = true;
         }
         else {
             //Возврат ошибки при несуществующем клиенте
-
-            $message = '{ "status": "error", "errorMessage": "access denied"}';
-            $success = false;
+            return false;
+            //$message = '{ "status": "error", "errorMessage": "access denied"}';
+            //$success = false;
        }
-*/
-        $message = '{ "status": "success", "defscene":0}';
 
-        return $message;
+       // $message = '{ "status": "success", "defscene":0}';
+
     }
 
 

@@ -47,7 +47,8 @@ $ws_worker->reloadable = true;
 // создаём обработчик, который будет выполняться при запуске ws-сервера
 $ws_worker->onWorkerStart = function() use (&$users)
 {
-//var_dump($users);
+
+
     // создаём локальный tcp-сервер, чтобы отправлять на него сообщения из кода нашего сайта
     $inner_tcp_worker = new Worker("tcp://127.0.0.1:5678");
 
@@ -56,6 +57,8 @@ $ws_worker->onWorkerStart = function() use (&$users)
     // создаём обработчик сообщений, который будет срабатывать,
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
+
+        global $debugmode;
         $data = json_decode($data);
 
 
@@ -105,8 +108,9 @@ $ws_worker->onWorkerStart = function() use (&$users)
                    }
             }
 
-          
-            
+        if ($debugmode)
+            print_r('Received message: '.$data->message." \n");
+
     };
     $inner_tcp_worker->listen();
 };
@@ -208,6 +212,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->getMessages();
                     break;
 
+                case 'getCountMessages':
+                    $send->getCountMessages();
+                    break;
+
                 case 'deleteMessages':
                     $send->deleteMessages();
                     break;
@@ -223,6 +231,12 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 case 'ready?events':
                     $send->readyEvents();
                     break;
+
+
+                case 'testMessage': //TODO: Убрать это
+                    $send->testMessage();
+                    break;
+
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

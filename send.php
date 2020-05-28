@@ -10,6 +10,6 @@ $message = '{ "status": "itemChange", "items": [{"id":2,"name":"light-own","stat
 // connect to a local tcp-server
 $instance = stream_socket_client($localsocket);
 // send message
-fwrite($instance, json_encode(['user' => $user, 'Messages' => $message])  . "\n");
+fwrite($instance, json_encode(['user' => $user, 'message' => $message])  . "\n");
 
 

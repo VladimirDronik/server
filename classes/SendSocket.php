@@ -84,11 +84,11 @@ class SendSocket
     }
 
     /**
-     * Отправка сообщений
+     * Получение сообщений
      */
     public function getMessages()
     {
-        $this->send($this->message->getMessages());
+        $this->send($this->message->getMessages($this->param1));
     }
 
     /**
@@ -99,12 +99,17 @@ class SendSocket
         $this->send($this->message->deleteMessages());
     }
 
+    public function getCountMessages()
+    {
+        $this->send($this->message->getCountMessages());
+    }
+
     /**
      * Пометка сообщения прочитанным
      */
     public function messageRead()
     {
-        $this->send($this->message->messageRead( $this->param1));
+        $this->send($this->message->messageRead($this->param1));
     }
 
     /**
@@ -116,6 +121,12 @@ class SendSocket
         $this->send($this->views->getEvents('w'));
         $this->send($this->views->getEvents('m'));
         $this->send($this->views->getEvents('y'));
+    }
+
+    public function testMessage()
+    {
+        //TODO: Убрать это
+        Messages::send($this->param1, $this->param2);
     }
 
     /**
@@ -176,5 +187,6 @@ class SendSocket
             $webconnection->send($fulldata);
         }
     }
+
 
 }

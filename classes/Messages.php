@@ -5,6 +5,7 @@
  */
 class Messages
 {
+
     /**
      * Отправка сообщения всем зарегистрированным ползователям из таблицы devusers
      *
@@ -14,26 +15,38 @@ class Messages
      */
     public static function send(int $priority, string $message)
     {
+        global $localsocket;
+
 
         $sql = system::$db->query("SELECT dev_id, telegram_id, push_id, phone_number,
                                         telegram_send, push_send, sms_send
                           FROM `devusers` 
-                          WHERE telegram_send = $priority OR push_send = $priority OR sms_send = $priority");
+                          WHERE telegram_send = $priority OR telegram_send = $priority OR sms_send = $priority
+                          OR telegram_send = 0 OR telegram_send = 0 OR sms_send = 0
+                          ");
 
         $devusers = $sql->fetchAll(PDO::FETCH_OBJ);
 
         foreach ($devusers AS $device) {
 
-            if (($device->telegram_send == $priority) && ($device->telegram_id))
+            if ((($device->telegram_send == $priority) || ($device->telegram_send == 0)) && ($device->telegram_id))
                 passthru("(php -f ../libs/send_telegram.php {$device->telegram_id} $message $priority & )  >> /dev/null 2>&1");
 
-            if (($device->push_send == $priority) && ($device->push_id))
+            if ((($device->push_send == $priority) || ($device->push_send == 0)) && ($device->push_id))
                 passthru("(php -f ../libs/send_push.php {$device->push_id} TouchOn $message & ) >> /dev/null 2>&1");
 
-            if(($device->sms_send == $priority) && ($device->phone_number));
+            if((($device->sms_send == $priority) || ($device->sms_send == 0)) && ($device->phone_number));
                 passthru("(php -f ../libs/send_sms.php {$device->phone_number} $message & ) >> /dev/null 2>&1");
         }
 
+
+        //Отправка сообщения через сокет
+        $messageToSocket = '{"status": "singleMessage", "message": "'.$message.'", "priority":'.$priority.'}';
+
+        // connect to a local tcp-server
+        $instance = stream_socket_client($localsocket);
+        // send message
+        fwrite($instance, json_encode(['user' => 'all', 'message' => $messageToSocket])  . "\n");
     }
 
     /**
@@ -59,11 +72,14 @@ class Messages
 
     /**
      * Функция отдет последние 30 сообщений из таблицы
+     * @param  int $startPos - стартовая строка выборки данных из таблицы
      * @return string
      */
-    public function getMessages()
+    public function getMessages($startPos)
     {
-        $sql = system::$db->query("SELECT id, text, priority, date, is_read FROM `messages`  ORDER BY date DESC LIMIT 30");
+        $countRow = 30;
+
+        $sql = system::$db->query("SELECT id, text, priority, date, is_read FROM `messages`  ORDER BY date DESC LIMIT $startPos,$countRow");
 
         if($sql->rowCount()) {
 
@@ -75,6 +91,25 @@ class Messages
 
             return $json = json_encode(array('status'=>'messagesLoad', 'messages'=>$MessageLog));
         }
+    }
+
+    public function getCountMessages()
+    {
+        $sql = system::$db->query("SELECT is_read, COUNT(is_read) AS cnt FROM `messages` GROUP BY is_read ORDER BY is_read LIMIT 30");
+
+        if($sql->rowCount()) {
+
+            while ($messageCount = $sql->fetch(PDO::FETCH_OBJ)) {
+
+                if($messageCount->is_read == 0)
+                    $unreadMessages = $messageCount->cnt;
+                else
+                    $readMessages = $messageCount->cnt;
+            }
+
+            return $json = json_encode(array('status'=>'countMessages', 'counts' => ['unread' => $unreadMessages, 'read' => $readMessages]));
+        }
+
     }
 
     /**

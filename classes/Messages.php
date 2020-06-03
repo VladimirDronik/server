@@ -29,19 +29,20 @@ class Messages
 
         foreach ($devusers AS $device) {
 
-            if ((($device->telegram_send == $priority) || ($device->telegram_send == 0)) && ($device->telegram_id))
+            if ((($device->telegram_send == $priority) || ($device->telegram_send == 3)) && ($device->telegram_id))
                 passthru("(php -f ../libs/send_telegram.php {$device->telegram_id} $message $priority & )  >> /dev/null 2>&1");
 
-            if ((($device->push_send == $priority) || ($device->push_send == 0)) && ($device->push_id))
+            if ((($device->push_send == $priority) || ($device->push_send == 3)) && ($device->push_id))
                 passthru("(php -f ../libs/send_push.php {$device->push_id} TouchOn $message & ) >> /dev/null 2>&1");
 
-            if((($device->sms_send == $priority) || ($device->sms_send == 0)) && ($device->phone_number));
+            if((($device->sms_send == $priority) || ($device->sms_send == 3)) && ($device->phone_number));
                 passthru("(php -f ../libs/send_sms.php {$device->phone_number} $message & ) >> /dev/null 2>&1");
         }
 
 
         //Отправка сообщения через сокет
-        $messageToSocket = '{"status": "singleMessage", "message": "'.$message.'", "priority":'.$priority.'}';
+        $messageToSocket = '{"status": "singleMessage", "text": "'.$message.'", "priority":'.$priority.', 
+        "date":'.date("Y-m-d H:i:s").',"is_read": 0}';
 
         // connect to a local tcp-server
         $instance = stream_socket_client($localsocket);
@@ -86,11 +87,12 @@ class Messages
             while ($message = $sql->fetch(PDO::FETCH_OBJ)) {
 
                 $MessageLog[] = array('id' => $message->id, 'text' => $message->text,
-                    'priority' => $message->priority, 'date' => $message->date, 'is_read', $message->is_read);
+                    'priority' => $message->priority, 'date' => $message->date, 'is_read' => $message->is_read);
             }
 
             return $json = json_encode(array('status'=>'messagesLoad', 'messages'=>$MessageLog));
-        }
+        } else
+            return $json = json_encode(array('status'=>'messagesLoad', 'messages' => ''));
     }
 
     public function getCountMessages()
@@ -107,7 +109,8 @@ class Messages
                     $readMessages = $messageCount->cnt;
             }
 
-            return $json = json_encode(array('status'=>'countMessages', 'counts' => ['unread' => $unreadMessages, 'read' => $readMessages]));
+            return $json = json_encode(array('status'=>'countMessages',
+                'counts' => ['unread' => $unreadMessages, 'read' => $readMessages, 'total' => $unreadMessages+$readMessages]));
         }
 
     }

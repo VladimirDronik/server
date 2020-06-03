@@ -513,7 +513,7 @@ class Views extends System
             "title":"'.$viewItem->title.'"}]}';
 
 
-            $res_json = (['user' => 'all', 'Messages' => $message]);
+            $res_json = (['user' => 'all', 'message' => $message]);
             $res_json = json_encode($res_json);
 
 

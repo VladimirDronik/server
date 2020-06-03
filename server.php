@@ -237,6 +237,9 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->testMessage();
                     break;
 
+                case 'singleMessage':
+                    break;
+
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

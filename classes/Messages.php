@@ -9,7 +9,7 @@ class Messages
     /**
      * Отправка сообщения всем зарегистрированным ползователям из таблицы devusers
      *
-     * @param integer $priority - тип сообщения 1 - важные, 2 - все
+     * @param integer $priority - тип сообщения 1 - важные, 2 - обычные
      * @param string $title - название сообщения
      * @param string $message - тело сообщения
      */

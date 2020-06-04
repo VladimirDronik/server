@@ -127,6 +127,7 @@ class Thermostats extends Objects
     function get_temperature()
     {
         $alarm_cnt = 0;
+        $alarm_cnt_avail = 0;
 
 
         if(($this->placetype == 'port') || ($this->placetype == '1wire')) {
@@ -178,23 +179,38 @@ class Thermostats extends Objects
                     }
 
 
-                    $alarm_cnt++;
 
-                    //Если превышено число аварийных значений термометра
-                    if ($alarm_cnt >= 10) {
+                    $alarm_cnt_avail++;
+
+                    //Если превышено число пороговых значений термометра, значит он не работает
+                    if ($alarm_cnt_avail >= 10) {
                         //Здесь сделать вызов обработчика аварии и выходим из цикла
-                        System::addLog('error', 'Термостат "' . $this->name . '" не доступен', 'sensor');
-
+                        System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
 
                         $error = true;
                         break 2;
                     }
 
-                    //Проверка на аварийные занчения
-                } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
 
-                //Проверка на пороговые значения
-            } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
+                    //Проверка на пороговые значения
+                } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
+
+                $alarm_cnt++;
+
+                //Если превышено число аварийных значений термометра
+                if ($alarm_cnt >= 10) {
+                    //Здесь сделать вызов обработчика аварии и выходим из цикла
+                    System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
+
+                    Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
+
+                    $error = true;
+                    break 1;
+                }
+
+                    //Проверка на аварийные занчения
+            } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
+
 
         } else { //Термостат входит в состав унивесального датчика
 

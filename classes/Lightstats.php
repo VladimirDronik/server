@@ -206,5 +206,16 @@ class Lightstats extends Objects
         }
     }
 
+    /**
+     * Получение значения светостата из таблицы
+     */
+    public static function getValueFromDB($idLightstat)
+    {
+        $lightstatsql = parent::$db->query("SELECT `current` FROM lightstats WHERE id_object = $idLightstat");
+        if($lightstat = $lightstatsql->fetch(PDO::FETCH_OBJ));
+        return $lightstat->current;
+
+    }
+
 
 }

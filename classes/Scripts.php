@@ -78,6 +78,8 @@ class Scripts extends Megad
      */
     function runscript($idScript, $param = null)
     {
+
+
         if($idScript) {
 
             $scriptsql = parent::$db->query("SELECT scripts.link AS link, system FROM scripts 
@@ -89,11 +91,11 @@ class Scripts extends Megad
             $dir = str_replace(' ', '\ ', __DIR__);
 
             if($script->system)
-                $folder = '/../scripts';
+                $folder = '../scripts';
             else
-                $folder = '/../userscripts';
+                $folder = '../userscripts';
 
-            passthru("(cd {$dir}{$folder} && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
+            passthru("(cd {$dir} && cd {$folder} && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
            // exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
 
             System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running', 'scripts');

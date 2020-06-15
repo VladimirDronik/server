@@ -38,6 +38,9 @@ flush();
         //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
         if($method)
         Action::runAction($method, 'device', $port->object, $params);
+        else //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
+            Action::runWithoutMethod($port->object);
+
 
 
 

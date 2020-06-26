@@ -48,7 +48,7 @@ class Action extends Megad
                 self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
             else
                 if (self::$easy)
-                    self::easy($method->id_object);
+                    self::easy($method->id_object, $params);
                 else
                     self::script($method->id_object);
 
@@ -59,7 +59,7 @@ class Action extends Megad
      * Выполнение простого действия в таблице портов
      * @param int $idObject ид объекта, который вызвал действие
      */
-    static private function easy($idObject)
+    static private function easy($idObject, $params = null)
     {
 
         $porteasy = explode(';',self::$easy);
@@ -69,6 +69,16 @@ class Action extends Megad
 
 
         if($device->active) {
+
+            //Если есть доп. параметры
+            if($params) {
+                if ($params == 'ON')
+                    $porteasy[1] = 1;
+
+                if($params == 'OFF')
+                    $porteasy[1] = 0;
+            }
+
             //Меняем статус порта на физическом устройстве
             file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
 

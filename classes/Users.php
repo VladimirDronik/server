@@ -16,7 +16,7 @@ class Users extends System
         if ($result_dev = $sql->fetch(PDO::FETCH_OBJ)){
 
 
-            if($result_dev->push_id)
+            if($result_dev->id)
                 parent::$db->query("UPDATE devusers SET `push_id` = '$idPush' WHERE `dev_id`= '$idDevice'");
 
             return true;

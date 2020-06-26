@@ -11,6 +11,8 @@ $message = 'watchdog';
 //Флаг рестарта
 $restart = false;
 
+
+
 // connect to a local tcp-server
 $instance = stream_socket_client($localsocket, $errno, $errstr, 30);
 
@@ -58,6 +60,12 @@ else {
 
 if ($restart) {
     System::addLog('error', 'Server is restarted from the watchdog', 'socket_server');
+
+    //Если остановка сервера вызывает ошибку
+    exec("php server.php stop", $output);
+   // if($output[2] == 'Workerman[server.php] stop fail')
+        exec('/sbin/reboot'); //Перезапускаем весь сервер
+
     passthru("(php -f server.php restart & ) >> /dev/null 2>&1");
 }
 

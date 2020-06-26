@@ -10,7 +10,7 @@ class Users extends System
 
         global $localsocket;
 
-        $sql = parent::$db->query("SELECT push_id FROM `devusers` WHERE `dev_id`= '$idDevice'");
+        $sql = parent::$db->query("SELECT id FROM `devusers` WHERE `dev_id`= '$idDevice'");
 
 
         if ($result_dev = $sql->fetch(PDO::FETCH_OBJ)){

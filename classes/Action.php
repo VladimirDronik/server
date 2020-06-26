@@ -36,23 +36,23 @@ class Action extends Megad
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null)
     {
 
-        $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
+            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
                                    FROM `methods` WHERE `methods`.`id`=$idMethod");
-        $method = $sql->fetch(PDO::FETCH_OBJ);
+            $method = $sql->fetch(PDO::FETCH_OBJ);
 
-        self::$easy = $method->easy;
-        self::$idScript = $method->script;
+            self::$easy = $method->easy;
+            self::$idScript = $method->script;
 
 
-        if($method->is_system)
-            self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
-        else
-        if (self::$easy)
-            self::easy($method->id_object);
-        else
-            self::script($method->id_object);
+            if ($method->is_system)
+                self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
+            else
+                if (self::$easy)
+                    self::easy($method->id_object);
+                else
+                    self::script($method->id_object);
 
-        Messages::sendByObject($method->id_object);
+        Messages::sendByObject($idCausing);
     }
 
     /**
@@ -161,5 +161,29 @@ class Action extends Megad
         } else return null;
     }
 
+    /**
+     * Выполнение действий для объектов исходя из их типа
+     */
+    static public function runWithoutMethod($idObject)
+    {
+        $object = new Objects();
+        $object->select($idObject);
 
+
+        
+        if ($object->type == 'drycontact') {
+
+            $sql = parent::$db->query("SELECT `method_on`, `method_off`, `param_method_on`, `param_method_off` 
+                                        FROM `drycontacts` WHERE `id_object`=$idObject");
+            $drycontact = $sql->fetch(PDO::FETCH_OBJ);
+
+            if ($object->status == 'ON')
+                self::runAction($drycontact->method_on, null, $idObject, $drycontact->param_method_on);
+            else
+                self::runAction($drycontact->method_off, null, $idObject, $drycontact->param_method_off);
+
+        }
+
+
+    }
 }

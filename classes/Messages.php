@@ -21,8 +21,8 @@ class Messages
         $sql = system::$db->query("SELECT dev_id, telegram_id, push_id, phone_number,
                                         telegram_send, push_send, sms_send
                           FROM `devusers` 
-                          WHERE telegram_send = $priority OR telegram_send = $priority OR sms_send = $priority
-                          OR telegram_send = 0 OR telegram_send = 0 OR sms_send = 0
+                          WHERE telegram_send = $priority OR push_send = $priority OR sms_send = $priority
+                          OR telegram_send = 3 OR push_send = 3 OR sms_send = 3
                           ");
 
         $devusers = $sql->fetchAll(PDO::FETCH_OBJ);
@@ -30,13 +30,13 @@ class Messages
         foreach ($devusers AS $device) {
 
             if ((($device->telegram_send == $priority) || ($device->telegram_send == 3)) && ($device->telegram_id))
-                passthru("(php -f ../libs/send_telegram.php {$device->telegram_id} $message $priority & )  >> /dev/null 2>&1");
+                passthru("(php -f libs/send_telegram.php {$device->telegram_id} '$message' $priority & )  >> /dev/null 2>&1");
 
             if ((($device->push_send == $priority) || ($device->push_send == 3)) && ($device->push_id))
-                passthru("(php -f ../libs/send_push.php {$device->push_id} TouchOn $message & ) >> /dev/null 2>&1");
+                passthru("(php -f libs/send_push.php {$device->push_id} TouchOn '$message' & ) >> /dev/null 2>&1");
 
             if((($device->sms_send == $priority) || ($device->sms_send == 3)) && ($device->phone_number));
-                passthru("(php -f ../libs/send_sms.php {$device->phone_number} $message & ) >> /dev/null 2>&1");
+                passthru("(php -f libs/send_sms.php {$device->phone_number} '$message' & ) >> /dev/null 2>&1");
         }
 
 
@@ -48,6 +48,11 @@ class Messages
         $instance = stream_socket_client($localsocket);
         // send message
         fwrite($instance, json_encode(['user' => 'all', 'message' => $messageToSocket])  . "\n");
+
+        //Добавление сообщения в БД
+
+        system::$db->query("INSERT INTO `messages` (`id`, `text`, `priority`, `date`, `is_read`) 
+                            VALUES (null, '$message', $priority,'".date("Y-m-d H:i:s")."', 0)");
     }
 
     /**
@@ -57,15 +62,33 @@ class Messages
     public static function sendByObject(int $idObject)
     {
 
-        $sql = system::$db->query("SELECT `message_on`, `priority_on`, `message_off`, `priority_off` 
+        $object = new Objects();
+        $object->select($idObject);
+
+
+        $sql = system::$db->query("SELECT `message_1`, `priority_1`, `message_2`, `priority_2` 
                                    FROM `notifications` WHERE `id_object`=$idObject");
 
         if($sql->rowCount() > 0) {
 
             $message = $sql->fetch(PDO::FETCH_OBJ);
 
-            if ($message->message_on) self::send($message->priority_on, $message->message_on);
-            if ($message->message_off) self::send($message->priority_off, $message->message_off);
+            //определяем тип объекта
+            if ($object->type == 'motionsensor') { //если датчик движения
+
+                //Если есть оповещение 1, то отправляем его в любом случае
+                if ($message->message_1) self::send($message->priority_1, $message->message_1);
+
+                //Если есть оповещение 2 и включен режим охраны, то отправляем оповещение
+                if (($message->message_1) && (System::readSetting('guard_mode'))) self::send($message->priority_2, $message->message_2);
+
+            } else { // объектом является что-то, что имеет сообщения на on/off
+
+                if (($message->message_1) && ($object->status == 'ON')) self::send($message->priority_1, $message->message_1);
+                if (($message->message_2) && ($object->status == 'OFF')) self::send($message->priority_2, $message->message_2);
+            }
+
+
         }
 
     }

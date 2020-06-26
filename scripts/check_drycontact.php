@@ -13,3 +13,5 @@ $status = $drycontact->getPortState();
 
 //Присваиваем объекту это состояние
 $drycontact->setStatus($status,true, false);
+
+

@@ -50,11 +50,11 @@ $object = new Objects();
 
         //Если включен режим охраны
         if(System::readSetting('guard_mode') && $motionsensor->method_guard)
-            Action::runAction($motionsensor->method_guard, null, null, $state);
+            Action::runAction($motionsensor->method_guard, null, $motionsensor->id, $state);
 
         //Если включен режим эко
         if(System::readSetting('eco_mode') && $motionsensor->method_eco)
-            Action::runAction($motionsensor->method_eco, null, null, $state);
+            Action::runAction($motionsensor->method_eco, null, $motionsensor->id, $state);
 
         //Если включен режим дневной, ночной, утро, вечер
         if($motionsensor->method_normal || $motionsensor->method_night ||
@@ -65,7 +65,7 @@ $object = new Objects();
             else
                 $actString = '$motionsensor->method_'.System::readSetting('light_mode');
 
-            Action::runAction($$actString, null, null, $state);
+            Action::runAction($actString, null, $motionsensor->id, $state);
 
         }
 
@@ -77,12 +77,12 @@ $object = new Objects();
             if($motionsensor->equality == '>') {
 
                 if($motionsensor->lightvalue > $lightstatValue)
-                    Action::runAction($motionsensor-> method_light, null, null, $state);
+                    Action::runAction($motionsensor-> method_light, null, $motionsensor->id, $state);
 
             } else {
 
                 if($motionsensor->lightvalue < $lightstatValue)
-                    Action::runAction($motionsensor-> method_light, null, null, $state);
+                    Action::runAction($motionsensor-> method_light, null, $argv[1], $state);
             }
         }
 

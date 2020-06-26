@@ -67,19 +67,24 @@ class Action extends Megad
         $device = parent::getDeviceParams($porteasy[0]);
         $ip_device = $device->ip_address;
 
+        $portAndCmd = explode(':', $porteasy[1]);
+        $port = $portAndCmd[0];
+        $command = $portAndCmd[1];
 
         if($device->active) {
 
             //Если есть доп. параметры
             if($params) {
                 if ($params == 'ON')
-                    $porteasy[1] = 1;
+                    $command = 1;
 
                 if($params == 'OFF')
-                    $porteasy[1] = 0;
-            }
+                    $command = 0;
 
-            //Меняем статус порта на физическом устройстве
+                file_get_contents("http://$ip_device/sec/?cmd=$port:$command");
+
+            } else
+            //Меняем статус порта на физическом устройстве так как есть без параметров
             file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
 
             //Получаем состояние порта, на который воздействуем

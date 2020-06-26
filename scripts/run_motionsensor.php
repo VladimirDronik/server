@@ -49,11 +49,11 @@ $object = new Objects();
     {
 
         //Если включен режим охраны
-        if(System::readSetting('guard_mode') && $motionsensor->method_guard)
+        if((System::readSetting('guard_mode') == 'true') && $motionsensor->method_guard)
             Action::runAction($motionsensor->method_guard, null, $motionsensor->id, $state);
 
         //Если включен режим эко
-        if(System::readSetting('eco_mode') && $motionsensor->method_eco)
+        if((System::readSetting('eco_mode') == 'true') && $motionsensor->method_eco)
             Action::runAction($motionsensor->method_eco, null, $motionsensor->id, $state);
 
         //Если включен режим дневной, ночной, утро, вечер

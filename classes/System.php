@@ -45,7 +45,9 @@ class System
      */
     static function addLog($typeLog, $string, $loggingPoint = null) {
 
-        passthru("(cd .. && php -f logging.php {$typeLog} '{$string}' {$loggingPoint} &) >> /dev/null 2>&1");
+        passthru("(php -f logging.php {$typeLog} '{$string}' {$loggingPoint} &) >> /dev/null 2>&1");
+
+        //passthru("(cd .. && php -f logging.php {$typeLog} '{$string}' {$loggingPoint} &) >> /dev/null 2>&1");
 
     }
 

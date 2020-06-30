@@ -28,13 +28,29 @@ class Action extends Megad
 
     /**
      * Функция вызывается при реакции на физическое устройство или реакция на веб интерфейс
-     * @param $idMethod - метод, который выполняем
-     * @param $whence - откуда был вызван скрипт
-     * @param $idCausing - id сущности, которая вызывала действие
-     * @param $params - передаваемые параметры
+     * @param int $idMethod - метод, который выполняем
+     * @param string $whence - откуда был вызван скрипт
+     * @param int $idCausing - id сущности, которая вызывала действие
+     * @param string $params - передаваемые параметры
+     * @param bool $sendMessage - отправлять сообщение или нет
      */
-    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null)
+    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $sendMessage=true)
     {
+
+        $object = new Objects();
+
+        //Меняем состояние объекта и итема, которые вызвали действие
+        $object->select($idCausing);
+
+
+        //Если дейстивие происходит по замыканию порта в любом режиме
+        // или если действие происходит без удержания
+        // или если действие происходит с удержанием кнопки и объект является кнопкой
+        if(
+            ($params == '') ||
+            ($params == 1) ||
+            (($params == 2) && ($object->type == 'button'))
+        ) {
 
             $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
                                    FROM `methods` WHERE `methods`.`id`=$idMethod");
@@ -48,18 +64,19 @@ class Action extends Megad
                 self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
             else
                 if (self::$easy)
-                    self::easy($method->id_object, $params);
+                    self::easy($object, $params);
                 else
-                    self::script($method->id_object);
+                    self::script($object);
 
-        Messages::sendByObject($idCausing);
+            Messages::sendByObject($object, $sendMessage);
+        }
     }
 
     /**
      * Выполнение простого действия в таблице портов
-     * @param int $idObject ид объекта, который вызвал действие
+     * @param int $object объект, который вызвал действие
      */
-    static private function easy($idObject, $params = null)
+    static private function easy($object, $params = null)
     {
 
         $porteasy = explode(';',self::$easy);
@@ -71,10 +88,10 @@ class Action extends Megad
         $port = $portAndCmd[0];
         $command = $portAndCmd[1];
 
-        if($device->active) {
+        if ($device->active) {
 
             //Если есть доп. параметры
-            if($params) {
+            if (($params == 'ON') || ($params == 'OFF')) {
                 if ($params == 'ON')
                     $command = 1;
 
@@ -91,10 +108,6 @@ class Action extends Megad
             $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get");
             $state = explode('/', $state)[0];
 
-            $object = new Objects();
-
-            //Меняем состояние объекта и итема, которые вызвали действие
-            $object->select($idObject);
             $object->setStatus($state);
 
             //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
@@ -107,14 +120,11 @@ class Action extends Megad
 
     /**
      * Выполнение связанного с объектом скрипта
-     * @param int $idObject ид объекта, который вызвал действие
+     * @param int $object объект, который вызвал действие
     */
-    static private function script($idObject)
+    static private function script($object)
     {
 
-        $object = new Objects();
-        //Меняем состояние объекта и итема, которые вызвали действие
-        $object->select($idObject);
         $object->setStatus('sw');
 
         //Запускаем связанный скрипт
@@ -188,14 +198,21 @@ class Action extends Megad
         
         if ($object->type == 'drycontact') {
 
+            //Получаем состояние порта, на котором висит данный элемент
+            $status = $object->getPortState();
+
+            //Присваиваем объекту это состояние
+            $object->setStatus($status,true, false);
+
+
             $sql = parent::$db->query("SELECT `method_on`, `method_off`, `param_method_on`, `param_method_off` 
                                         FROM `drycontacts` WHERE `id_object`=$idObject");
-            $drycontact = $sql->fetch(PDO::FETCH_OBJ);
+            $drycontQuery = $sql->fetch(PDO::FETCH_OBJ);
 
             if ($object->status == 'ON')
-                self::runAction($drycontact->method_on, null, $idObject, $drycontact->param_method_on);
+                self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on);
             else
-                self::runAction($drycontact->method_off, null, $idObject, $drycontact->param_method_off);
+                self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off);
 
         }
 

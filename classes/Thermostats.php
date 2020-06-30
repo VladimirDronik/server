@@ -73,6 +73,10 @@ class Thermostats extends Objects
 
     function check()
     {
+        $sendMessage = false;
+
+        $object = new Objects();
+        $object->select($this->idObject);
 
         //Если термостат с фйнкцией нагрева
         if ($this->termostat->thermostat == 1)
@@ -80,18 +84,26 @@ class Thermostats extends Objects
 
             if ($this->termostat->current >=($this->termostat->optimal))
             {
+                if ($object->status == 'ON') $sendMessage = true;
+
+                $object->setStatus('OFF',true,false);
+
                 // Вызываем метод off
                 if($this->termostat->method_off)
-                Action::runAction($this->termostat->method_off, 'termostat');
+                Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
                 return 0;
 
             }
 
             if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
             {
+                if ($object->status == 'OFF') $sendMessage = true;
+
+                $object->setStatus('ON',true,false);
+
                 // Вызываем метод on
                 if($this->termostat->method_on)
-                Action::runAction($this->termostat->method_on, 'termostat');
+                Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
                 return 1;
             }
 
@@ -100,18 +112,26 @@ class Thermostats extends Objects
         {
             if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
             {
+                if ($object->status == 'ON') $sendMessage = true;
+
+                $object->setStatus('OFF',true,false);
+
                 // Вызываем метод off
                 if($this->termostat->method_off)
-                Action::runAction($this->termostat->method_off, 'termostat');
+                Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
                 return 0;
             }
 
 
             if ($this->termostat->current > $this->termostat->optimal)
             {
+                if ($object->status == 'OFF') $sendMessage = true;
+
+                $object->setStatus('ON',true,false);
+
                 // Вызываем метод on
                 if($this->termostat->method_on)
-                Action::runAction($this->termostat->method_on, 'termostat');
+                Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
                 return 1;
             }
 
@@ -183,9 +203,11 @@ class Thermostats extends Objects
                     $alarm_cnt_avail++;
 
                     //Если превышено число пороговых значений термометра, значит он не работает
-                    if ($alarm_cnt_avail >= 10) {
+                    if ($alarm_cnt_avail >= 5) {
                         //Здесь сделать вызов обработчика аварии и выходим из цикла
                         System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
+
+                        Messages::send(1, 'Термостат '.$this->name.' недоступен');
 
                         $error = true;
                         break 2;
@@ -198,7 +220,8 @@ class Thermostats extends Objects
                 $alarm_cnt++;
 
                 //Если превышено число аварийных значений термометра
-                if ($alarm_cnt >= 10) {
+                if ($alarm_cnt >= 3) {
+
                     //Здесь сделать вызов обработчика аварии и выходим из цикла
                     System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
 
@@ -217,17 +240,44 @@ class Thermostats extends Objects
             $result = Usensors::checkI2C($this->usensor);
             $termometr_value = $result['temp'];
 
+            //Проверка на пороговое значение (доступность)
+            if(($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold)) {
+
+                System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
+                Messages::send(1, 'Термостат '.$this->name.' недоступен');
+            }
+
+            //Проверка на аварийные значения
+            if(($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm)) {
+
+                //Здесь сделать вызов обработчика аварии и выходим из цикла
+                System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
+                Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
+
+            }
+
+
         }
 
 
-        //TODO: проверка на слишком резкое изменеие значения
+
 
         if (!$error) {
-            //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
-            parent::$db->query("UPDATE termostats SET `current` = $termometr_value
+
+            //проверка на слишком резкое изменеие значения
+            parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats WHERE id_termostat = $this->id_termostat");
+            $termostat = $sql->fetch(PDO::FETCH_OBJ);
+            if (abs($termostat->value - $termometr_value) < 10) { //Если разница больше 10 град, то не заносим в графики значения
+
+                //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
+
+                parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id=$this->id_termostat");
 
-            Graphs::insertToTermostats($this->id_termostat, $termometr_value);
+                Graphs::insertToTermostats($this->id_termostat, $termometr_value);
+
+            }
+
         }
 
         //Отдаем значение визуальному компоненту

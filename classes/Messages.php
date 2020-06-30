@@ -30,13 +30,13 @@ class Messages
         foreach ($devusers AS $device) {
 
             if ((($device->telegram_send == $priority) || ($device->telegram_send == 3)) && ($device->telegram_id))
-                passthru("(php -f libs/send_telegram.php {$device->telegram_id} '$message' $priority & )  >> /dev/null 2>&1");
+                passthru("(cd ".ROOT_DIR." && php -f libs/send_telegram.php {$device->telegram_id} '$message' $priority & )  >> /dev/null 2>&1");
 
             if ((($device->push_send == $priority) || ($device->push_send == 3)) && ($device->push_id))
-                passthru("(php -f libs/send_push.php {$device->push_id} TouchOn '$message' & ) >> /dev/null 2>&1");
+                passthru("(cd ".ROOT_DIR." && php -f libs/send_push.php {$device->push_id} TouchOn '$message' & ) >> /dev/null 2>&1");
 
             if((($device->sms_send == $priority) || ($device->sms_send == 3)) && ($device->phone_number));
-                passthru("(php -f libs/send_sms.php {$device->phone_number} '$message' & ) >> /dev/null 2>&1");
+                passthru("(cd ".ROOT_DIR." && php -f libs/send_sms.php {$device->phone_number} '$message' & ) >> /dev/null 2>&1");
         }
 
 
@@ -57,40 +57,38 @@ class Messages
 
     /**
      * Функция отправки сообщений, которые соответсвуют объекту
-     * @param int $idObject - ид объекта
+     * @param int $object - объект
+     * @param bool $sendMessage - отправлять сообщение или нет
      */
-    public static function sendByObject(int $idObject)
+    public static function sendByObject(int $object, $sendMessage=true)
     {
 
-        $object = new Objects();
-        $object->select($idObject);
+        if($sendMessage) {
+            $sql = system::$db->query("SELECT `message_1`, `priority_1`, `message_2`, `priority_2` 
+                                       FROM `notifications` WHERE `id_object`=$idObject");
+
+            if($sql->rowCount() > 0) {
+
+                $message = $sql->fetch(PDO::FETCH_OBJ);
+
+                //определяем тип объекта
+                if ($object->type == 'motionsensor') { //если датчик движения
+
+                    //Если есть оповещение 1, то отправляем его в любом случае
+                    if ($message->message_1) self::send($message->priority_1, $message->message_1);
+
+                    //Если есть оповещение 2 и включен режим охраны, то отправляем оповещение
+                    if (($message->message_2) && (System::readSetting('guard_mode') == 'true')) self::send($message->priority_2, $message->message_2);
+
+                } else { // объектом является что-то, что имеет сообщения на on/off
+
+                    if (($message->message_1) && (mb_strtoupper($object->status) == 'ON')) self::send($message->priority_1, $message->message_1);
+                    if (($message->message_2) && (mb_strtoupper($object->status) == 'OFF')) self::send($message->priority_2, $message->message_2);
+                }
 
 
-        $sql = system::$db->query("SELECT `message_1`, `priority_1`, `message_2`, `priority_2` 
-                                   FROM `notifications` WHERE `id_object`=$idObject");
-
-        if($sql->rowCount() > 0) {
-
-            $message = $sql->fetch(PDO::FETCH_OBJ);
-
-            //определяем тип объекта
-            if ($object->type == 'motionsensor') { //если датчик движения
-
-                //Если есть оповещение 1, то отправляем его в любом случае
-                if ($message->message_1) self::send($message->priority_1, $message->message_1);
-
-                //Если есть оповещение 2 и включен режим охраны, то отправляем оповещение
-                if (($message->message_1) && (System::readSetting('guard_mode'))) self::send($message->priority_2, $message->message_2);
-
-            } else { // объектом является что-то, что имеет сообщения на on/off
-
-                if (($message->message_1) && ($object->status == 'ON')) self::send($message->priority_1, $message->message_1);
-                if (($message->message_2) && ($object->status == 'OFF')) self::send($message->priority_2, $message->message_2);
             }
-
-
         }
-
     }
 
 

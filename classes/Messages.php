@@ -57,15 +57,18 @@ class Messages
 
     /**
      * Функция отправки сообщений, которые соответсвуют объекту
-     * @param int $object - объект
+     * @param int $idObject - объект
      * @param bool $sendMessage - отправлять сообщение или нет
      */
-    public static function sendByObject(int $object, $sendMessage=true)
+    public static function sendByObject(int $idObject, $sendMessage=true)
     {
+
+        $object = new Objects();
+        $object->select($idObject);
 
         if($sendMessage) {
             $sql = system::$db->query("SELECT `message_1`, `priority_1`, `message_2`, `priority_2` 
-                                       FROM `notifications` WHERE `id_object`=$idObject");
+                                       FROM `notifications` WHERE `id_object`=$object->id");
 
             if($sql->rowCount() > 0) {
 

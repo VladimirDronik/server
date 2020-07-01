@@ -68,7 +68,7 @@ class Action extends Megad
                 else
                     self::script($object);
 
-            Messages::sendByObject($object, $sendMessage);
+            Messages::sendByObject($idCausing, $sendMessage);
         }
     }
 

@@ -46,31 +46,39 @@ class Device extends System
 
             foreach ($devices AS $device) {
 
+                //Если устройство недоступно
                 if (!parent::ping($device->host)) {
 
-                    //Меняем статус устройства
-                    self::$db->query("UPDATE $table SET `active` = 0
+                    //Если ранее было доступно, то изменяем состояние
+                    if ($device->active == 1) {
+
+                        //Меняем статус устройства
+                        self::$db->query("UPDATE $table SET `active` = 0
+                                             WHERE `id`=$device->id");
+
+                        //Записываем в лог информацию
+                        parent::addLog('error', 'Device "'.$device->description.'" ('.$device->host.') is not available', 'controller');
+
+                        //Отправка сообщения пользователю о том, что устройство не доступно
+                        Messages::send(1, 'Устройство "'.$device->description.'" ('.$device->host.') недоступно');
+                    }
+
+                } else {
+
+                    //Если ранее было недоступно, то меняем состояние
+                    if ($device->active == 0) {
+
+                        //Меняем статус устройства
+                        self::$db->query("UPDATE $table SET `active` = 1
                                          WHERE `id`=$device->id");
 
-                    //Записываем в лог информацию
-                    parent::addLog('error', 'Device "'.$device->description.'" ('.$device->host.') is not available', 'controller');
+                        //Записываем в лог информацию
+                        parent::addLog('Messages', "Device  {$device->description} ({$device->host})  is available", 'controller');
 
-                    //Отправка сообщения пользователю о том, что устройство не доступно
-                    Messages::send(1, 'Устройство "'.$device->description.'" ('.$device->host.') недоступно');
-
-                } elseif (!$device->active) {  //Если устройство было не активно
-
-                    //Меняем статус устройства
-                    self::$db->query("UPDATE $table SET `active` = 1
-                                         WHERE `id`=$device->id");
-
-                    //Записываем в лог информацию
-                    parent::addLog('Messages', "Device  {$device->description} ({$device->host})  is available", 'controller');
-
-                    //Отправка сообщения пользователю о том, что устройство снова доступно
-                    Messages::send(1, 'Устройство "'.$device->description.'" ('.$device->host.') снова доступно');
+                        //Отправка сообщения пользователю о том, что устройство снова доступно
+                        Messages::send(1, 'Устройство "' . $device->description . '" (' . $device->host . ') снова доступно');
+                    }
                 }
-
             }
         }
     }

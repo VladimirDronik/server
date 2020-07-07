@@ -132,7 +132,7 @@ class System
      */
     static function ping($host) {
 
-        exec("ping -c 1 $host",$output, $status);
+        exec("ping -c 5 $host",$output, $status);
         if ($status==0)
             return true;
         else

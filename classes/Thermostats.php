@@ -245,12 +245,9 @@ class Thermostats extends Objects
 
                 System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
                 Messages::send(1, 'Термостат '.$this->name.' недоступен');
-            }
+            }elseif (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm)) {
+                //Проверка на аварийные значения
 
-            //Проверка на аварийные значения
-            if(($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm)) {
-
-                //Здесь сделать вызов обработчика аварии и выходим из цикла
                 System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
                 Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
 
@@ -265,9 +262,14 @@ class Thermostats extends Objects
         if (!$error) {
 
             //проверка на слишком резкое изменеие значения
-            parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats WHERE id_termostat = $this->id_termostat");
+            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats 
+                                      WHERE id_termostat = $this->id_termostat
+                                      AND (NOW() - `datetime`) < 300 ");
+
             $termostat = $sql->fetch(PDO::FETCH_OBJ);
-            if (abs($termostat->value - $termometr_value) < 10) { //Если разница больше 10 град, то не заносим в графики значения
+
+            //Если разница меньше 10 град или если данные были слишком давно, то заносим в графики значения
+            if ((abs($termostat->value - $termometr_value) < 10) || (!$termostat->value)) {
 
                 //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
 

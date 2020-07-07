@@ -12,6 +12,14 @@ $message = 'watchdog';
 $restart = false;
 
 
+//Пингуем туннель, если не работает, то пробуем его запустить
+exec("ping -c 5 $VPN_server",$output, $status);
+if ($status!=0)
+    //перезапускаем сервер сокетов
+    exec("/etc/init.d/xl2tpd restart");
+
+
+
 
 // connect to a local tcp-server
 $instance = stream_socket_client($localsocket, $errno, $errstr, 30);
@@ -58,6 +66,8 @@ else {
     unlink('watchdog.txt');
 }
 
+
+//Если есть флаг рестарта сервера сокетов
 if ($restart) {
     System::addLog('error', 'Server is restarted from the watchdog', 'socket_server');
 

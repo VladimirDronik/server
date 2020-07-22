@@ -196,6 +196,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->readyDashboard();
                     break;
 
+                case 'ready?scenes':
+                    $send->readyScenes();
+                    break;
+
                 case 'ready?room':
                     $send->readyRoom();
                     break;

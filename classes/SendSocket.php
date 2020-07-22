@@ -126,11 +126,21 @@ class SendSocket
     public function testMessage()
     {
         //TODO: Убрать это
-        Messages::send($this->param1, $this->param2);
+        //Messages::send($this->param1, $this->param2);
+        $data1 = $this->views->getScenesItems();
+        echo $data1;
+        $this->send($data1);
     }
 
     /**
-     * Отпарвка  всех данных для главной страницы
+     * Отправка элементов сцен
+     */
+    public function readyScenes()
+    {
+        $this->send($this->views->getScenesItems());
+    }
+    /**
+     * Отправка  всех данных для главной страницы
      */
     public function readyDashboard()
     {

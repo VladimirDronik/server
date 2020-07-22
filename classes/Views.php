@@ -160,13 +160,15 @@ class Views extends System
                     $item = array('id' => (int)$viewObject->id,
                                   'type' => $viewObject->type,
                                   'on_image' => $viewObject->on_image,
-                                  'off_image' => $viewObject->off_image, 'value' => $viewObject->value, 'left' => $viewObject->position_left, 'top' => $viewObject->position_top);
+                                  'off_image' => $viewObject->off_image, 'value' => $viewObject->value,
+                                   'left' => $viewObject->position_left, 'top' => $viewObject->position_top);
 
                 //if(isset($item))
                 $items_array[] = $item;
 
                 //if(isset($items_array))
-                $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->name,'image' => $scenes_obj->image, 'backgroung-color' => $scenes_obj->backgroung_color, 'label' => $scenes_obj->label, 'items' => $items_array);
+                $scenes = array('id' => (int)$scenes_obj->id,'name' => $scenes_obj->label,'image' => '/ela/images/scenes/'.$scenes_obj->image,
+                    'backgroung-color' => $scenes_obj->backgroung_color, 'items' => $items_array);
 
             }
 
@@ -565,7 +567,9 @@ class Views extends System
                 'type' => $viewObject->type,
                 'icon' => $viewObject->icon,
                 'title' => $viewObject->title,
-                'status' => $viewObject->status);
+                'status' => $viewObject->status,
+                'left' => $viewObject->position_left,
+                'top' => $viewObject->position_top);
 
         // Если тип объекта термометр
         if ($viewObject->type == 'temp') {

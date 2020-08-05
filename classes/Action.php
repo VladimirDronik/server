@@ -60,13 +60,12 @@ class Action extends Megad
             self::$idScript = $method->script;
 
 
-            if ($method->is_system)
-                self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
-            else
                 if (self::$easy)
                     self::easy($object, $params);
-                else
+                elseif (self::$idScript)
                     self::script($object);
+                else
+                    self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
 
             Messages::sendByObject($idCausing, $sendMessage);
         }

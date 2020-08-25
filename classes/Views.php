@@ -237,7 +237,7 @@ class Views extends System
             $newTemp = (float)$termostat->optimal;
 
             if($typeOutput == 'array')
-            $item = array('id' => (int)$view->id, 'type' => $view->type,
+            $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $viewObject->icon,
                 'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
                 'left' => $view->position_left, 'top' => $view->position_top);
             else

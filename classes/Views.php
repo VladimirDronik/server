@@ -155,14 +155,6 @@ class Views extends System
 
                 $item = self::getItem($viewObject);
 
-                // Если тип объекта термометр или гигрометр
-                if (($viewObject->type == 'temp') || ($viewObject->type == 'humidity'))
-                    $item = array('id' => (int)$viewObject->id,
-                                  'type' => $viewObject->type,
-                                  'on_image' => $viewObject->on_image,
-                                  'off_image' => $viewObject->off_image, 'value' => $viewObject->value,
-                                   'left' => $viewObject->position_left, 'top' => $viewObject->position_top);
-
                 //if(isset($item))
                 $items_array[] = $item;
 

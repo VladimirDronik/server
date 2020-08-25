@@ -40,6 +40,7 @@ require_once __DIR__. '/classes/SendSocket.php';
 require_once __DIR__ . '/classes/Messages.php';
 require_once __DIR__. '/classes/Lightstats.php';
 require_once __DIR__. '/classes/Motionsensor.php';
+require_once __DIR__. '/classes/HitePro.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

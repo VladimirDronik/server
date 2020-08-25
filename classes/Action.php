@@ -82,6 +82,7 @@ class Action extends Megad
 
         $device = parent::getDeviceParams($porteasy[0]);
         $ip_device = $device->ip_address;
+        $password = $device->password;
 
         $portAndCmd = explode(':', $porteasy[1]);
         $port = $portAndCmd[0];
@@ -89,23 +90,34 @@ class Action extends Megad
 
         if ($device->active) {
 
-            //Если есть доп. параметры
-            if (($params == 'ON') || ($params == 'OFF')) {
-                if ($params == 'ON')
-                    $command = 1;
+            //Если тип устройства хитпро
+            if($device->type == 'Hite-pro') {
 
-                if($params == 'OFF')
-                    $command = 0;
+                HitePro::setHiteProCommand($ip_device, $password, $port, $command);
+                $state = HitePro::getHiteProCommand($ip_device, $password, $port);
 
-                file_get_contents("http://$ip_device/sec/?cmd=$port:$command");
+            } else { //если обычная мега
 
-            } else
-            //Меняем статус порта на физическом устройстве так как есть без параметров
-            file_get_contents("http://$ip_device/sec/?cmd=$porteasy[1]");
+                //Если есть доп. параметры
+                if (($params == 'ON') || ($params == 'OFF')) {
+                    if ($params == 'ON')
+                        $command = 1;
 
-            //Получаем состояние порта, на который воздействуем
-            $state = file_get_contents("http://$ip_device/sec/?pt=$porteasy[1]&cmd=get");
-            $state = explode('/', $state)[0];
+                    if($params == 'OFF')
+                        $command = 0;
+
+                    file_get_contents("http://$ip_device/$password/?cmd=$port:$command");
+
+                } else {
+                        //Меняем статус порта на физическом устройстве так как есть без параметров
+                        file_get_contents("http://$ip_device/$password/?cmd=$porteasy[1]");
+                }
+
+
+                //Получаем состояние порта, на который воздействуем
+                $state = file_get_contents("http://$ip_device/$password/?pt=$porteasy[1]&cmd=get");
+                $state = explode('/', $state)[0];
+            }
 
             $object->setStatus($state);
 
@@ -192,8 +204,6 @@ class Action extends Megad
     {
         $object = new Objects();
         $object->select($idObject);
-
-
         
         if ($object->type == 'drycontact') {
 
@@ -214,7 +224,7 @@ class Action extends Megad
                 self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off);
 
         }
-
-
     }
+
+
 }

@@ -14,7 +14,8 @@ class Megad extends System
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
         {
-            $ip_sql = parent::$db->query("SELECT ip_address, active FROM devices WHERE id=$id_device");
+            $ip_sql = parent::$db->query("SELECT `ip_address`, `type`, `active`, `password`
+                                              FROM devices WHERE id=$id_device");
             $device = $ip_sql->fetch(PDO::FETCH_OBJ);
         }
 

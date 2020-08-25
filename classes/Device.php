@@ -82,4 +82,16 @@ class Device extends System
             }
         }
     }
+
+    /**
+     * Получение названия типа устройства
+     */
+    public static function getTypeName($idType) {
+
+        $sql = parent::$db->query("SELECT `name` FROM devtypes WHERE `id` = $idType");
+        $device = $sql->fetch(PDO::FETCH_OBJ);
+
+        return  $device->name;
+
+    }
 }

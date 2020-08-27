@@ -37,10 +37,10 @@ class Action extends Megad
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $sendMessage=true)
     {
 
-        $object = new Objects();
+        $causingObject = new Objects();
 
         //Меняем состояние объекта и итема, которые вызвали действие
-        $object->select($idCausing);
+        $causingObject->select($idCausing);
 
 
         //Если дейстивие происходит по замыканию порта в любом режиме
@@ -49,7 +49,7 @@ class Action extends Megad
         if(
             ($params == '') ||
             ($params == 1) ||
-            (($params == 2) && ($object->type == 'button'))
+            (($params == 2) && ($causingObject->type == 'button'))
         ) {
 
             $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
@@ -59,11 +59,13 @@ class Action extends Megad
             self::$easy = $method->easy;
             self::$idScript = $method->script;
 
+            $object = new Objects();
+            $object->select($method->id_object);
 
                 if (self::$easy)
-                    self::easy($idCausing, $object, $params);
+                    self::easy($causingObject, $object, $params);
                 elseif (self::$idScript)
-                    self::script($object);
+                    self::script($causingObject);
                 else
                     self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
 

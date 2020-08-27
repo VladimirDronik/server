@@ -67,9 +67,10 @@ class HitePro extends System
 
         $contents = file_get_contents($url, false, $context);
 
-        if (json_decode($contents)['status'] == 'false')
-            $state = 'OFF';
-            else $state = 'ON';
+        if (json_decode($contents)->status == 1)
+            $state = 'ON';
+        else $state = 'OFF';
+
 
         return $state;
     }

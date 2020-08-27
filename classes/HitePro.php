@@ -16,13 +16,19 @@ class HitePro extends System
      * @param $hpdevice - устройство, на контроллере, на которое воздействуем
      * @param $command - команда, которую передаем устройству
      */
-    public static function setHiteProCommand($ip_device, $password, $hpdevice, $command) {
+    public static function setHiteProCommand($ip_device, $password, $hpdevice, $command, $object) {
 
 
         if ($command == 0)
             $command = 2;
         elseif ($command == 1)
             $command = 1;
+        elseif($command == 2) {
+            if ($object->status == 'ON')
+                $command = 2;
+            else $command = 1;
+        }
+
 
         $url = 'http://'.$ip_device.'/rest/devices/'.$hpdevice.'/'.$command;
 

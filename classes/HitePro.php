@@ -18,6 +18,12 @@ class HitePro extends System
      */
     public static function setHiteProCommand($ip_device, $password, $hpdevice, $command) {
 
+
+        if ($command == 0)
+            $command = 2;
+        elseif ($command == 1)
+            $command = 1;
+
         $url = 'http://'.$ip_device.'/rest/devices/'.$hpdevice.'/'.$command;
 
         $options = [

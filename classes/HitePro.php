@@ -25,6 +25,7 @@ class HitePro extends System
                 'method'  => 'PUT',
                 'header'  => [
                     'Content-type: application/json',
+                    'Cookie: PHPSESSID=5e6dcf7a5adb0da0c675030edbc1e1a1',
                     'Authorization: Basic ' . $password,
                 ],
             ],
@@ -45,6 +46,7 @@ class HitePro extends System
                 'method'  => 'GET',
                 'header'  => [
                     'Content-type: application/json',
+                    'Cookie: PHPSESSID=5e6dcf7a5adb0da0c675030edbc1e1a1',
                     'Authorization: Basic ' . $password,
                 ],
             ],

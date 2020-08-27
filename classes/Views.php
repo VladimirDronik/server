@@ -628,7 +628,7 @@ class Views extends System
 
         if($idMethod) {
             //Выполняем действие для данного объекта
-            Action::runAction($idMethod, 'view', $itemId);
+            Action::runAction($idMethod, 'view', $newObject->id);
             return true;
         } else return false;
 

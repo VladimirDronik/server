@@ -61,7 +61,7 @@ class Action extends Megad
 
 
                 if (self::$easy)
-                    self::easy($object, $params);
+                    self::easy($idCausing, $object, $params);
                 elseif (self::$idScript)
                     self::script($object);
                 else
@@ -75,7 +75,7 @@ class Action extends Megad
      * Выполнение простого действия в таблице портов
      * @param int $object объект, который вызвал действие
      */
-    static private function easy($object, $params = null)
+    static private function easy($idCausing, $object, $params = null)
     {
 
         $porteasy = explode(';',self::$easy);
@@ -93,12 +93,9 @@ class Action extends Megad
             //Если тип устройства хитпро
             if(Device::getTypeName($device->type) == 'Hite-pro') {
 
-                HitePro::setHiteProCommand($ip_device, $password, $port, $command);
+                $state = HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
                 //$state = HitePro::getHiteProCommand($ip_device, $password, $port);
-                if($command == 1)
-                    $state = 'ON';
-                elseif($command == 2)
-                    $state = 'OFF';
+
 
             } else { //если обычная мега
 
@@ -123,6 +120,7 @@ class Action extends Megad
                 $state = explode('/', $state)[0];
             }
 
+            $idCausing->setStatus($state);
             $object->setStatus($state);
 
             //Если у порта, которым управляем имеется связанный объект, то меняем его состояние

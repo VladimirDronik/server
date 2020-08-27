@@ -19,23 +19,15 @@ class HitePro extends System
     public static function setHiteProCommand($ip_device, $password, $hpdevice, $command, $object) {
 
 
-        if ($command == 0){
+        if ($command == 0)
             $command = 2;
-            $state = 'OFF';
-        }
-        elseif ($command == 1) {
+        elseif ($command == 1)
             $command = 1;
-            $state = 'ON';
-        }
         elseif($command == 2) {
-            if ($object->status == 'ON') {
+            if ($object->status == 'ON')
                 $command = 2;
-                $state = 'OFF';
-            }
-            else {
+            else
                 $command = 1;
-                $state = 'ON';
-            }
         }
 
 
@@ -53,9 +45,8 @@ class HitePro extends System
         ];
         $context = stream_context_create($options);
 
-        $contents = file_get_contents($url, false, $context);
+        file_get_contents($url, false, $context);
 
-        return $state;
     }
 
     public static function getHiteProCommand($ip_device, $password, $hpdevice) {
@@ -76,7 +67,11 @@ class HitePro extends System
 
         $contents = file_get_contents($url, false, $context);
 
-        return json_decode($contents);
+        if (json_decode($contents)['status'] == 'false')
+            $state = 'OFF';
+            else $state = 'ON';
+
+        return $state;
     }
 
 }

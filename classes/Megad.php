@@ -67,7 +67,7 @@ class Megad extends System
      * @param int $id_device - ид мегадевайса из таблицы устройств
      * @param int $param - какой по счету параметр будем брать из строки, которую получим от устройства
      **/
-      static function status($port, $command, $idDevice = null, $param = 0)
+      static function status($port, $command = 'get', $idDevice = null, $param = 0)
     {
 
         $state = file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");

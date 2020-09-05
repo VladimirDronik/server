@@ -48,6 +48,6 @@ class CarbMonoxide extends Megad
         $raw_val = ($val / 1024 * 3.4); // Разница в Вольтах между нормальным и текущим напряжением на выходе датчика
         $ppm = round($raw_val / 100E3 * (1E9 / 1) / $this->sensor->calibration, 2);
 
-        echo $ppm;
+        return $ppm;
     }
 }

@@ -19,8 +19,9 @@ class SendSocket
     private $currentUser;
     private $param1;
     private $param2;
+    private $device;
 
-    function __construct($data, $users, Views $views, Messages $message)
+    function __construct($data, $users, Views $views, Messages $message, Device $device)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -31,6 +32,7 @@ class SendSocket
         $this->users = $users;
         $this->views = $views;
         $this->message = $message;
+        $this->device = $device;
     }
 
     /**
@@ -48,6 +50,7 @@ class SendSocket
      */
     public function ping()
     {
+        echo 'test';
         $this->send('{"status": "pong"}');
     }
 
@@ -197,6 +200,28 @@ class SendSocket
             $webconnection->send($fulldata);
         }
     }
+
+    /**
+     * Функция отдает сокету все устройства, которые необходимы для заполнения таблицы на коллекторе
+     * (для Алисы)
+     */
+    public function getDevices()
+    {
+        //Отправляем данные коллектору
+        $this->currentUser = 'collector';
+        $this->send($this->device->getDevicesForCollector());
+    }
+
+    /**
+     * Получение статуса конкретного устройства
+     */
+    public function getStatus($idDevice)
+    {
+        //Отправляем данные коллектору
+        $this->currentUser = 'collector';
+        $this->send($this->device->getStatus($idDevice));
+    }
+
 
 
 }

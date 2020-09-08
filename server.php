@@ -54,9 +54,11 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
     //совмесное использование порта группой воркеров
     $inner_tcp_worker->reusePort = true;
+
     // создаём обработчик сообщений, который будет срабатывать,
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
+
 
         global $debugmode;
         $data = json_decode($data);
@@ -91,7 +93,6 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
 
 
-
         //Здесь рассылаем приходящие от сторонних скриптов сообщения всем ползователям или конкретному
         if ($data->user=='all') {
 
@@ -122,12 +123,16 @@ $ws_worker->onWorkerStart = function() use (&$users)
 $ws_worker->onConnect = function($connection) use (&$users)
 {
 
+
     $connection->onWebSocketConnect = function($connection) use (&$users)
     {
+
         global $system_message;
 
         // при подключении нового пользователя сохраняем get-параметр, который же сами и передали со страницы сайта
-        $users[$_GET['user']] = $connection;
+         $users[$_GET['user']] = $connection;
+
+
 
         //System::addlog('User '.$_GET['user'].' is connected');
 
@@ -144,6 +149,7 @@ $ws_worker->onConnect = function($connection) use (&$users)
 /** Получение данных от клиента */
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
+
     global $debugmode;
 
    if ($debugmode) print_r("=====================================\n");
@@ -151,12 +157,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $views = new Views();
         $user = new Users();
         $messages = new Messages();
+        $device = new Device();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views, $messages);
+        $send = new SendSocket($data_array, $users, $views, $messages, $device);
 
         $status = $data_array[0];
 
@@ -186,7 +193,17 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 }
             }
 
+
+
             switch ($status) {
+
+                case 'get_status':
+                    $send->getStatus($data_array[1]);
+                    break;
+
+                case 'get_devices':
+                    $send->getDevices();
+                    break;
 
                 case 'ping':
                     $send->ping();

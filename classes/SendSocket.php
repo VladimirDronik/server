@@ -222,6 +222,33 @@ class SendSocket
         $this->send($this->device->getStatus($idDevice));
     }
 
+    /**
+     * Изменеие статуса какого-либо собъекта
+     * @param $fulldata - данные, которые пришли из сокета
+     * @param $debugmode - флаг отладки сервера
+     */
+    public function setStatus($fulldata, $debugmode)
+    {
+
+
+        var_dump($fulldata);
+  /*
+        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
+        if ($debugmode) $this->views->resData($fulldata);
+        else
+            passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
+
+*/
+        //отдаем данные об изменении всем другим зарегестрированным клиентам
+        /*
+        foreach ($this->users as $user) {
+
+            $webconnection = $user;
+            $webconnection->send($fulldata);
+        }
+        */
+    }
+
 
 
 }

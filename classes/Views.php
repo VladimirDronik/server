@@ -390,6 +390,7 @@ class Views extends System
             $itemValue = $data_array->items[0]->value;
             $set_value = $data_array->items[0]->set_value;
 
+
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
 
@@ -401,7 +402,6 @@ class Views extends System
 
             $newObject = new Objects();
             $newObject->select($idObject);
-
 
 
 
@@ -523,14 +523,14 @@ class Views extends System
 
 
     /**
-     * получение объекта и метода, которые соответвуют представлению
+     * получение объекта и метода и прочих данных, которые соответвуют представлению
      *
      * @param  int $item_id - ид метода
      * @return object
      */
     function getObjectAndMethod($idItem)
     {
-        $sql = parent::$db->query("SELECT `id_object`, `on_method`, `off_method`  FROM `view_items` WHERE `id`= $idItem");
+        $sql = parent::$db->query("SELECT `id_object`, `on_method`, `off_method` FROM `view_items` WHERE `id`= $idItem");
 
         if($sql->rowCount() > 0)
         return $sql->fetch(PDO::FETCH_OBJ);

@@ -18,6 +18,7 @@ class webSocket
     public $address;
     private $user_id;
     private $id_device;
+    private $items;
 
 
     private function runSocket()
@@ -33,7 +34,7 @@ class webSocket
 
             $ws_connection->onConnect = function ($connection) {
                 $user = 'collector';
-                $connection->send(json_encode(['user' => 'all', 'status' => $this->command]));
+                $connection->send(json_encode(['status' => $this->command, 'items' => $this->items]));
             };
 
 
@@ -121,7 +122,10 @@ class webSocket
      */
     public function setStatus($id_device, $status)
     {
-        $this->command = '{ "status": "itemChange", "items": [{"id":'.$id_device.', "status":"'.$status.'"}]}';
+        $this->command = 'itemChange';
+        $obj = array('id' => (int)$id_device, 'status' => $status);
+        $this->items[] = $obj;
+       // $this->items = "[{\"id\":$id_device, \"status\":\"$status\"}]";
         $this->runSocket();
     }
 

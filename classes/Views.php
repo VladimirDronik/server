@@ -615,7 +615,7 @@ class Views extends System
         //Для кнопки без фиксации не выполняем действий по смене статуса
         if($itemType != 'button') {
             //Меняем состояние итема и состояние объекта, физическим портом не управляем
-            $newObject->setStatus($itemStatus, true, false);
+            //$newObject->setStatus($itemStatus, true, false);
 
             if ($itemStatus == 'on')
                 $idMethod = $onMethod;

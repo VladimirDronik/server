@@ -15,8 +15,8 @@ class Messages
      */
     public static function send(int $priority, string $message)
     {
-        global $localsocket;
 
+        global $localsocket;
 
         $sql = system::$db->query("SELECT dev_id, telegram_id, push_id, phone_number,
                                         telegram_send, push_send, sms_send
@@ -59,8 +59,9 @@ class Messages
      * Функция отправки сообщений, которые соответсвуют объекту
      * @param int $idObject - объект
      * @param bool $sendMessage - отправлять сообщение или нет
+     * @param string $options - через запятую перечисляются номера сообщений, который отправлять, например '1,2'
      */
-    public static function sendByObject(int $idObject, $sendMessage=true)
+    public static function sendByObject(int $idObject, $sendMessage = true, $options = null)
     {
 
         $object = new Objects();
@@ -74,19 +75,39 @@ class Messages
 
                 $message = $sql->fetch(PDO::FETCH_OBJ);
 
+                $message_1 = $message->message_1;
+                $priority_1 = $message->priority_1;
+                $message_2 = $message->message_2;
+                $priority_2 = $message->priority_2;
+
+
                 //определяем тип объекта
                 if ($object->type == 'motionsensor') { //если датчик движения
 
                     //Если есть оповещение 1, то отправляем его в любом случае
-                    if ($message->message_1) self::send($message->priority_1, $message->message_1);
+                    if ($message_1) self::send($priority_1, $message_1);
 
                     //Если есть оповещение 2 и включен режим охраны, то отправляем оповещение
-                    if (($message->message_2) && (System::readSetting('guard_mode') == 'true')) self::send($message->priority_2, $message->message_2);
+                    if (($message_2) && (System::readSetting('guard_mode') == 'true')) self::send($priority_2, $message_2);
 
-                } else { // объектом является что-то, что имеет сообщения на on/off
+                } elseif ($options) { //Если указаны опции, какие сообщения выводить
 
-                    if (($message->message_1) && (mb_strtoupper($object->status) == 'ON')) self::send($message->priority_1, $message->message_1);
-                    if (($message->message_2) && (mb_strtoupper($object->status) == 'OFF')) self::send($message->priority_2, $message->message_2);
+                    $numbersMessages = explode(',',$options);
+
+                    foreach ($numbersMessages AS $numberMessage) {
+
+                        $message = 'message_'.$numberMessage;
+                        $priority = 'priority_'.$numberMessage;
+
+                        if ($$message) self::send($$priority, $$message);
+                    }
+
+                }
+                else
+                { // объектом является что-то, что имеет сообщения на on/off
+
+                    if (($message_1) && (mb_strtoupper($object->status) == 'ON')) self::send($priority_1, $message_1);
+                    if (($message_2) && (mb_strtoupper($object->status) == 'OFF')) self::send($priority_2, $message_2);
                 }
 
 

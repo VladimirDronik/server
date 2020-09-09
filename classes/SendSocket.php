@@ -227,16 +227,19 @@ class SendSocket
      * @param $fulldata - данные, которые пришли из сокета
      * @param $debugmode - флаг отладки сервера
      */
-    public function setStatus($fulldata, $debugmode)
+    public function setStatus($fulldata)
     {
 
         $data_array = json_decode($fulldata);
+
+
         $idObject = $data_array->items[0]->id;
         $status = $data_array->items[0]->status;
 
         $object = new Objects();
         $object->select($idObject);
         $object->setStatus($status);
+
 
   /*
         //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий

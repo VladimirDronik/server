@@ -63,8 +63,7 @@ class Action extends Megad
             $object->select($method->id_object);
 
                 if (self::$easy)
-
-                    self::easy($causingObject, $object, $params);
+                    self::easy($causingObject, $object, $whence, $params);
                 elseif ((self::$idScript) && ($method->is_system == 0))
                     self::script($object);
                 else
@@ -78,7 +77,7 @@ class Action extends Megad
      * Выполнение простого действия в таблице портов
      * @param int $object объект, который вызвал действие
      */
-    static private function easy($idCausing, $object, $params = null)
+    static private function easy($idCausing, $object, $whence, $params = null)
     {
 
         $porteasy = explode(';',self::$easy);
@@ -123,12 +122,16 @@ class Action extends Megad
                 $state = explode('/', $state)[0];
             }
 
-            $idCausing->setStatus($state);
-            $object->setStatus($state);
+            //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
+            if($whence == 'device') {
+                $idCausing->setStatus($state);
 
-            //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
-            if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
-            $object->setStatus($state, true, false);
+                //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
+                if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
+                    $object->setStatus($state, true, false);
+            }
+
+            $object->setStatus($state);
 
         }
     }

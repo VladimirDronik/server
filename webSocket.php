@@ -125,7 +125,6 @@ class webSocket
         $this->command = 'set_status';
         $obj = array('id' => (int)$id_device, 'status' => $status);
         $this->items[] = $obj;
-       // $this->items = "[{\"id\":$id_device, \"status\":\"$status\"}]";
         $this->runSocket();
     }
 

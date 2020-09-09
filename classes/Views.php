@@ -510,7 +510,6 @@ class Views extends System
             $res_json = (['user' => 'all', 'message' => $message]);
             $res_json = json_encode($res_json);
 
-
             //Отправляем клиенту измененные данные
             // connect to a local tcp-server
             $instance = stream_socket_client($localsocket);

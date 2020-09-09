@@ -122,7 +122,7 @@ class webSocket
      */
     public function setStatus($id_device, $status)
     {
-        $this->command = 'itemChange';
+        $this->command = 'set_status';
         $obj = array('id' => (int)$id_device, 'status' => $status);
         $this->items[] = $obj;
        // $this->items = "[{\"id\":$id_device, \"status\":\"$status\"}]";

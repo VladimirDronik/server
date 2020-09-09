@@ -230,8 +230,14 @@ class SendSocket
     public function setStatus($fulldata, $debugmode)
     {
 
+        $data_array = json_decode($fulldata);
+        $idObject = $data_array->items[0]->id;
+        $status = $data_array->items[0]->status;
 
-        var_dump($fulldata);
+        $object = new Objects();
+        $object->select($idObject);
+        $object->setStatus($status);
+
   /*
         //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
         if ($debugmode) $this->views->resData($fulldata);

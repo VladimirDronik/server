@@ -32,8 +32,8 @@ class webSocket
 
 
             $ws_connection->onConnect = function ($connection) {
-                $user = 'server';
-                $connection->send(json_encode(['user' => $user, 'status' => $this->command]));
+                $user = 'collector';
+                $connection->send(json_encode(['user' => 'all', 'status' => $this->command]));
             };
 
 
@@ -93,9 +93,10 @@ class webSocket
     /**
      * Получение всех устройст пользователя
      */
-    public function getDevices()
+    public function getDevices($user_id)
     {
         $this->command = 'get_devices';
+        $this->user_id = $user_id;
         $this->runSocket();
     }
 
@@ -120,8 +121,7 @@ class webSocket
      */
     public function setStatus($id_device, $status)
     {
-        $this->command = '{ "status": "itemChange", "items": [{"id":'.$id_device.',
-            "status":"'.$status.'"}]}';
+        $this->command = '{ "status": "itemChange", "items": [{"id":'.$id_device.', "status":"'.$status.'"}]}';
         $this->runSocket();
     }
 

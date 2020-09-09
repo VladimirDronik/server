@@ -64,7 +64,7 @@ class Action extends Megad
 
                 if (self::$easy)
 
-                    self::easy($object, $params);
+                    self::easy($idCausing, $object, $params);
                 elseif ((self::$idScript) && ($method->is_system == 0))
                     self::script($object);
                 else

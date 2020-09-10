@@ -353,7 +353,7 @@ class Views extends System
     /**
      * Получаем данные от клиента и выполняем действия в зависимости от этого
      */
-    function resData($data)
+    public function resData($data)
     {
 
         $data_array = json_decode($data);
@@ -381,7 +381,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния итема
-        if ($data_array->status=='itemChange'){
+        if (($data_array->status == 'itemChange')||($data_array->status == 'set_status')){
 
             $itemID = $data_array->items[0]->id;
             $itemDescription = $data_array->items[0]->description;

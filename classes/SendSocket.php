@@ -193,12 +193,14 @@ class SendSocket
         else
             passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
 
+    /*
         //отдаем данные об изменении всем другим зарегестрированным клиентам
         foreach ($this->users as $user) {
 
             $webconnection = $user;
             $webconnection->send($fulldata);
         }
+    */
     }
 
     /**
@@ -227,9 +229,14 @@ class SendSocket
      * @param $fulldata - данные, которые пришли из сокета
      * @param $debugmode - флаг отладки сервера
      */
-    public function setStatus($fulldata)
+    public function setStatus($fulldata, $debugmode)
     {
 
+        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
+        if ($debugmode) $this->views->resData($fulldata);
+        else
+            passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
+/*
         $data_array = json_decode($fulldata);
 
 
@@ -238,16 +245,16 @@ class SendSocket
 
         $object = new Objects();
         $object->select($idObject);
+
+        if($object->type == 'dimmer') {
+
+
+        }
+        else
         $object->setStatus($status);
 
-
-  /*
-        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-        if ($debugmode) $this->views->resData($fulldata);
-        else
-            passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
-
 */
+
         //отдаем данные об изменении всем другим зарегестрированным клиентам
         /*
         foreach ($this->users as $user) {

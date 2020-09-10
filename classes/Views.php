@@ -419,7 +419,7 @@ class Views extends System
                     $termostat->set_temperature($idObject, $set_value);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch')||($itemType == 'button')||($itemType == 'light')) { //Если объект является переключателем или кнопкой
 
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                     System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');

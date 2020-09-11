@@ -119,7 +119,7 @@ class Action extends Megad
 
                 //Получаем состояние порта, на который воздействуем
                 $state = file_get_contents("http://$ip_device/$password/?pt=$porteasy[1]&cmd=get");
-                $state = explode('/', $state)[0];
+                $state = mb_strtolower(explode('/', $state)[0]);
             }
 
             //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)

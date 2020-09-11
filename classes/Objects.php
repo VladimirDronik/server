@@ -139,7 +139,6 @@ class Objects extends System
     function setStatus($status, $set_object_status=true, $portrelease=true)
     {
 
-
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->checkSwitchState($status);
 

@@ -227,42 +227,44 @@ class SendSocket
     /**
      * Изменеие статуса какого-либо собъекта
      * @param $fulldata - данные, которые пришли из сокета
-     * @param $debugmode - флаг отладки сервера
      */
-    public function setStatus($fulldata, $debugmode)
+    public function setStatus($fulldata)
     {
 
-        //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
-        if ($debugmode) $this->views->resData($fulldata);
-        else
-            passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
-/*
         $data_array = json_decode($fulldata);
 
 
         $idObject = $data_array->items[0]->id;
         $status = $data_array->items[0]->status;
+        $instance = $data_array->items[0]->instance;
+
+        if($status == 1)
+            $status = 'on';
+        elseif($status == 0)
+            $status = 'off';
+
 
         $object = new Objects();
         $object->select($idObject);
 
-        if($object->type == 'dimmer') {
+        if (($object->type == 'lamp') || ($object->type == 'sjcket') || ($object->type == 'relay')) {
+
+            $object->setStatus($status);
+            //TODO: вместо этого сделать реализацию конкретного объекта и его метода, например лампы.
+
+        } elseif($object->type == 'dimmer') {
+
+            $dimmer = new Dimmer($idObject);
+
+            //Если передаем яркость
+            if ($instance == 'brightness')
+            $dimmer->setValue($status);
+            elseif ($instance == 'on')
+                $dimmer->setValue($status);
 
 
         }
-        else
-        $object->setStatus($status);
 
-*/
-
-        //отдаем данные об изменении всем другим зарегестрированным клиентам
-        /*
-        foreach ($this->users as $user) {
-
-            $webconnection = $user;
-            $webconnection->send($fulldata);
-        }
-        */
     }
 
 

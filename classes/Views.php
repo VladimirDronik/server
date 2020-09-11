@@ -381,7 +381,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния итема
-        if (($data_array->status == 'itemChange')||($data_array->status == 'set_status')){
+        if ($data_array->status == 'itemChange'){
 
             $itemID = $data_array->items[0]->id;
             $itemDescription = $data_array->items[0]->description;

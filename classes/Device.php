@@ -102,36 +102,10 @@ class Device extends System
     public function getDevicesForCollector()
     {
 
-        $sql = parent::$db->query("SELECT lamps.`name` AS `name`, lamps.`id_object` AS `id_object`, rooms.name AS `room`, 
-                                    objects.status AS `status`  FROM lamps 
-                                    LEFT JOIN `view_items` ON lamps.id_object = view_items.id_object 
-                                    LEFT JOIN rooms ON view_items.room = rooms.id
-                                    INNER JOIN objects ON lamps.`id_object` = objects.id 
-                                    ");
+        $devices[] = Lamps::getToCollector();
+        $devices[] = Dimmer::getToCollector();
 
-        if($sql->rowCount() > 0) {
-            $devices = $sql->fetchAll(PDO::FETCH_OBJ);
-
-            foreach ($devices AS $device) {
-
-                $name = $device->name;
-                $deviceId = $device->id_object;
-                $type = 'devices.types.light';
-                $model = 'to.light';
-                $manufacturer = 'TouchOn';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$device->status.'"},"retrievable":true}]';
-                $room = $device->room;
-
-                $deviceArr[$deviceId] = array('name' => $name, 'type' => $type, 'model' => $model,
-                'manufacturer' => $manufacturer, 'capabilities' => $capabilities, 'room' => $room);
-            }
-
-
-           return json_encode(array('mode' => 'get_devices', 'devices' => $deviceArr));
-
-
-        }
-
+        return json_encode(array('mode' => 'get_devices', 'devices' => $devices));
     }
 
 
@@ -143,9 +117,24 @@ class Device extends System
     public function getStatus($idDevice)
     {
 
-        $sql = parent::$db->query("SELECT `status` FROM objects WHERE id = $idDevice");
+        $sql = parent::$db->query("SELECT `status`, `type` FROM objects WHERE id = $idDevice");
         $device = $sql->fetch(PDO::FETCH_OBJ);
 
-        return json_encode(array('mode' => 'get_status', 'status' => $device->status));
+        if($device->status == 'on')
+            $on = 1;
+        elseif ($device->status == 'off')
+            $on = 0;
+        else
+            $on = null;
+
+        if (($device->type == 'lamp') || ($device->type == 'relay') || ($device->type == 'socket'))
+            $status = array('on' => $on);
+
+        if ($device->type == 'dimmer') {
+            $dimmer = new Dimmer($idDevice);
+            $status = array('on' => $on, 'brightness' => $dimmer->getValue());
+        }
+
+        return json_encode(array('mode' => 'get_status', 'status' => $status));
     }
 }

@@ -198,7 +198,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
             switch ($status) {
 
                 case 'set_status':
-                    $send->setStatus($data, $debugmode);
+                    $send->setStatus($data);
                     break;
 
                 case 'get_status':

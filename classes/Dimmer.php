@@ -111,4 +111,49 @@ class Dimmer extends Device
         return $dimer->oldvalue;
     }
 
+    /**
+     * Отдаем данные о диммерах коллектору в нужном формате
+     */
+    public static function getToCollector() {
+
+
+        $sql = parent::$db->query("SELECT dimmers.`name` AS `name`, dimmers.`id_object` AS `id_object`, rooms.name AS `room`, 
+                                    objects.status AS `status`  FROM dimmers 
+                                    LEFT JOIN `view_items` ON dimmers.id_object = view_items.id_object 
+                                    LEFT JOIN rooms ON view_items.room = rooms.id
+                                    INNER JOIN objects ON dimmers.`id_object` = objects.id 
+                                    ");
+
+        if($sql->rowCount() > 0) {
+            $devices = $sql->fetchAll(PDO::FETCH_OBJ);
+
+            foreach ($devices AS $device) {
+
+                $name = $device->name;
+                $deviceId = $device->id_object;
+                $type = 'devices.types.light';
+                $model = 'to.dimmer';
+                $manufacturer = 'TouchOn';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$device->status.'"},"retrievable":true}]';
+                $room = $device->room;
+
+                $deviceArr[$deviceId] = array('name' => $name, 'type' => $type, 'model' => $model,
+                    'manufacturer' => $manufacturer, 'capabilities' => $capabilities, 'room' => $room);
+            }
+
+
+            return $deviceArr;
+
+        }
+
+    }
+
+    /**
+     * Включить диммер на предыдущем занчении
+     */
+    public function on()
+    {
+
+    }
+
 }

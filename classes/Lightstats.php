@@ -81,7 +81,7 @@ class Lightstats extends Objects
             {
                 // Вызываем метод off
                 if($this->lightstat->method_off)
-                Action::runAction($this->lightstat->method_off, 'lightstat');
+                Action::runAction($this->lightstat->method_off, 'lightstat', $this->idObject);
                 return 0;
 
             }
@@ -90,7 +90,7 @@ class Lightstats extends Objects
             {
                 // Вызываем метод on
                 if($this->lightstat->method_on)
-                Action::runAction($this->lightstat->method_on, 'lightstat');
+                Action::runAction($this->lightstat->method_on, 'lightstat', $this->idObject);
                 return 1;
             }
 
@@ -101,7 +101,7 @@ class Lightstats extends Objects
             {
                 // Вызываем метод off
                 if($this->lightstat->method_off)
-                Action::runAction($this->lightstat->method_off, 'lightstat');
+                Action::runAction($this->lightstat->method_off, 'lightstat', $this->idObject);
                 return 0;
             }
 
@@ -110,7 +110,7 @@ class Lightstats extends Objects
             {
                 // Вызываем метод on
                 if($this->lightstat->method_on)
-                Action::runAction($this->lightstat->method_on, 'lightstat');
+                Action::runAction($this->lightstat->method_on, 'lightstat', $this->idObject);
                 return 1;
             }
 

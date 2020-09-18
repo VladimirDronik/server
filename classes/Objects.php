@@ -133,18 +133,25 @@ class Objects extends System
      * @param string $status
      * @param bool $set_object_status - при true меняем статус объекта, при false не трогаем статус
      * @param bool $portrelease
+     * @param string $whence - откуда было вызвано изменение статуса
+     * @param int $idCausing - ид объекта, который инициировал изменение статуса для другого объекта
      * $portrelease=false - при этом параметре не меняем состояние физическог порта, а только состояние объекта
      * @return bool
      */
-    function setStatus($status, $set_object_status=true, $portrelease=true)
+    function setStatus($status, $set_object_status = true, $portrelease = true, $whence = null, $idCausing = null)
     {
 
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->checkSwitchState($status);
 
-        //Выполняем по умолчанию смену состояния связанного порта
+        //Выполняем по умолчанию смену состояния связанного порта и снимаем с порта реальный статус
         if($portrelease)
-            $this->set_port_state($status);
+            $status = $this->set_port_state($status);
+
+        //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
+        if($whence == 'device') {
+            $idCausing->setStatus($status);
+        }
 
         //Изменяем статус объекта
         if($set_object_status)
@@ -165,6 +172,7 @@ class Objects extends System
             }
         }
 
+
         return $status;
 
     }
@@ -175,7 +183,7 @@ class Objects extends System
      * Установка нового значения для порта без смены состояния связанного с ним объекта
      *
      * @param string $status
-     * @return null
+     * @return string - состояние физического порта
      *
      */
     function set_port_state($status)
@@ -189,7 +197,7 @@ class Objects extends System
         if ($status=='off') $statusport=0;
 
         //назначаем порту новое значение
-        $script->set($this->port, $statusport, $this->device);
+        return $script->set($this->port, $statusport, $this->device);
     }
 
 

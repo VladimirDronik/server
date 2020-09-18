@@ -52,17 +52,25 @@ class Lamps extends Device
     /**
      * Функция включения лампы
      */
-    public function on()
+    public function on($whence, $idCausing)
     {
 
+        $object = new Objects();
+
+        $object->select(self::$idObject);
+        $object->setStatus('on', true, true, $whence, $idCausing);
     }
 
     /**
      * Функция выключения лампы
      */
-    public function off()
+    public function off($whence, $idCausing)
     {
 
+        $object = new Objects();
+
+        $object->select(self::$idObject);
+        $object->setStatus('off', true, true, $whence, $idCausing);
     }
 
     /**

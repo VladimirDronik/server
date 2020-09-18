@@ -6,7 +6,7 @@ class Users extends System
 
     /** Получаем id девайса с которого делается запрос и сравниваем его с имеющимися в таблице devuser, а также отправляем
      * дефолтный дашборд */
-    public static function checkuser($idDevice, $idPush = null){
+    public static function checkuser($idDevice, $idPush = null) {
 
         global $localsocket;
 
@@ -32,7 +32,7 @@ class Users extends System
             //$success = false;
        }
 
-       // $message = '{ "status": "success", "defscene":0}';
+        //$message = '{ "status": "success", "defscene":0}';
 
     }
 

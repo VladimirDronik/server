@@ -131,6 +131,7 @@ class Action extends Megad
                     $object->setStatus($state, true, false);
             }
 
+            //Меняем статус объекта, которым управляем
             $object->setStatus($state);
 
         }

@@ -121,7 +121,7 @@ class Lightstats extends Objects
     /**
      * Получение значение светостата
      *
-     * @return void
+     * @return int
      */
     function getLux()
     {
@@ -204,6 +204,8 @@ class Lightstats extends Objects
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
+
+        return $lux;
     }
 
     /**

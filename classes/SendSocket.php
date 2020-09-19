@@ -247,12 +247,12 @@ class SendSocket
         $object = new Objects();
         $object->select($idObject);
 
-        if (($object->type == 'lamp') || ($object->type == 'sjcket') || ($object->type == 'relay')) {
+        if (($object->type == 'lamp') || ($object->type == 'socket') || ($object->type == 'relay')) {
 
             $object->setStatus($status);
             //TODO: вместо этого сделать реализацию конкретного объекта и его метода, например лампы.
 
-        } elseif($object->type == 'dimmer') {
+        } elseif ($object->type == 'dimmer') {
 
             $dimmer = new Dimmer($idObject);
 
@@ -263,7 +263,19 @@ class SendSocket
                 $dimmer->setValue($status);
 
 
+        } elseif ($object->type == 'virtual') {
+
+        $virtual = new Virtuals($idObject);
+
+        if ($status == 'on')
+            $virtual->on();
+        elseif ($status == 'off')
+            $virtual->off();
+
+
         }
+
+
 
     }
 

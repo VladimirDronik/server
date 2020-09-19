@@ -48,7 +48,7 @@ class Action extends Megad
         // или если действие происходит с удержанием кнопки и объект является кнопкой
         if(
             ($params == '') ||
-            ($params == 1) ||
+            (($params == 1) && ($causingObject->type != 'button')) ||
             (($params == 2) && ($causingObject->type == 'button'))
         ) {
 

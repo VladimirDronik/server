@@ -145,8 +145,13 @@ class Objects extends System
         $status = $this->checkSwitchState($status);
 
         //Выполняем по умолчанию смену состояния связанного порта и снимаем с порта реальный статус
-        if($portrelease)
-            $status = $this->set_port_state($status);
+        if($portrelease) {
+
+            $portState = $this->set_port_state($status);
+            if($portState)
+                $status = $portState;
+        }
+
 
         //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
         if($whence == 'device') {

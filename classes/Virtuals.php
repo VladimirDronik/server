@@ -72,10 +72,10 @@ class Virtuals extends Device
         $object = new Objects();
 
         $object->select(self::$idObject);
-        $object->setStatus('on', true, false, $whence = null, $idCausing = null);
+        $object->setStatus('on', true, false, $whence, $idCausing);
 
-echo '=====================';
-       Action::runAction($this->methodON,'view', $idCausing, 'on');
+
+       Action::runAction($this->methodON,'view', $idCausing);
     }
 
     /**
@@ -89,7 +89,7 @@ echo '=====================';
         $object->select(self::$idObject);
         $object->setStatus('off', true, false, $whence, $idCausing);
 
-        Action::runAction($this->methodON,'view', $idCausing, 'off');
+        Action::runAction($this->methodOFF,'view', $idCausing);
     }
 
     /**

@@ -225,7 +225,7 @@ class Views extends System
     static private function getTermostats($view, $typeOutput = 'array')
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
-                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title` 
+                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title`, `view_items`.`on_method_params` 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
@@ -235,6 +235,7 @@ class Views extends System
 
             $curTemp = round($termostat->current);
             $newTemp = (float)$termostat->optimal;
+
 
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $viewObject->icon,
@@ -247,7 +248,8 @@ class Views extends System
             "set_value":"'.$newTemp.'",
             "title":"'.$view->title.'",
             "left":"'.$view->position_left.'",
-            "top":"'.$view->position_top.'"
+            "top":"'.$view->position_top.'",
+            "params":"'.$termostat->on_method_params.'"
             }';
 
             return $item;

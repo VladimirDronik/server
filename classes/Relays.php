@@ -3,7 +3,7 @@
 /**
  * Класс работы с устройствами типа "лампа"
  */
-class Lamps extends Device
+class Relays extends Device
 {
     private static $idObject; // id объекта
     private static $methods;
@@ -31,7 +31,7 @@ class Lamps extends Device
      */
     public static function getToCollector() {
 
-
+/*
         $sql = parent::$db->query("SELECT lamps.`name` AS `name`, lamps.`id_object` AS `id_object`, rooms.name AS `room`, 
                                     objects.status AS `status`  FROM lamps 
                                     LEFT JOIN `view_items` ON lamps.id_object = view_items.id_object 
@@ -60,31 +60,31 @@ class Lamps extends Device
             return $deviceArr;
 
         }
-
+*/
     }
 
     /**
-     * Функция включения лампы
+     * Функция включения реле
      */
     public function on()
     {
-        Action::runAction(self::$methods['Включить лампу'], 'script', self::$idObject);
+        Action::runAction(self::$methods['Включить реле'], 'script', self::$idObject);
     }
 
     /**
-     * Функция выключения лампы
+     * Функция выключения реле
      */
     public function off()
     {
-        Action::runAction(self::$methods['Выключить лампу'], 'script', self::$idObject);
+        Action::runAction(self::$methods['Выключить реле'], 'script', self::$idObject);
     }
 
     /**
-     * Функция переключния лампы
+     * Функция переключния реле
      */
     public function sw()
     {
-        Action::runAction(self::$methods['Смена состояния лампы'], 'script', self::$idObject);
+        Action::runAction(self::$methods['Смена состояния реле'], 'script', self::$idObject);
     }
 
 

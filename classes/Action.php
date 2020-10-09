@@ -182,13 +182,13 @@ class Action extends Megad
             switch ($whence) {
 
                 case 'view' :
-                    $sql = parent::$db->query("SELECT `id_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
                     $method = $sql->fetch(PDO::FETCH_OBJ);
                     break;
 
                 case 'device':
                     //TODO : Исправить запрос, что бы параметры двойного и длительного нажатия тоже передавались
-                    $sql = parent::$db->query("SELECT `id_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
                     $method = $sql->fetch(PDO::FETCH_OBJ);
                     break;
 

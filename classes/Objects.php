@@ -154,7 +154,7 @@ class Objects extends System
 
 
         //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
-        if($whence == 'device') {
+        if(($whence == 'device') && ($idCausing != null)) {
             $idCausing->setStatus($status);
         }
 

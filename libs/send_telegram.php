@@ -23,5 +23,5 @@ switch ($argv[3]) {
         $priority = '';
 }
 
-file_get_contents('https://api.telegram.org/bot1232846380:AAE7_ypFvBjlF0yn7RZADQkYI7bcRFuu508/webSocket?chat_id='.$chatId.'&text='
+file_get_contents('https://api.telegram.org/bot1232846380:AAE7_ypFvBjlF0yn7RZADQkYI7bcRFuu508/sendMessage?chat_id='.$chatId.'&text='
     .urlencode(hex2bin($priority).'  '.$message));

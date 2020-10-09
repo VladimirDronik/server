@@ -28,7 +28,7 @@ class CarbMonoxide extends Megad
     }
 
     /**
-     * Получение значения датчика
+     * Получение значения датчика CO2
      */
     public function check()
     {

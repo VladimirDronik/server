@@ -63,7 +63,7 @@ class SendSocket
     }
 
     /**
-     * Отпарвка  данных со страницы термометров
+     * Отпарвка  данных со страницы термометров для температурых пресетов
      */
     public function readyTemperatures()
     {
@@ -268,9 +268,9 @@ class SendSocket
         $virtual = new Virtuals($idObject);
 
         if ($status == 'on')
-            $virtual->on();
+            $virtual->on('view',$idObject);
         elseif ($status == 'off')
-            $virtual->off();
+            $virtual->off('view',$idObject);
 
 
         }

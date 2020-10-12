@@ -294,22 +294,27 @@ class Views extends System
             }
 
 
-            //Ищем данные в таблице графиков, которые относятся к данным термостатам
-            $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
-                                              INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
-                                              WHERE `termostats`.`room`=$idRoom AND MINUTE(`graph_termostats`.`datetime`)='00' 
-                                              AND $whereString
-                                              $groupString
-                                              ");
+            $sql_termostats = parent::$db->query("SELECT `id`, `name` FROM `termostats` WHERE room=".$idRoom);
+            while ($termostat = $sql_termostats->fetch(PDO::FETCH_OBJ)) {
 
-            while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
-                $temperatureLog[] = array('date'=>$temperatures->date, 'value'=>round($temperatures->value,1));
+
+                //Ищем данные в таблице графиков, которые относятся к данным термостатам
+                $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
+                                                  INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
+                                                  WHERE `termostats`.`id`={$termostat->id} AND MINUTE(`graph_termostats`.`datetime`)='00' 
+                                                  AND $whereString
+                                                  $groupString
+                                                  ");
+
+                while ($temperatures = $sql_graph->fetch(PDO::FETCH_OBJ)) {
+                    $temperatureLog[] = array('date' => $temperatures->date, 'value' => round($temperatures->value, 1));
+                }
+
+                $datagrapf[] = array('id_termostat' => $termostat->id, 'trrmostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
             }
-
-            $rooms[] = array('room'=>$temp->name, 'style'=>$temp->style, 'temperatureLog'=>$temperatureLog);
  //       }
 
-        return $json = json_encode(array('status'=>'graphsLoad', 'rooms'=>$rooms));
+        return $json = json_encode(array('status'=>'graphsLoad', 'data'=>$datagrapf));
     }
 
 

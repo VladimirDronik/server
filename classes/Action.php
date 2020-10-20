@@ -96,7 +96,11 @@ class Action extends Megad
             if(Device::getTypeName($device->type) == 'Hite-pro') {
 
                 HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
-                $state = HitePro::getHiteProCommand($ip_device, $password, $port);
+
+                //$state = HitePro::getHiteProCommand($ip_device, $password, $port);
+
+                if ($command == 1) $state = 'on';
+                else $state = 'off';
 
 
             } else { //если обычная мега

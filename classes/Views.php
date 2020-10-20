@@ -240,7 +240,7 @@ class Views extends System
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $viewObject->icon,
                 'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
-                'left' => $view->position_left, 'top' => $view->position_top);
+                'left' => $view->position_left, 'top' => $view->position_top,  'params' => $termostat->on_method_params);
             else
 
             $item = '{"id":'.$view->id.',
@@ -401,7 +401,7 @@ class Views extends System
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
 
-            if ($object != false) {
+            if ($object->id_object != null) {
 
             $idObject = $object->id_object;
             $onMethod = $object->on_method;

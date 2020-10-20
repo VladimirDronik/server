@@ -83,7 +83,7 @@ class Scripts extends Megad
 
         if($idScript) {
 
-            $scriptsql = parent::$db->query("SELECT scripts.link AS link, system FROM scripts 
+            $scriptsql = parent::$db->query("SELECT scripts.link AS link, system, enable FROM scripts 
                                          WHERE scripts.id = $idScript");
 
             $script = $scriptsql->fetch(PDO::FETCH_OBJ);
@@ -96,10 +96,10 @@ class Scripts extends Megad
             else
                 $folder = '../userscripts';
 
-            passthru("(cd {$dir} && cd {$folder} && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
-           // exec("cd " . $dir . "/../scripts && php -f {$script->link} {$param} &"); //выполняем внешний скрипт
-
-            System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running', 'scripts');
+            if($script->enable) {
+                 passthru("(cd {$dir} && cd {$folder} && php -f {$script->link} {$param} &) >> /dev/null 2>&1");
+                 System::addLog('system', 'Script "' . $script->link . ' ' . $param . '" is running', 'scripts');
+            }
 
             return true;
         }else {
@@ -108,6 +108,53 @@ class Scripts extends Megad
         }
         
     }
+
+
+    /**
+     * Функция включения скриптов
+     * @param string $idsScripts строка id скриптов через запятую
+     */
+    function enable($idsScripts) {
+
+        $this->setState($idsScripts, 1);
+    }
+
+    /**
+     * Функция выключения скриптов
+     * @param string $idsScripts строка id скриптов через запятую
+     */
+    function disable($idsScripts) {
+
+        $this->setState($idsScripts, 0);
+    }
+
+    private function setState($idsScripts, $state) {
+
+        $scriptsArray = explode(',',$idsScripts);
+
+        foreach ($scriptsArray as $script) {
+            parent::$db->query("UPDATE `scripts` SET `enable` = $state WHERE id= $script AND `system` = 0");
+        }
+    }
+
+
+    /**
+     * Получение состояние скрипта, включен или выключен
+     *
+     * @param $idScript
+     * @return mixed
+     */
+    public function getState($idScript) {
+
+        $scriptsql = parent::$db->query("SELECT enable FROM scripts 
+                                         WHERE scripts.id = $idScript");
+
+        $state = $scriptsql->fetch(PDO::FETCH_OBJ);
+
+        return $state->enable;
+    }
+
+
 
 
 }

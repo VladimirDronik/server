@@ -139,4 +139,18 @@ class System
             return false;
     }
 
+    public static function setVariable($varname, $value) {
+
+        system::$db->query("REPLACE INTO variables (`name`, `value`)
+                                VALUES ('$varname', '$value')");
+    }
+
+    public static function getVariable($varname) {
+
+        $sql = self::$db->query("SELECT `value` FROM `variables` WHERE `name`= '$varname'");
+        $variable = $sql->fetch(PDO::FETCH_OBJ);
+        return $id_object = $variable->value;
+    }
+
+
 }

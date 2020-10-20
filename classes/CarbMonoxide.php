@@ -50,8 +50,8 @@ class CarbMonoxide extends Megad
 
 
         //Заносим данные в таблицу устройства
-        $sql = parent::$db->query("UPDATE `carbmonoxide` SET `cur_value` = '$ppm' 
-                                   WHERE `carbmonoxide`.`id` = $this->sensor->id;");
+        parent::$db->query("UPDATE `carbmonoxide` SET `cur_value` = '$ppm' 
+                                   WHERE `carbmonoxide`.`id` = $this->sensor->id");
 
 
         //Проверяем на высокое пороговое значение

@@ -421,6 +421,11 @@ class Views extends System
                     //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
                     parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus', `value` = $set_value  WHERE `view_items`.`id` = $itemID");
 
+
+                    //Отпарвляем данные о температуре остальным клиентам
+                    self::updateItem($itemID);
+
+
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
                     $termostat->set_temperature($idObject, $set_value);
@@ -490,6 +495,7 @@ class Views extends System
        // parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='temp', `status`, '$itemStatus'),
          //                   `value` = IF(`type`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
 
+        if($itemStatus)
         parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus'
                             WHERE `view_items`.`id` = $idItem");
 

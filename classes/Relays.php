@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Класс работы с устройствами типа "лампа"
+ * Класс работы с устройствами типа "реле"
  */
 class Relays extends Device
 {
@@ -84,7 +84,7 @@ class Relays extends Device
      */
     public function sw()
     {
-        Action::runAction(self::$methods['Смена состояния реле'], 'script', self::$idObject);
+        Action::runAction(self::$methods['Переключить реле'], 'script', self::$idObject);
     }
 
 

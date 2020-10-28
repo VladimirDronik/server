@@ -17,6 +17,7 @@ class Users extends System
 
 
             if($result_dev->id)
+                if($idPush!='')
                 parent::$db->query("UPDATE devusers SET `push_id` = '$idPush' WHERE `dev_id`= '$idDevice'");
 
             return true;

@@ -40,19 +40,20 @@ class Messages
         }
 
 
+        //Добавление сообщения в БД
+        $query = system::$db->prepare("INSERT INTO `messages` (`id`, `text`, `priority`, `date`, `is_read`) 
+                            VALUES (null, '$message', $priority,'".date("Y-m-d H:i:s")."', 0)");
+        $query->execute();
+        $idMessage = system::$db->lastInsertId();
+
         //Отправка сообщения через сокет
-        $messageToSocket = '{"status": "singleMessage", "text": "'.$message.'", "priority":'.$priority.', 
-        "date":'.date("Y-m-d H:i:s").',"is_read": 0}';
+        $messageToSocket = '{"status": "singleMessage", "id":"'.$idMessage.'", "text": "'.$message.'", "priority":"'.$priority.'"", 
+        "date":"'.date("Y-m-d H:i:s").'","is_read": "0"}';
 
         // connect to a local tcp-server
         $instance = stream_socket_client($localsocket);
         // send message
         fwrite($instance, json_encode(['user' => 'all', 'message' => $messageToSocket])  . "\n");
-
-        //Добавление сообщения в БД
-
-        system::$db->query("INSERT INTO `messages` (`id`, `text`, `priority`, `date`, `is_read`) 
-                            VALUES (null, '$message', $priority,'".date("Y-m-d H:i:s")."', 0)");
     }
 
     /**

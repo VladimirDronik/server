@@ -43,7 +43,8 @@ class Views extends System
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
                                               `rooms`.`id` AS room_id,
-                                              `rooms`.`name` AS room_name
+                                              `rooms`.`name` AS room_name,
+                                              `rooms`.`image` AS room_image
                                        FROM `view_items` 
                                        INNER JOIN `rooms` ON `rooms`.`id` = `view_items`.`room` 
                                        WHERE $whereString `room_group` = $rooms_obj->id 
@@ -56,7 +57,8 @@ class Views extends System
                 if($item)
                 $items_array[] = $item;
 
-                $roomsArray[$viewObject->room_id] = $viewObject->room_name;
+                $roomsArray[$viewObject->room_id]['name'] = $viewObject->room_name;
+                $roomsArray[$viewObject->room_id]['image'] = $viewObject->room_image;
 
 
             }
@@ -64,7 +66,7 @@ class Views extends System
 
 
             foreach($roomsArray as $key => $value)
-            $roomsInGroup[] = array('id' => (int)$key, 'name' => $value);
+            $roomsInGroup[] = array('id' => (int)$key, 'name' => $value['name'], 'image' => $value['icon']);
 
 
             $room = array('id' => (int)$rooms_obj->id,
@@ -422,16 +424,17 @@ class Views extends System
                     parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus', `value` = $set_value  WHERE `view_items`.`id` = $itemID");
 
 
-                    //Отпарвляем данные о температуре остальным клиентам
-                    self::updateItem($itemID);
-
-
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
                     $termostat->set_temperature($idObject, $set_value);
 
+                    //Отпарвляем данные о температуре остальным клиентам
+                    self::updateItem($itemID);
+
 
                 } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+
+                    self::updateItem($itemID, $itemStatus);
 
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                     System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');

@@ -14,7 +14,7 @@ class Virtuals extends Device
         self::$idObject = $idObject;
 
         //находим метод вирт. устройства в таблице методов
-        $sql = parent::$db->query("SELECT method_on, method_off FROM virtualobj   
+        $sql = parent::$db->query("SELECT method_on, method_off FROM virtualsdev   
                                     WHERE id_object=$idObject");
         $method = $sql->fetch(PDO::FETCH_OBJ);
 

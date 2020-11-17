@@ -47,7 +47,7 @@ class Messages
         $idMessage = system::$db->lastInsertId();
 
         //Отправка сообщения через сокет
-        $messageToSocket = '{"status": "singleMessage", "id":"'.$idMessage.'", "text": "'.$message.'", "priority":"'.$priority.'"", 
+        $messageToSocket = '{"status": "singleMessage", "id":"'.$idMessage.'", "text": "'.$message.'", "priority":"'.$priority.'", 
         "date":"'.date("Y-m-d H:i:s").'","is_read": "0"}';
 
         // connect to a local tcp-server

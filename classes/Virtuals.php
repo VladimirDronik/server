@@ -92,13 +92,7 @@ class Virtuals extends Device
         Action::runAction($this->methodOFF,'view', $idCausing);
     }
 
-    /**
-     * Функция переключния лампы
-     */
-    public function sw()
-    {
-
-    }
+  
 
 
 

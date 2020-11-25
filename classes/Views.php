@@ -349,7 +349,7 @@ class Views extends System
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
             unset($days_array);
             $days_array = explode(',',$view_obj->days);
-            $events_array = array('id'=>(int)$view_obj->id, 'type'=>$view_obj->type, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
+            $events_array = array('id'=>(int)$view_obj->id, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
             $events[] = $events_array;
         }
 
@@ -648,6 +648,65 @@ class Views extends System
             Action::runAction($idMethod, 'view', $newObject->id);
             return true;
         } else return false;
+
+    }
+
+    public function getCounts() {
+
+        $day = date('w')-1;
+        $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
+        $today = date('Y-m-d');
+
+        $month_start = date('Y').date('m').'-01';
+        $year_start = date('Y').'-01-01';
+
+
+        $sql = parent::$db->query("SELECT id, name, type, today_value, total_value, unit FROM counts");
+
+        while ($counts = $sql->fetch(PDO::FETCH_OBJ)) {
+
+            echo "SELECT SUM(value) FROM `graph_counts` 
+                                              WHERE datetime >= '$week_start' 
+                                              AND datetime <= '$today' AND id_count=$counts->id";
+
+            $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >= '$week_start' 
+                                              AND datetime <= '$today' AND id_count=$counts->id");
+
+            if($sqlweekly->rowCount() > 0) {
+                $weekly = $sqlweekly->fetch(PDO::FETCH_OBJ)->value;
+            } else $weekly = 0;
+
+
+            $sqlmonthly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >=  '$month_start' 
+                                              AND datetime <= '$today' AND id_count=$counts->id");
+
+            if($sqlmonthly->rowCount() > 0) {
+                $monthly = $sqlmonthly->fetch(PDO::FETCH_OBJ)->value;
+            } else $monthly = 0;
+
+
+            $sqlyearly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >=  '$year_start'
+                                              AND datetime <= '$today' AND id_count=$counts->id");
+
+            if($sqlyearly->rowCount() > 0) {
+                $yearly = $sqlyearly->fetch(PDO::FETCH_OBJ)->value;
+            } else $yearly = 0;
+
+
+
+
+            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
+                                    'today_value'=>$counts->today_value, 'total_value'=>$counts->total_value,
+                                    'weekly_value'=>$weekly, 'monthly_value'=>$monthly, 'yearly_value'=>$yearly);
+            $countsarr[] = $counts_array;
+
+
+        }
+var_dump(json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr)));
+        return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
 
     }
 

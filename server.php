@@ -257,6 +257,9 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->readyEvents();
                     break;
 
+                case 'getCounts':
+                    $send->getCounts();
+                    break;
 
                 case 'testMessage': //TODO: Убрать это
                     $send->testMessage();

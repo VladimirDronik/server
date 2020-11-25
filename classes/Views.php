@@ -665,9 +665,7 @@ class Views extends System
 
         while ($counts = $sql->fetch(PDO::FETCH_OBJ)) {
 
-            echo "SELECT SUM(value) FROM `graph_counts` 
-                                              WHERE datetime >= '$week_start' 
-                                              AND datetime <= '$today' AND id_count=$counts->id";
+       
 
             $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >= '$week_start' 
@@ -705,7 +703,7 @@ class Views extends System
 
 
         }
-var_dump(json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr)));
+
         return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
 
     }

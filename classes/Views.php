@@ -665,9 +665,7 @@ class Views extends System
 
         while ($counts = $sql->fetch(PDO::FETCH_OBJ)) {
 
-            echo "SELECT SUM(value) FROM `graph_counts` 
-                                              WHERE datetime >= '$week_start' 
-                                              AND datetime <= '$today' AND id_count=$counts->id";
+
 
             $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >= '$week_start' 
@@ -705,8 +703,34 @@ class Views extends System
 
 
         }
-var_dump(json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr)));
+
         return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
+
+    }
+
+
+    public function getCountsGraphs($idCount, $period) {
+
+        if ($period == 'month')
+        $sql = "SELECT DAY(datetime) AS date, SUM(value) AS value FROM `graph_counts` 
+                WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
+                GROUP BY DAY(datetime)";
+
+        if ($period == 'year')
+            $sql = "SELECT MONTH(datetime) AS date, SUM(value) AS value FROM `graph_counts` 
+                    WHERE `datetime` >= NOW() - INTERVAL 12 MONTH  AND id_count = $idCount
+                    GROUP BY MONTH(datetime)";
+
+
+        $sqlquery = parent::$db->query($sql);
+        while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
+
+            $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
+        }
+
+        var_dump(json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value)));
+        return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
+
 
     }
 

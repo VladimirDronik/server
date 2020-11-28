@@ -134,6 +134,12 @@ class SendSocket
         $this->send($data);
     }
 
+    public function getCountsGraphs() {
+
+        $data = $this->views->getCountsGraphs($this->param1, $this->param2);
+        $this->send($data);
+    }
+
     public function testMessage()
     {
         //TODO: Убрать это

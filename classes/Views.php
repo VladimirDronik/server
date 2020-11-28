@@ -727,8 +727,7 @@ class Views extends System
 
             $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
         }
-
-        var_dump(json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value)));
+        
         return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
 
 

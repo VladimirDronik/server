@@ -702,7 +702,7 @@ class Views extends System
             for($i=0;$i<$nulls;$i++) {
                 $total .= '0';
                 }
-            $total .= $total;
+            $total .= $totalValue;
 
             $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
                                     'today_value'=>$counts->today_value, 'total_value'=>$total,

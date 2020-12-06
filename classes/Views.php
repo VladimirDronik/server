@@ -706,7 +706,7 @@ class Views extends System
 
 
             if($counts->unit == 'куб.м')
-                $unit = 'M3';
+                $unit = 'м³';
             else $unit = $counts->unit;
 
             $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$unit,

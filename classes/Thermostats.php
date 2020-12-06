@@ -235,7 +235,7 @@ class Thermostats extends Objects
             } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
 
 
-        } else { //Термостат входит в состав унивесального датчика
+        } elseif ($this->placetype == 'usensor') { //Термостат входит в состав унивесального датчика
 
             $result = Usensors::checkI2C($this->usensor);
             $termometr_value = $result['temp'];
@@ -252,6 +252,14 @@ class Thermostats extends Objects
                 Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
 
             }
+
+
+        } else { //если датчик в составе сервера хитпро
+
+            //определить на каком контроллере находится хитпро и его данные
+            //снять температуру с датчика хитпро
+            //Проверка на пороговое значение (доступность)
+            //Проверка на аварийное значение
 
 
         }

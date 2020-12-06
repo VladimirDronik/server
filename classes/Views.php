@@ -671,33 +671,41 @@ class Views extends System
                                               WHERE datetime >= '$week_start' 
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
-            if($sqlweekly->rowCount() > 0) {
-                $weekly = $sqlweekly->fetch(PDO::FETCH_OBJ)->value;
-            } else $weekly = 0;
+
+            $weekly = $sqlweekly->fetch(PDO::FETCH_OBJ)->value;
+            if($weekly == null) $weekly = "0";
 
 
             $sqlmonthly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >=  '$month_start' 
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
-            if($sqlmonthly->rowCount() > 0) {
-                $monthly = $sqlmonthly->fetch(PDO::FETCH_OBJ)->value;
-            } else $monthly = 0;
+
+            $monthly = $sqlmonthly->fetch(PDO::FETCH_OBJ)->value;
+            if($monthly == null) $monthly = "0";
 
 
             $sqlyearly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >=  '$year_start'
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
-            if($sqlyearly->rowCount() > 0) {
-                $yearly = $sqlyearly->fetch(PDO::FETCH_OBJ)->value;
-            } else $yearly = 0;
+
+            $yearly = $sqlyearly->fetch(PDO::FETCH_OBJ)->value;
+            if($yearly == null) $yearly = "0";
 
 
+            $totalValue = ceil($counts->total_value);
+            $nulls = 6-strlen($totalValue);
 
+            $total ='';
+
+            for($i=0;$i<$nulls;$i++) {
+                $total .= '0';
+                }
+            $total .= $total;
 
             $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
-                                    'today_value'=>$counts->today_value, 'total_value'=>$counts->total_value,
+                                    'today_value'=>$counts->today_value, 'total_value'=>$total,
                                     'weekly_value'=>$weekly, 'monthly_value'=>$monthly, 'yearly_value'=>$yearly);
             $countsarr[] = $counts_array;
 

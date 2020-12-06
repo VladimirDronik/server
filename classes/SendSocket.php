@@ -50,7 +50,6 @@ class SendSocket
      */
     public function ping()
     {
-        echo 'test';
         $this->send('{"status": "pong"}');
     }
 

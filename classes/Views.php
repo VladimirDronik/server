@@ -704,7 +704,12 @@ class Views extends System
                 }
             $total .= $totalValue;
 
-            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
+
+            if($counts->unit == 'куб.м')
+                $unit = 'M3';
+            else $unit = $counts->unit;
+
+            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$unit,
                                     'today_value'=>$counts->today_value, 'total_value'=>$total,
                                     'weekly_value'=>$weekly, 'monthly_value'=>$monthly, 'yearly_value'=>$yearly);
             $countsarr[] = $counts_array;

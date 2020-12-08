@@ -655,7 +655,7 @@ class Views extends System
 
         $day = date('w')-1;
         $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
-        $today = date('Y-m-d');
+        $todayDate = date('Y-m-d');
 
         $month_start = date('Y').date('m').'-01';
         $year_start = date('Y').'-01-01';
@@ -669,7 +669,7 @@ class Views extends System
 
             $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >= '$week_start' 
-                                              AND datetime <= '$today' AND id_count=$counts->id");
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
 
 
             $weekly = (string)ceil($sqlweekly->fetch(PDO::FETCH_OBJ)->value);
@@ -678,7 +678,7 @@ class Views extends System
 
             $sqlmonthly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >=  '$month_start' 
-                                              AND datetime <= '$today' AND id_count=$counts->id");
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
 
 
             $monthly = (string)ceil($sqlmonthly->fetch(PDO::FETCH_OBJ)->value);
@@ -687,7 +687,7 @@ class Views extends System
 
             $sqlyearly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
                                               WHERE datetime >=  '$year_start'
-                                              AND datetime <= '$today' AND id_count=$counts->id");
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
 
 
             $yearly = (string)ceil($sqlyearly->fetch(PDO::FETCH_OBJ)->value);

@@ -724,14 +724,14 @@ class Views extends System
     public function getCountsGraphs($idCount, $period) {
 
         if ($period == 'month')
-        $sql = "SELECT DAY(datetime) AS date, SUM(value) AS value FROM `graph_counts` 
+        $sql = "SELECT DATE_FORMAT(datetime,'%d.%m') AS date, SUM(value) AS value FROM `graph_counts` 
                 WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
-                GROUP BY DAY(datetime)";
+                GROUP BY DAY(datetime)  ORDER BY datetime";
 
         if ($period == 'year')
-            $sql = "SELECT MONTH(datetime) AS date, SUM(value) AS value FROM `graph_counts` 
+            $sql = "SELECT DATE_FORMAT(datetime,'%b') AS date, SUM(value) AS value FROM `graph_counts` 
                     WHERE `datetime` >= NOW() - INTERVAL 12 MONTH  AND id_count = $idCount
-                    GROUP BY MONTH(datetime)";
+                    GROUP BY MONTH(datetime)  ORDER BY datetime";
 
 
         $sqlquery = parent::$db->query($sql);

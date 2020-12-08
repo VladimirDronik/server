@@ -349,7 +349,7 @@ class Views extends System
         while ($view_obj = $sql->fetch(PDO::FETCH_OBJ)) {
             unset($days_array);
             $days_array = explode(',',$view_obj->days);
-            $events_array = array('id'=>(int)$view_obj->id, 'type'=>$view_obj->type, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
+            $events_array = array('id'=>(int)$view_obj->id, 'type'=>$view_obj->type, 'time'=>$view_obj->time, 'days'=>$days_array);
             $events[] = $events_array;
         }
 
@@ -648,6 +648,100 @@ class Views extends System
             Action::runAction($idMethod, 'view', $newObject->id);
             return true;
         } else return false;
+
+    }
+
+    public function getCounts() {
+
+        $day = date('w')-1;
+        $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
+        $todayDate = date('Y-m-d');
+
+        $month_start = date('Y').date('m').'-01';
+        $year_start = date('Y').'-01-01';
+
+
+        $sql = parent::$db->query("SELECT id, name, type, today_value, total_value, unit FROM counts");
+
+        while ($counts = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+
+            $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >= '$week_start' 
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
+
+
+            $weekly = (string)ceil($sqlweekly->fetch(PDO::FETCH_OBJ)->value);
+            if($weekly == null) $weekly = "0";
+
+
+            $sqlmonthly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >=  '$month_start' 
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
+
+
+            $monthly = (string)ceil($sqlmonthly->fetch(PDO::FETCH_OBJ)->value);
+            if($monthly == null) $monthly = "0";
+
+
+            $sqlyearly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
+                                              WHERE datetime >=  '$year_start'
+                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
+
+
+            $yearly = (string)ceil($sqlyearly->fetch(PDO::FETCH_OBJ)->value);
+            if($yearly == null) $yearly = "0";
+
+
+            $totalValue = ceil($counts->total_value);
+            $nulls = 6-strlen($totalValue);
+
+            $total ='';
+
+            for($i=0;$i<$nulls;$i++) {
+                $total .= '0';
+                }
+            $total .= $totalValue;
+            
+
+            $today = (string)ceil($counts->today_value);
+
+
+            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
+                                    'today_value'=>$today, 'total_value'=>(string)$total,
+                                    'weekly_value'=>(string)ceil($weekly), 'monthly_value'=>(string)ceil($monthly), 'yearly_value'=>(string)ceil($yearly));
+            $countsarr[] = $counts_array;
+
+
+        }
+
+        return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
+
+    }
+
+
+    public function getCountsGraphs($idCount, $period) {
+
+        if ($period == 'month')
+        $sql = "SELECT DATE_FORMAT(datetime,'%d') AS date, SUM(value) AS value FROM `graph_counts` 
+                WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
+                GROUP BY DAY(datetime)  ORDER BY datetime";
+
+        if ($period == 'year')
+            $sql = "SELECT DATE_FORMAT(datetime,'%b') AS date, SUM(value) AS value FROM `graph_counts` 
+                    WHERE `datetime` >= NOW() - INTERVAL 12 MONTH  AND id_count = $idCount
+                    GROUP BY MONTH(datetime)  ORDER BY datetime";
+
+
+        $sqlquery = parent::$db->query($sql);
+        while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
+
+            $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
+        }
+        
+        return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
+
 
     }
 

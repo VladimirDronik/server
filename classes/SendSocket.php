@@ -50,7 +50,6 @@ class SendSocket
      */
     public function ping()
     {
-        echo 'test';
         $this->send('{"status": "pong"}');
     }
 
@@ -126,6 +125,20 @@ class SendSocket
         $this->send($this->views->getEvents('y'));
     }
 
+    /**
+     * Отправка счетчиков
+     */
+    public function getCounts() {
+        $data = $this->views->getCounts();
+        $this->send($data);
+    }
+
+    public function getCountsGraphs() {
+
+        $data = $this->views->getCountsGraphs($this->param1, $this->param2);
+        $this->send($data);
+    }
+
     public function testMessage()
     {
         //TODO: Убрать это
@@ -142,6 +155,7 @@ class SendSocket
     {
         $this->send($this->views->getScenesItems());
     }
+
     /**
      * Отправка  всех данных для главной страницы
      */

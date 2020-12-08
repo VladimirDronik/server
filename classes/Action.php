@@ -149,7 +149,7 @@ class Action extends Megad
     static private function script($object)
     {
 
-        $object->setStatus('sw');
+        //$object->setStatus('sw');
 
         //Запускаем связанный скрипт
         $script = new Scripts();

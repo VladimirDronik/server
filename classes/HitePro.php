@@ -49,9 +49,16 @@ class HitePro extends System
 
     }
 
-    public static function getHiteProCommand($ip_device, $password, $hpdevice) {
+    public static function getHiteProCommand($hpdevice) {
 
-        $url = 'http://'.$ip_device.'/rest/devices/'.$hpdevice;
+        $sql = parent::$db->query("SELECT ip_address, password FROM devices 
+                                    INNER JOIN hiteprodev ON devices.id = hiteprodev.id_controller 
+                                    WHERE hiteprodev.id = $hpdevice");
+
+
+        $device = $sql->fetch(PDO::FETCH_OBJ);
+
+        $url = 'http://'.$device->ip_address.'/rest/devices/'.$hpdevice;
 
         $options = [
             'http' => [
@@ -59,7 +66,7 @@ class HitePro extends System
                 'header'  => [
                     'Content-type: application/json',
                     'Cookie: PHPSESSID=5e6dcf7a5adb0da0c675030edbc1e1a1',
-                    'Authorization: Basic ' . $password,
+                    'Authorization: Basic ' . $device->password,
                 ],
             ],
         ];
@@ -67,12 +74,9 @@ class HitePro extends System
 
         $contents = file_get_contents($url, false, $context);
 
-        if (json_decode($contents)->status == 1)
-            $state = 'ON';
-        else $state = 'OFF';
-
-
-        return $state;
+        return json_decode($contents)->status;
     }
+
+
 
 }

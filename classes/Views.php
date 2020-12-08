@@ -672,7 +672,7 @@ class Views extends System
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
 
-            $weekly = $sqlweekly->fetch(PDO::FETCH_OBJ)->value;
+            $weekly = (string)ceil($sqlweekly->fetch(PDO::FETCH_OBJ)->value);
             if($weekly == null) $weekly = "0";
 
 
@@ -681,7 +681,7 @@ class Views extends System
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
 
-            $monthly = $sqlmonthly->fetch(PDO::FETCH_OBJ)->value;
+            $monthly = (string)ceil($sqlmonthly->fetch(PDO::FETCH_OBJ)->value);
             if($monthly == null) $monthly = "0";
 
 
@@ -690,7 +690,7 @@ class Views extends System
                                               AND datetime <= '$today' AND id_count=$counts->id");
 
 
-            $yearly = $sqlyearly->fetch(PDO::FETCH_OBJ)->value;
+            $yearly = (string)ceil($sqlyearly->fetch(PDO::FETCH_OBJ)->value);
             if($yearly == null) $yearly = "0";
 
 
@@ -705,9 +705,12 @@ class Views extends System
             $total .= $totalValue;
             
 
+            $today = (string)ceil($counts->today_value);
+
+
             $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
-                                    'today_value'=>ceil($counts->today_value), 'total_value'=>$total,
-                                    'weekly_value'=>ceil($weekly), 'monthly_value'=>ceil($monthly), 'yearly_value'=>ceil($yearly));
+                                    'today_value'=>$today, 'total_value'=>(string)$total,
+                                    'weekly_value'=>(string)ceil($weekly), 'monthly_value'=>(string)ceil($monthly), 'yearly_value'=>(string)ceil($yearly));
             $countsarr[] = $counts_array;
 
 

@@ -703,15 +703,11 @@ class Views extends System
                 $total .= '0';
                 }
             $total .= $totalValue;
+            
 
-
-            if($counts->unit == 'куб.м')
-                $unit = 'м³';
-            else $unit = $counts->unit;
-
-            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$unit,
-                                    'today_value'=>$counts->today_value, 'total_value'=>$total,
-                                    'weekly_value'=>$weekly, 'monthly_value'=>$monthly, 'yearly_value'=>$yearly);
+            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
+                                    'today_value'=>ceil($counts->today_value), 'total_value'=>$total,
+                                    'weekly_value'=>ceil($weekly), 'monthly_value'=>ceil($monthly), 'yearly_value'=>ceil($yearly));
             $countsarr[] = $counts_array;
 
 

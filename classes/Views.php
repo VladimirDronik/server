@@ -724,7 +724,7 @@ class Views extends System
     public function getCountsGraphs($idCount, $period) {
 
         if ($period == 'month')
-        $sql = "SELECT DATE_FORMAT(datetime,'%d.%m') AS date, SUM(value) AS value FROM `graph_counts` 
+        $sql = "SELECT DATE_FORMAT(datetime,'%d') AS date, SUM(value) AS value FROM `graph_counts` 
                 WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
                 GROUP BY DAY(datetime)  ORDER BY datetime";
 

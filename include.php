@@ -10,7 +10,7 @@ define("ROOT_DIR",  __DIR__);
 
 //Переменная для вывода в неё служебной информации
 $system_message = true;
-
+SELECT * FROM `relays` WHERE 1
 $remotewebsocket = '188.120.233.76:48654';
 $localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';

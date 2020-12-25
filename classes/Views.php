@@ -633,7 +633,7 @@ class Views extends System
             /*Меняем состояние итема и состояние объекта, физическим портом не управляем.
             Это действие выполняем в любом случае. Повторно статус отправляем еще в Action, если прочитали с устройства
             */
-            $newObject->setStatus($itemStatus, true, false);
+            $newObject->setStatus($itemStatus, false, false);
 
             if ($itemStatus == 'on')
                 $idMethod = $onMethod;

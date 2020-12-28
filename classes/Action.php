@@ -69,7 +69,8 @@ class Action extends Megad
                 else
                     self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
 
-            Messages::sendByObject($idCausing, $sendMessage);
+            Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
+            Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
         }
     }
 

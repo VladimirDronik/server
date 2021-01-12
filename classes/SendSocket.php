@@ -20,8 +20,9 @@ class SendSocket
     private $param1;
     private $param2;
     private $device;
+    private $cameras;
 
-    function __construct($data, $users, Views $views, Messages $message, Device $device)
+    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -33,6 +34,7 @@ class SendSocket
         $this->views = $views;
         $this->message = $message;
         $this->device = $device;
+        $this->cameras = $cameras;
     }
 
     /**
@@ -112,6 +114,24 @@ class SendSocket
     public function messageRead()
     {
         $this->send($this->message->messageRead($this->param1));
+    }
+
+    /**
+     * Отдает список превью камер
+     */
+    public function getAllCameras()
+    {
+        $this->send($this->cameras->getAllCameras());
+    }
+
+    /**
+     * Отдает ссылку на изображение камеры
+     *
+     * $this->param1 - ИД камеры, для которой получаем ссылку
+     */
+    public function getLinkCamera()
+    {
+        $this->send($this->cameras->getCamera($this->param1));
     }
 
     /**

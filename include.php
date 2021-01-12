@@ -45,6 +45,7 @@ require_once __DIR__. '/classes/CarbMonoxide.php';
 require_once __DIR__. '/classes/Lamps.php';
 require_once __DIR__. '/classes/Virtuals.php';
 require_once __DIR__. '/classes/Relays.php';
+require_once __DIR__. '/classes/Cameras.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

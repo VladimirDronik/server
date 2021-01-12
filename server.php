@@ -269,6 +269,14 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->testMessage();
                     break;
 
+                case 'getAllCameras':
+                    $send->getAllCameras();
+                    break;
+
+                case 'getLinkCamera':
+                    $send->getLinkCamera();
+                    break;
+
                 case 'singleMessage':
                     break;
 

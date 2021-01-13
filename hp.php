@@ -14,17 +14,18 @@ require_once 'include.php';
 
     foreach ($json AS $obj) {
 
-        $obj->id;
-
         //Определяем тип объекта, который сработал
-        $sql = "SELECT type, id_object, status FROM hiteprodev WHERE id = {$obj->id}";
+        $sql = system::$db->query("SELECT type, id_object, status FROM hiteprodev WHERE id = {$obj->id}");
 
         $hiteproDevice = $sql->fetch(PDO::FETCH_OBJ);
 
 
-        if (($hiteproDevice->type == 'switch') && ($hiteproDevice->status == true))
+        if (($hiteproDevice->type == 'switch') && ($obj->status == true))
             $status = 'ON';
         else $status = 'OFF';
+
+
+        system::$db->query("UPDATE hiteprodev SET status = '$status' WHERE id = {$obj->id}");
 
         //Изменяем статус объекта
         if ($hiteproDevice->id_object) {

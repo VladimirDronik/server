@@ -98,10 +98,8 @@ class Action extends Megad
 
                 HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
 
-                //$state = HitePro::getHiteProCommand($ip_device, $password, $port);
-
-                if ($command == 1) $state = 'on';
-                else $state = 'off';
+                sleep(1);
+                $state = HitePro::getHiteProCommand($ip_device, $password, $port);
 
 
             } else { //если обычная мега

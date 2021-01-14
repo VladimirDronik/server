@@ -158,12 +158,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $user = new Users();
         $messages = new Messages();
         $device = new Device();
+        $cameras = new Cameras();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views, $messages, $device);
+        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras);
 
         $status = $data_array[0];
 

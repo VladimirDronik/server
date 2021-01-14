@@ -8,6 +8,7 @@
  */
 use Views;
 use Messages;
+use Cameras;
 
 class SendSocket
 {

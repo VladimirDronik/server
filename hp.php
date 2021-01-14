@@ -31,7 +31,7 @@ require_once 'include.php';
         if ($hiteproDevice->id_object) {
             $object = new Objects();
             $object->select($hiteproDevice->id_object);
-            $object->setStatus($hiteproDevice->status,true,false);
+            $object->setStatus($status,true,false);
         }
     }
 

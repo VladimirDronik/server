@@ -286,7 +286,7 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     break;
 
                 case 'getPage':
-
+                    $send->getPage();
                     break;
 
 

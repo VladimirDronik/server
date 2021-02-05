@@ -281,6 +281,14 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                 case 'singleMessage':
                     break;
 
+                case 'getMenu':
+                    $send->getMenu();
+                    break;
+
+                case 'getPage':
+
+                    break;
+
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

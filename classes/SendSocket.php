@@ -165,7 +165,6 @@ class SendSocket
         //TODO: Убрать это
         //Messages::send($this->param1, $this->param2);
         $data1 = $this->views->getScenesItems();
-        echo $data1;
         $this->send($data1);
     }
 
@@ -176,6 +175,15 @@ class SendSocket
     {
         $this->send($this->views->getScenesItems());
     }
+
+    /**
+     * Отправка меню
+     */
+    public function getMenu()
+    {
+        $this->send($this->views->getMenu());
+    }
+
 
     /**
      * Отправка  всех данных для главной страницы
@@ -257,6 +265,15 @@ class SendSocket
         //Отправляем данные коллектору
         $this->currentUser = 'collector';
         $this->send($this->device->getStatus($idDevice));
+    }
+
+    /**
+     * Получение запрашиваемой страницы
+     */
+    public function getPage()
+    {
+
+
     }
 
     /**

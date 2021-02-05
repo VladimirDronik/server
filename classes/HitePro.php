@@ -52,14 +52,14 @@ class HitePro extends System
     public static function getHiteProCommand($ip_device, $password, $hpdevice, $hpDevId = null) {
 
         if ($hpDevId) {
-            $sql = parent::$db->query("SELECT id, ip_address, password FROM devices 
+            $sql = parent::$db->query("SELECT hiteprodev.id AS id, ip_address, password FROM devices 
                                     INNER JOIN hiteprodev ON devices.id = hiteprodev.id_controller 
                                     WHERE hiteprodev.id = $hpDevId");
 
 
             $device = $sql->fetch(PDO::FETCH_OBJ);
 
-            $ip_device = $device->ip_device;
+            $ip_device = $device->ip_address;
             $password =  $device->password;
             $hpdevice = $device->id;
         }

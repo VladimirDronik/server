@@ -123,7 +123,7 @@ class Views extends System
                                         'items' => $items_array));
     }
 
-    /** Получаем список итемов, которые относятся к главной комнате */
+    /** Получаем список итемов, которые относятся к главной комнате (скрипты) */
     function getMainItems()
     {
             //Отдаем элементы
@@ -174,25 +174,6 @@ class Views extends System
         if (isset($scenes_array))
         return $json = json_encode(array('status'=>'ScenesItems', 'items'=>$scenes_array));
 
-    }
-
-
-
-    /**
-     * Получаем все пункты меню
-     */
-    function getMenu()
-    {
-
-        $sql = parent::$db->query("SELECT `id`, `name`, `title`, `link`, `image` FROM `menu` WHERE `active`=1 ORDER BY `sort`");
-        while ($menu = $sql->fetch(PDO::FETCH_OBJ)) {
-
-            $menu_array = array('id'=>(int)$menu->id, 'name'=>$menu->name, 'title'=>$menu->title, 'link'=>$menu->link, 'image'=>$menu->image);
-            $menures[] = $menu_array;
-        }
-
-        $json = json_encode(array('menu'=> $menures));
-        return $json;
     }
 
 
@@ -745,4 +726,67 @@ class Views extends System
 
     }
 
+
+    /**
+     * Функция отдает пункты меню в json
+     */
+    public function getMenu()
+    {
+        //Сначала находим все родительские пункты
+        $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = 0 ORDER BY sort";
+
+        $queryParrent = parent::$db->query($sql);
+        while ($parrent = $queryParrent->fetch(PDO::FETCH_OBJ)) {
+
+            $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = {$parrent->id} ORDER BY sort";
+            $queryChild = parent::$db->query($sql);
+
+            while ($child = $queryChild->fetch(PDO::FETCH_OBJ)) {
+                $childs[] = array('image'=>$child->image, 'title'=>$child->title, 'link'=>$child->link);
+            }
+
+            $parents[] = array('image'=>$parrent->image, 'title'=>$parrent->title, 'link'=>$parrent->link, 'childs'=>$childs);
+        }
+
+        return  $json = json_encode(array('status'=>'menuLoad', 'elements' => $parents));
+
+    }
+
+    public function getPage($link)
+    {
+        //Запрашиваем данные о нужных страницах
+        $sql = "SELECT id, name, type FROM pages WHERE link = '$link' ORDER BY sort";
+
+        $queryPage = parent::$db->query($sql);
+        while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
+
+            unset($elements);
+
+            //Запрашиваем данные для компонентов страницы
+            $sql = "SELECT id, name, type, image, value FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
+
+            $queryElements = parent::$db->query($sql);
+            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
+
+                //Если тип - аккордеон, то ищем еще дочерние элементы
+                if($element->type == 'accordeon') {
+                    $sqlChildElements = "SELECT id, name, type, image, value FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
+                    $queryChildElements = parent::$db->query($sqlChildElements);
+                    while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
+                        $value[] = array('image' => $childElement->image, 'title' => $childElement->name, 'type' => $childElement->type,
+                            'value' => $childElement->value);
+
+                        $element->value = $value;
+                    }
+                }
+
+                $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                                    'value'=>$element->value);
+            }
+
+            $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);
+        }
+
+        return  $json = json_encode(array('status'=>'pageLoad', 'pages' => $pages));
+    }
 }

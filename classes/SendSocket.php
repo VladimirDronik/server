@@ -272,8 +272,7 @@ class SendSocket
      */
     public function getPage()
     {
-
-
+        $this->send($this->views->getPage($this->param1));
     }
 
     /**

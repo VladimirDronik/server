@@ -781,7 +781,7 @@ class Views extends System
                 }
 
                 $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                                    'value'=>$element->value);
+                                    'value'=>json_decode($element->value));
             }
 
             $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);

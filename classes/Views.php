@@ -774,13 +774,16 @@ class Views extends System
                     $queryChildElements = parent::$db->query($sqlChildElements);
                     while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
                         $value[] = array('image' => $childElement->image, 'title' => $childElement->name, 'type' => $childElement->type,
-                            'elements' => json_decode($childElement->value));
+                            'value' => json_decode($childElement->value));
                     }
                     $element->value = json_encode($value);
-                }
 
-                $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                                    'value'=>json_decode($element->value));
+                    $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                        'elements'=>json_decode($element->value));
+                }else
+                    $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                        'value'=>json_decode($element->value));
+                
             }
 
             $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);

@@ -549,6 +549,7 @@ class Views extends System
             ($viewObject->type == 'light') ||
             ($viewObject->type == 'dimmer') ||
             ($viewObject->type == 'light-own') ||
+            ($viewObject->type == 'link') ||
             ($viewObject->type == 'socket'))
 
             return array('id' => (int)$viewObject->id,
@@ -557,6 +558,7 @@ class Views extends System
                 'title' => $viewObject->title,
                 'status' => $viewObject->status,
                 'left' => $viewObject->position_left,
+                'params' => $viewObject->on_method_params,
                 'top' => $viewObject->position_top);
 
         // Если тип объекта термометр
@@ -779,11 +781,11 @@ class Views extends System
                     $element->value = json_encode($value);
 
                     $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                        'elements'=>json_decode($element->value));
+                        'position' => $childElement->position, 'elements'=>json_decode($element->value));
                 }else
                     $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                        'value'=>json_decode($element->value));
-                
+                        'position' => $childElement->position, 'value'=>json_decode($element->value));
+
             }
 
             $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);

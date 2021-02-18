@@ -765,7 +765,7 @@ class Views extends System
             unset($elements);
 
             //Запрашиваем данные для компонентов страницы
-            $sql = "SELECT id, name, type, image, value FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
+            $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
 
             $queryElements = parent::$db->query($sql);
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {

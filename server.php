@@ -289,6 +289,10 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->getPage();
                     break;
 
+                case 'pagesItemChange':
+                    $send->changePageItem();
+                    break;
+
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

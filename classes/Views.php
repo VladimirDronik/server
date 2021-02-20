@@ -775,16 +775,16 @@ class Views extends System
                     $sqlChildElements = "SELECT id, name, type, image, value FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
                     $queryChildElements = parent::$db->query($sqlChildElements);
                     while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
-                        $value[] = array('image' => $childElement->image, 'title' => $childElement->name, 'type' => $childElement->type,
+                        $value[] = array('id' => $childElement->id, 'image' => $childElement->image, 'title' => $childElement->name, 'type' => $childElement->type,
                             'value' => json_decode($childElement->value));
                     }
                     $element->value = json_encode($value);
 
-                    $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $childElement->position, 'elements'=>json_decode($element->value));
+                    $elements[] = array('id' => $element->id, 'image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                        'position' => $element->position, 'elements'=>json_decode($element->value));
                 }else
-                    $elements[] = array('image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $childElement->position, 'value'=>json_decode($element->value));
+                    $elements[] = array('id' => $element->id, 'image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                        'position' => $element->position, 'value'=>json_decode($element->value));
 
             }
 

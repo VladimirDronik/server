@@ -740,6 +740,8 @@ class Views extends System
         $queryParrent = parent::$db->query($sql);
         while ($parrent = $queryParrent->fetch(PDO::FETCH_OBJ)) {
 
+            unset($childs);
+
             $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = {$parrent->id} ORDER BY sort";
             $queryChild = parent::$db->query($sql);
 

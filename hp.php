@@ -20,19 +20,26 @@ require_once 'include.php';
         $hiteproDevice = $sql->fetch(PDO::FETCH_OBJ);
 
 
-        if (($hiteproDevice->type == 'switch') && ($obj->status == true))
-            $status = 'ON';
-        else $status = 'OFF';
+        if ($hiteproDevice->type == 'transmitter') {
+
+            $sqlswitch =  system::$db->query("SELECT id_object, id_method FROM switches WHERE id_object = {$hiteproDevice->id_object}");
+            $switch = $sqlswitch->fetch(PDO::FETCH_OBJ);
+
+            Action::runAction($switch->id_method, 'device', $switch->id_object);
+
+        }
 
 
-        system::$db->query("UPDATE hiteprodev SET status = '$status' WHERE id = {$obj->id}");
 
+        //system::$db->query("UPDATE hiteprodev SET status = '$status' WHERE id = {$obj->id}");
+/*
         //Изменяем статус объекта
         if ($hiteproDevice->id_object) {
             $object = new Objects();
             $object->select($hiteproDevice->id_object);
             $object->setStatus($status,true,false);
         }
+*/
     }
 
 

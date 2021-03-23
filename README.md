@@ -1,3 +1,3 @@
 # CORE for TouchOn project 
-current ver 1.5.1
+current ver 1.6.0
 

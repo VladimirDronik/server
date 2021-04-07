@@ -745,11 +745,15 @@ class Views extends System
             $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = {$parrent->id} ORDER BY sort";
             $queryChild = parent::$db->query($sql);
 
+
             while ($child = $queryChild->fetch(PDO::FETCH_OBJ)) {
-                $childs[] = array('image'=>$child->image, 'title'=>$child->title, 'link'=>$child->link);
+
+                $imageChild = explode('.',$child->image)[0];
+                $childs[] = array('image'=>$imageChild, 'title'=>$child->title, 'link'=>$child->link);
             }
 
-            $parents[] = array('image'=>$parrent->image, 'title'=>$parrent->title, 'link'=>$parrent->link, 'childs'=>$childs);
+            $imageParrent = explode('.',$parrent->image)[0];
+            $parents[] = array('image'=>$imageParrent, 'title'=>$parrent->title, 'link'=>$parrent->link, 'childs'=>$childs);
         }
 
         return  $json = json_encode(array('status'=>'menuLoad', 'elements' => $parents));
@@ -772,20 +776,25 @@ class Views extends System
             $queryElements = parent::$db->query($sql);
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
+                $image = explode('.', $element->image)[0];
+
                 //Если тип - аккордеон, то ищем еще дочерние элементы
                 if($element->type == 'accordeon') {
                     $sqlChildElements = "SELECT id, name, type, image, value FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
                     $queryChildElements = parent::$db->query($sqlChildElements);
                     while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
-                        $value[] = array('id' => $childElement->id, 'image' => $childElement->image, 'title' => $childElement->name, 'type' => $childElement->type,
+
+                        $imageChild = explode('.', $childElement->image)[0];
+
+                        $value[] = array('id' => $childElement->id, 'image' => $imageChild, 'title' => $childElement->name, 'type' => $childElement->type,
                             'value' => json_decode($childElement->value));
                     }
                     $element->value = json_encode($value);
 
-                    $elements[] = array('id' => $element->id, 'image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                    $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
                         'position' => $element->position, 'elements'=>json_decode($element->value));
                 }else
-                    $elements[] = array('id' => $element->id, 'image'=>$element->image, 'title'=>$element->name, 'type'=>$element->type,
+                    $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
                         'position' => $element->position, 'value'=>json_decode($element->value));
 
             }

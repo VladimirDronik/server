@@ -80,63 +80,65 @@ class Thermostats extends Objects
         $object = new Objects();
         $object->select($this->idObject);
 
+        if($this->termostat->current) {
         //Если термостат с фйнкцией нагрева
-        if ($this->termostat->thermostat == 1)
-        {
-
-            if ($this->termostat->current >=($this->termostat->optimal))
+            if ($this->termostat->thermostat == 1)
             {
-                if ($object->status == 'ON') $sendMessage = true;
 
-                $object->setStatus('OFF',true,false);
+                if ($this->termostat->current >=($this->termostat->optimal))
+                {
+                    if ($object->status == 'ON') $sendMessage = true;
 
-                // Вызываем метод off
-                if($this->termostat->method_off)
-                Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
-                return 0;
+                    $object->setStatus('OFF',true,false);
+
+                    // Вызываем метод off
+                    if($this->termostat->method_off)
+                    Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
+                    return 0;
+
+                }
+
+                if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
+                {
+                    if ($object->status == 'OFF') $sendMessage = true;
+
+                    $object->setStatus('ON',true,false);
+
+                    // Вызываем метод on
+                    if($this->termostat->method_on)
+                    Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
+                    return 1;
+                }
+
+
+            } else //Если термостат с функцией охлаждения
+            {
+                if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
+                {
+                    if ($object->status == 'ON') $sendMessage = true;
+
+                    $object->setStatus('OFF',true,false);
+
+                    // Вызываем метод off
+                    if($this->termostat->method_off)
+                    Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
+                    return 0;
+                }
+
+
+                if ($this->termostat->current > $this->termostat->optimal)
+                {
+                    if ($object->status == 'OFF') $sendMessage = true;
+
+                    $object->setStatus('ON',true,false);
+
+                    // Вызываем метод on
+                    if($this->termostat->method_on)
+                    Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
+                    return 1;
+                }
 
             }
-
-            if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
-            {
-                if ($object->status == 'OFF') $sendMessage = true;
-
-                $object->setStatus('ON',true,false);
-
-                // Вызываем метод on
-                if($this->termostat->method_on)
-                Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
-                return 1;
-            }
-
-
-        } else //Если термостат с функцией охлаждения
-        {
-            if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
-            {
-                if ($object->status == 'ON') $sendMessage = true;
-
-                $object->setStatus('OFF',true,false);
-
-                // Вызываем метод off
-                if($this->termostat->method_off)
-                Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
-                return 0;
-            }
-
-
-            if ($this->termostat->current > $this->termostat->optimal)
-            {
-                if ($object->status == 'OFF') $sendMessage = true;
-
-                $object->setStatus('ON',true,false);
-
-                // Вызываем метод on
-                if($this->termostat->method_on)
-                Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
-                return 1;
-            }
-
         }
     }
 

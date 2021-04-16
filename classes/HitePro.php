@@ -24,7 +24,7 @@ class HitePro extends System
         elseif ($command == 1)
             $command = 1;
         elseif($command == 2) {
-            if ($object->status == 'ON')
+            if ($object->status == 'on')
                 $command = 2;
             else
                 $command = 1;

@@ -158,12 +158,13 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
         $user = new Users();
         $messages = new Messages();
         $device = new Device();
+        $cameras = new Cameras();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views, $messages, $device);
+        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras);
 
         $status = $data_array[0];
 
@@ -269,7 +270,27 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->testMessage();
                     break;
 
+                case 'getAllCameras':
+                    $send->getAllCameras();
+                    break;
+
+                case 'getLinkCamera':
+                    $send->getLinkCamera();
+                    break;
+
                 case 'singleMessage':
+                    break;
+
+                case 'getMenu':
+                    $send->getMenu();
+                    break;
+
+                case 'getPage':
+                    $send->getPage();
+                    break;
+
+                case 'pagesItemChange':
+                    $send->changePageItem();
                     break;
 
 

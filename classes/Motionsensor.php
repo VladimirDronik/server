@@ -7,6 +7,7 @@ class Motionsensor extends Objects
 {
 
     public $id;
+    public $id_object;
     public $name;
     public $method_normal;
     public $method_eco;
@@ -27,6 +28,7 @@ class Motionsensor extends Objects
         $motionsensor = $sql->fetch(PDO::FETCH_OBJ);
 
         $this->id = $motionsensor->id;
+        $this->id_object = $idObject;
         $this->name = $motionsensor->name;
         $this->method_normal = $motionsensor->method_normal;
         $this->method_eco = $motionsensor->method_eco;

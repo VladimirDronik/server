@@ -8,6 +8,7 @@
  */
 use Views;
 use Messages;
+use Cameras;
 
 class SendSocket
 {
@@ -20,8 +21,9 @@ class SendSocket
     private $param1;
     private $param2;
     private $device;
+    private $cameras;
 
-    function __construct($data, $users, Views $views, Messages $message, Device $device)
+    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -33,6 +35,7 @@ class SendSocket
         $this->views = $views;
         $this->message = $message;
         $this->device = $device;
+        $this->cameras = $cameras;
     }
 
     /**
@@ -115,6 +118,24 @@ class SendSocket
     }
 
     /**
+     * Отдает список превью камер
+     */
+    public function getAllCameras()
+    {
+        $this->send($this->cameras->getAllCameras());
+    }
+
+    /**
+     * Отдает ссылку на изображение камеры
+     *
+     * $this->param1 - ИД камеры, для которой получаем ссылку
+     */
+    public function getLinkCamera()
+    {
+        $this->send($this->cameras->getCamera($this->param1));
+    }
+
+    /**
      * Отправка событий
      */
     public function readyEvents()
@@ -144,7 +165,6 @@ class SendSocket
         //TODO: Убрать это
         //Messages::send($this->param1, $this->param2);
         $data1 = $this->views->getScenesItems();
-        echo $data1;
         $this->send($data1);
     }
 
@@ -155,6 +175,15 @@ class SendSocket
     {
         $this->send($this->views->getScenesItems());
     }
+
+    /**
+     * Отправка меню
+     */
+    public function getMenu()
+    {
+        $this->send($this->views->getMenu());
+    }
+
 
     /**
      * Отправка  всех данных для главной страницы
@@ -239,6 +268,14 @@ class SendSocket
     }
 
     /**
+     * Получение запрашиваемой страницы
+     */
+    public function getPage()
+    {
+        $this->send($this->views->getPage($this->param1));
+    }
+
+    /**
      * Изменеие статуса какого-либо собъекта
      * @param $fulldata - данные, которые пришли из сокета
      */
@@ -291,6 +328,12 @@ class SendSocket
 
 
 
+    }
+
+
+    public function changePageItem()
+    {
+        var_dump($this->param1);
     }
 
 

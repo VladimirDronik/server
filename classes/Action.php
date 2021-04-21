@@ -69,7 +69,8 @@ class Action extends Megad
                 else
                     self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
 
-            Messages::sendByObject($idCausing, $sendMessage);
+            Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
+            Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
         }
     }
 
@@ -97,10 +98,8 @@ class Action extends Megad
 
                 HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
 
-                //$state = HitePro::getHiteProCommand($ip_device, $password, $port);
-
-                if ($command == 1) $state = 'on';
-                else $state = 'off';
+                sleep(1);
+                $state = HitePro::getHiteProCommand($ip_device, $password, $port);
 
 
             } else { //если обычная мега

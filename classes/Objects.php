@@ -115,7 +115,6 @@ class Objects extends System
             $this->id = $obj->id;
             $this->type = $obj->type;
             $this->status = $obj->status;
-            $this->view = $obj->view;
             $this->port = $obj->port;
             $this->portstate = $obj->portstate;
             $this->device = (int)$obj->device;

@@ -31,13 +31,15 @@ class Usensors extends Objects
 
             do {
                 $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 0);
+                sleep(1);
                 $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 1);
+                sleep(1);
                 $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'max44009', 0);
 
             $cnt++;
-            if ($cnt>5) break;
+            if ($cnt>10) break;
 
-            } while ($humidity == 'NA' AND $temperature == 'NA' AND $lux == 'NA');
+            } while (($humidity == 'NA') || ($temperature == 'NA') || ($lux == 'NA'));
 
         } else {
             //Для нашего контроллера используем программный способ чтения для датчиков  HTU21D и BH1750

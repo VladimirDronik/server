@@ -41,7 +41,8 @@ class Views extends System
                                               `view_items`.`type`, 
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
-                                              `view_items`.`status`, 
+                                              `view_items`.`status`,
+                                              `view_items`.`on_method_params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`name` AS room_name,
                                               `rooms`.`image` AS room_image
@@ -95,6 +96,7 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
+                                              `view_items`.`on_method_params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`image` AS room_image,
                                               `rooms`.`style` AS room_style,

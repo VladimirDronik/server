@@ -549,6 +549,7 @@ class Views extends System
             ($viewObject->type == 'light') ||
             ($viewObject->type == 'dimmer') ||
             ($viewObject->type == 'light-own') ||
+            ($viewObject->type == 'label') ||
             ($viewObject->type == 'link') ||
             ($viewObject->type == 'socket'))
 

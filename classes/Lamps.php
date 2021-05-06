@@ -27,7 +27,7 @@ class Lamps extends Device
     }
 
     /**
-     * Отдаем данные о лампах коллектору в нужном формате
+     * НЕ ИСПРЛЬЗУЕТСЯ !!! Отдаем данные о лампах коллектору в нужном формате
      */
     public static function getToCollector() {
 

@@ -103,8 +103,9 @@ class Device extends System
     {
 
         $sql = parent::$db->query("SELECT objects.id AS id, alice_devices.name AS name, objects.type AS type, 
-                                      alice_devices.room AS room, objects.status AS status  FROM `alice_devices` 
+                                      rooms.name AS room, objects.status AS status  FROM `alice_devices` 
                                       INNER JOIN objects ON alice_devices.id_object = objects.id 
+                                      LEFT JOIN rooms ON alice_devices.room = rooms.id
                                       WHERE alice_devices.active = 1");
 
         if($sql->rowCount() > 0) {

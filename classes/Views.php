@@ -503,7 +503,8 @@ class Views extends System
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
-            "title":"'.$viewItem->title.'"}]}';
+            "title":"'.$viewItem->title.'",
+            "params"' .$viewItem->on_method_params.'}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);

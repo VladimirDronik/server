@@ -415,7 +415,7 @@ class Views extends System
                     self::updateItem($itemID);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch')||($itemType == 'button')||($itemType == 'label')) { //Если объект является переключателем или кнопкой
 
                     self::updateItem($itemID, $itemStatus);
 
@@ -616,7 +616,7 @@ class Views extends System
     static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId, $itemType) {
 
         //Для кнопки без фиксации не выполняем действий по смене статуса
-        if($itemType != 'button') {
+        if (($itemType != 'button') && ($itemType != 'label')) {
             /*Меняем состояние итема и состояние объекта, физическим портом не управляем.
             Это действие выполняем в любом случае. Повторно статус отправляем еще в Action, если прочитали с устройства
             */

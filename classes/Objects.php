@@ -169,6 +169,10 @@ class Objects extends System
             $sql = parent::$db->query("SELECT id FROM view_items WHERE id_object =  $this->id");
             $item = $sql->fetch(PDO::FETCH_OBJ);
 
+            if($status == 'open') $status = 'on';
+            elseif ($status == 'close') $status = 'off';
+            else $status = 'on';
+
             if(isset($item->id)) {
 
                 $view = new Views();

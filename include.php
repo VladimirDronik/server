@@ -47,6 +47,7 @@ require_once __DIR__. '/classes/Virtuals.php';
 require_once __DIR__. '/classes/Relays.php';
 require_once __DIR__. '/classes/Cameras.php';
 require_once __DIR__. '/classes/Boiler.php';
+require_once __DIR__. '/classes/Curtain.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

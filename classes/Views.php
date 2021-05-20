@@ -41,7 +41,8 @@ class Views extends System
                                               `view_items`.`type`, 
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
-                                              `view_items`.`status`, 
+                                              `view_items`.`status`,
+                                              `view_items`.`on_method_params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`name` AS room_name,
                                               `rooms`.`image` AS room_image
@@ -95,6 +96,7 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
+                                              `view_items`.`on_method_params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`image` AS room_image,
                                               `rooms`.`style` AS room_style,
@@ -413,7 +415,7 @@ class Views extends System
                     self::updateItem($itemID);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch')||($itemType == 'button')||($itemType == 'label')) { //Если объект является переключателем или кнопкой
 
                     self::updateItem($itemID, $itemStatus);
 
@@ -501,7 +503,8 @@ class Views extends System
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
-            "title":"'.$viewItem->title.'"}]}';
+            "title":"'.$viewItem->title.'",
+            "params"' .$viewItem->on_method_params.'}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);
@@ -549,6 +552,7 @@ class Views extends System
             ($viewObject->type == 'light') ||
             ($viewObject->type == 'dimmer') ||
             ($viewObject->type == 'light-own') ||
+            ($viewObject->type == 'label') ||
             ($viewObject->type == 'link') ||
             ($viewObject->type == 'socket'))
 
@@ -612,7 +616,7 @@ class Views extends System
     static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId, $itemType) {
 
         //Для кнопки без фиксации не выполняем действий по смене статуса
-        if($itemType != 'button') {
+        if (($itemType != 'button') && ($itemType != 'label')) {
             /*Меняем состояние итема и состояние объекта, физическим портом не управляем.
             Это действие выполняем в любом случае. Повторно статус отправляем еще в Action, если прочитали с устройства
             */

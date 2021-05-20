@@ -16,7 +16,7 @@ class HitePro extends System
      * @param $hpdevice - устройство, на контроллере, на которое воздействуем
      * @param $command - команда, которую передаем устройству
      */
-    public static function setHiteProCommand($ip_device, $password, $hpdevice, $command, $object) {
+    public static function setHiteProCommand($ip_device, $password, $hpdevice, $command, $object = null) {
 
 
         if ($command == 0)
@@ -83,6 +83,18 @@ class HitePro extends System
         return json_decode($contents)->status;
     }
 
+
+    /**
+     * Получаем ip адрес и пароль для устройства
+     * @param $idDevice
+     * @return mixed
+     */
+    public static function getDeviceParams($idDevice)
+    {
+        $ip_sql = parent::$db->query("SELECT `ip_address`, `type`, `active`, `password`
+                                              FROM devices WHERE id=$idDevice");
+        return $ip_sql->fetch(PDO::FETCH_OBJ);
+    }
 
 
 }

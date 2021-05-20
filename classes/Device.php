@@ -15,7 +15,10 @@ class Device extends System
      * */
     static public function getDevice($idObject)
     {
+        $sql = parent::$db->query("SELECT `id_device` FROM ports WHERE
+                                    `object` = $idObject");
 
+        return  $sql->fetch(PDO::FETCH_OBJ)->id_device;
     }
 
     /**
@@ -102,10 +105,78 @@ class Device extends System
     public function getDevicesForCollector()
     {
 
-        $devices[] = Lamps::getToCollector();
-        $devices[] = Dimmer::getToCollector();
+        $sql = parent::$db->query("SELECT objects.id AS id, alice_devices.name AS name, objects.type AS type, 
+                                      rooms.name AS room, objects.status AS status  FROM `alice_devices` 
+                                      INNER JOIN objects ON alice_devices.id_object = objects.id 
+                                      LEFT JOIN rooms ON alice_devices.room = rooms.id
+                                      WHERE alice_devices.active = 1");
 
-        return json_encode(array('mode' => 'get_devices', 'devices' => $devices));
+        if($sql->rowCount() > 0) {
+            $devices = $sql->fetchAll(PDO::FETCH_OBJ);
+
+            foreach ($devices AS $device) {
+
+                $attributes = $this->deviceAttributesToAlice($device->type, $device->status);
+
+                $name = $device->name;
+                $deviceId = $device->id;
+                $type = $attributes['type'];
+                $model = 'to.srv01';
+                $manufacturer = 'TouchOn';
+                $capabilities = $attributes['capabilities'];
+                $room = $device->room;
+
+                $devicesArr[$deviceId] = array('name' => $name, 'type' => $type, 'model' => $model,
+                    'manufacturer' => $manufacturer, 'capabilities' => $capabilities, 'room' => $room);
+
+            }
+
+        }
+
+        return json_encode(array('mode' => 'get_devices', 'devices' => $devicesArr));
+    }
+
+
+    /**
+     * Формирование атрибутов для устройства Алисы в зависимости от типа
+     */
+    private function deviceAttributesToAlice($type, $status)
+    {
+
+        switch ($type) {
+
+
+            case 'lamp':
+                $type = 'devices.types.light';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                break;
+
+            case 'socket':
+            case 'relay':
+                $type = 'devices.types.socket';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                break;
+
+            case 'lock':
+                $type = 'devices.types.openable';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                break;
+
+            case 'dimmer':
+                $type = 'devices.types.light';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"on"},"retrievable":true},
+                {"type":"devices.capabilities.range","parameters":{"unit":"unit.percent","range":{"min":1,"max":100,"precision":1},
+                "instance":"brightness"},"retrievable":true}]';
+                break;
+
+            case 'curtian':
+                $type = 'devices.types.openable.curtain';
+                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                break;
+        }
+
+        return ['type' => $type, 'capabilities' => $capabilities];
+
     }
 
 

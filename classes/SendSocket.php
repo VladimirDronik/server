@@ -230,6 +230,7 @@ class SendSocket
      */
     public function changeReseive($fulldata, $debugmode)
     {
+        if ($debugmode) print_r("Client send: $fulldata\n");
         
         //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
         if ($debugmode) $this->views->resData($fulldata);

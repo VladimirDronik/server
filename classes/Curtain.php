@@ -104,6 +104,8 @@ class Curtain extends Device
 
         if($curtain->place == 'port') {
 
+            $port = Device::getNumPort($port);
+
             //Включаем порт на определенное время
             $mega = new Megad();
             $mega->set($port,1,$curtain->device);

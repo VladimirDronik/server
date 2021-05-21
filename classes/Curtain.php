@@ -111,10 +111,14 @@ class Curtain extends Device
             $mega->set($port,1,$curtain->device);
             usleep(500000);
             $mega->set($port,0,$curtain->device);
-            usleep($time*1000000);
-            $mega->set($port,1,$curtain->device);
-            usleep(500000);
-            $mega->set($port,0,$curtain->device);
+
+            if(($status != 'open') && ($status != 'close')) {
+                usleep($time*1000000);
+                $mega->set($port,1,$curtain->device);
+                usleep(500000);
+                $mega->set($port,0,$curtain->device);
+            }
+
 
         } else {
             //Включаем устройство хитпро на определенное время

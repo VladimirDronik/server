@@ -47,7 +47,7 @@ class Curtain extends Device
     }
 
     /**
-     * Открытие шторы
+     * Закрытие шторы
      */
     public static function close($idObject)
     {
@@ -107,12 +107,17 @@ class Curtain extends Device
             $port = Device::getNumPort($port);
 
             //Включаем порт на определенное время
-            $mega = new Megad();
-            $mega->set($port,1,$curtain->device);
-            usleep(500000);
-            $mega->set($port,0,$curtain->device);
 
-            if(($status != 'open') && ($status != 'close')) {
+            $mega = new Megad();
+
+            if(($status == 'open') || ($status == 'close')) {
+                $mega->set($port,1,$curtain->device);
+                usleep(500000);
+                $mega->set($port,0,$curtain->device);
+            }else {
+                $mega->set($port,1,$curtain->device);
+                usleep(500000);
+                $mega->set($port,0,$curtain->device);
                 usleep($time*1000000);
                 $mega->set($port,1,$curtain->device);
                 usleep(500000);
@@ -123,9 +128,20 @@ class Curtain extends Device
         } else {
             //Включаем устройство хитпро на определенное время
             $hitePro = HitePro::getDeviceParams($curtain->device);
-            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
-            usleep($time*1000000);
-            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
+
+            if(($status == 'open') || ($status == 'close')) {
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
+                usleep(500000);
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
+            } else {
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
+                usleep( 500000);
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
+                usleep($time * 1000000);
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
+                usleep( 500000);
+                HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
+            }
         }
 
         //Устанавливаем шторе статус "открыто", связанной кнопке статус on

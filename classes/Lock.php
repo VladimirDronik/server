@@ -59,9 +59,26 @@ class Lock extends Device
     private static function setValue($lock, $command, $status, $time)
     {
 
-        if($command == 'open')
-            $port = $lock->openPort;
-        else $port = $lock->closePort;
+        //В зависимости от типа замка назначаем порт и время
+        switch ($lock->type) {
+            case 'Electromechanical':
+                if($command == 'open')
+                    $port = $lock->openPort;
+                else $port = $lock->closePort;
+                $time = 1;
+                break;
+
+            case 'Magnetic':
+                $port = $lock->openPort;
+                break;
+
+            case 'Latch':
+                $port = $lock->openPort;
+                $time = 1;
+                break;
+
+        }
+
 
         if($lock->place == 'port') {
 

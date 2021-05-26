@@ -21,7 +21,7 @@ class Lock extends Device
 
     private function initLock($idObject)
     {
-        $sql = parent::$db->query("SELECT `port_open`, `port_close`, `time`, `place`, `id_object` FROM Locks WHERE
+        $sql = parent::$db->query("SELECT `port_open`, `port_close`, `time`, `place`, `id_object` FROM locks WHERE
                                     `id_object` = $idObject");
 
         $lock =  $sql->fetch(PDO::FETCH_OBJ);

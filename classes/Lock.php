@@ -12,6 +12,7 @@ class Lock extends Device
     private $place;
     private $device;
     private $idObject;
+    private $type;
 
     public function __construct($idObject)
     {
@@ -21,7 +22,7 @@ class Lock extends Device
 
     private function initLock($idObject)
     {
-        $sql = parent::$db->query("SELECT `port_open`, `port_close`, `time`, `place`, `id_object` FROM locks WHERE
+        $sql = parent::$db->query("SELECT `port_open`, `port_close`, `time`, `place`, `id_object`, `type` FROM locks WHERE
                                     `id_object` = $idObject");
 
         $lock =  $sql->fetch(PDO::FETCH_OBJ);
@@ -31,6 +32,7 @@ class Lock extends Device
         $this->time = $lock->time;
         $this->place = $lock->place;
         $this->idObject = $lock->id_object;
+        $this->type =  $lock->type;
 
         if($lock->place == 'port')
         $this->device = Device::getDevice($idObject);

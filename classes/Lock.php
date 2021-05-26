@@ -78,11 +78,11 @@ class Lock extends Device
                 if ($time == null)
                     $time = 0;
 
-                if($command == 'open') {
+                if($command == 'open') { //При отркытии выключаем порт на время, если установлено или постоянно, если нет
                         $enable = 0;
                         $disable = 1;
                 } else {
-                        $enable = 1;
+                        $enable = 1; //При закрытии включаем порт постоянно, если время не установлено
                         $disable = 1;
                 }
                 break;

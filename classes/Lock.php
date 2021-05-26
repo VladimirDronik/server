@@ -70,6 +70,8 @@ class Lock extends Device
 
             case 'Magnetic':
                 $port = $lock->openPort;
+                if ($time == null)
+                    $time = 1;
                 break;
 
             case 'Latch':

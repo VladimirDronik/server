@@ -79,14 +79,12 @@ class Lock extends Device
                     $time = 0;
 
                 if($command == 'open') {
-                        $disable = 0;
-                        $enable = 1;
-                } else {
-                        $disable = 1;
                         $enable = 0;
+                        $disable = 1;
+                } else {
+                        $enable = 1;
+                        $disable = 0;
                 }
-
-
                 break;
 
             case 'Latch':
@@ -101,11 +99,15 @@ class Lock extends Device
 
             $port = Device::getNumPort($port);
             $mega = new Megad();
-            
 
-            $mega->set($port, $enable, $lock->device);
-            usleep($time*1000000);
-            $mega->set($port, $disable, $lock->device);
+            if(($lock->type == 'Magnetic') && ($time == null)) {
+                $mega->set($port, $enable, $lock->device);
+            } else {
+                $mega->set($port, $enable, $lock->device);
+                usleep($time*1000000);
+                $mega->set($port, $disable, $lock->device);
+
+            }
 
 
         } else {

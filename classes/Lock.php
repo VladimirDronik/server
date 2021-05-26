@@ -61,6 +61,9 @@ class Lock extends Device
     private static function setValue($lock, $command, $status, $time)
     {
 
+        $disable = 0;
+        $enable = 1;
+
         //В зависимости от типа замка назначаем порт и время
         switch ($lock->type) {
             case 'Electromechanical':
@@ -73,7 +76,17 @@ class Lock extends Device
             case 'Magnetic':
                 $port = $lock->openPort;
                 if ($time == null)
-                    $time = 1;
+                    $time = 0;
+
+                if($command == 'open') {
+                        $disable = 0;
+                        $enable = 1;
+                } else {
+                        $disable = 1;
+                        $enable = 0;
+                }
+
+
                 break;
 
             case 'Latch':
@@ -87,19 +100,21 @@ class Lock extends Device
         if($lock->place == 'port') {
 
             $port = Device::getNumPort($port);
-
-            //Включаем порт на определенное время
             $mega = new Megad();
-            $mega->set($port,1,$lock->device);
+            
+
+            $mega->set($port, $enable, $lock->device);
             usleep($time*1000000);
-            $mega->set($port,0,$lock->device);
+            $mega->set($port, $disable, $lock->device);
+
 
         } else {
             //Включаем устройство хитпро на определенное время
             $hitePro = HitePro::getDeviceParams($lock->device);
-            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
+
+            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, $enable);
             usleep($time*1000000);
-            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
+            HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, $disable);
         }
 
         //Устанавливаем замку статус "открыто", связанной кнопке статус on

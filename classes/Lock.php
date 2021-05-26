@@ -83,7 +83,7 @@ class Lock extends Device
                         $disable = 1;
                 } else {
                         $enable = 1;
-                        $disable = 0;
+                        $disable = 1;
                 }
                 break;
 
@@ -106,7 +106,6 @@ class Lock extends Device
                 $mega->set($port, $enable, $lock->device);
                 usleep($time*1000000);
                 $mega->set($port, $disable, $lock->device);
-
             }
 
 

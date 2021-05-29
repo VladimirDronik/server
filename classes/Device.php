@@ -21,6 +21,14 @@ class Device extends System
         return  $sql->fetch(PDO::FETCH_OBJ)->id_device;
     }
 
+    static public function getNumPort($idPort)
+    {
+        $sql = parent::$db->query("SELECT `num_port` FROM ports WHERE
+                                    `id` = $idPort");
+
+        return  $sql->fetch(PDO::FETCH_OBJ)->num_port;
+    }
+
     /**
      * Определение типа порта для устройств i2c
      */

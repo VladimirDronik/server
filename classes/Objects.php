@@ -171,7 +171,7 @@ class Objects extends System
 
             if($status == 'open') $status = 'on';
             elseif ($status == 'close') $status = 'off';
-            else $status = 'on';
+          
 
             if(isset($item->id)) {
 

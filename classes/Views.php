@@ -398,7 +398,7 @@ class Views extends System
 
 
                 //Если объект является термостатом или гигрометром
-                if(($itemType=='temp')||($itemType=='humidity')){
+                if(($itemType=='termostat')||($itemType=='humidity')){
 
 
                     if ($set_value == '') $set_value = 'NULL';
@@ -478,8 +478,8 @@ class Views extends System
         $itemStatus = mb_strtolower($itemStatus);
 
         // Обновляем данные в таблице представлений
-       // parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='temp', `status`, '$itemStatus'),
-         //                   `value` = IF(`type`='temp', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
+       // parent::$db->exec("UPDATE `view_items` SET `status` = IF(`type`='termostat', `status`, '$itemStatus'),
+         //                   `value` = IF(`type`='termostat', '$itemStatus', `value`) WHERE `view_items`.`id` = $idItem");
 
         if($itemStatus)
         parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus'
@@ -493,7 +493,7 @@ class Views extends System
         while ($viewItem = $sql->fetch(PDO::FETCH_OBJ)) {
 
            //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
-            if($viewItem->type == 'temp'){
+            if($viewItem->type == 'termostat'){
 
                 $itemTermostat = $this->getTermostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';

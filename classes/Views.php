@@ -566,7 +566,7 @@ class Views extends System
                 'top' => $viewObject->position_top);
 
         // Если тип объекта термометр
-        if ($viewObject->type == 'temp') {
+        if ($viewObject->type == 'termostat') {
             return self::getTermostats($viewObject, 'array');
         }
     }

@@ -42,7 +42,7 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`,
-                                              `view_items`.`on_method_params`, 
+                                              `view_items`.`params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`name` AS room_name,
                                               `rooms`.`image` AS room_image
@@ -96,7 +96,7 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
-                                              `view_items`.`on_method_params`, 
+                                              `view_items`.`params`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`image` AS room_image,
                                               `rooms`.`style` AS room_style,
@@ -210,7 +210,7 @@ class Views extends System
     static private function getTermostats($view, $typeOutput = 'array')
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
-                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title`, `view_items`.`on_method_params` 
+                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title`, `view_items`.`params` 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
@@ -225,7 +225,7 @@ class Views extends System
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
                 'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
-                'left' => $view->position_left, 'top' => $view->position_top,  'params' => $termostat->on_method_params);
+                'left' => $view->position_left, 'top' => $view->position_top,  'params' => $termostat->params);
             else
 
             $item = '{"id":'.$view->id.',
@@ -234,7 +234,7 @@ class Views extends System
             "title":"'.$view->title.'",
             "left":"'.$view->position_left.'",
             "top":"'.$view->position_top.'",
-            "params":"'.$termostat->on_method_params.'"
+            "params":"'.$termostat->params.'"
             }';
 
             return $item;
@@ -504,7 +504,7 @@ class Views extends System
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
             "title":"'.$viewItem->title.'",
-            "params":"'.$viewItem->on_method_params.'"}]}';
+            "params":"'.$viewItem->params.'"}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);
@@ -562,7 +562,7 @@ class Views extends System
                 'title' => $viewObject->title,
                 'status' => $viewObject->status,
                 'left' => $viewObject->position_left,
-                'params' => $viewObject->on_method_params,
+                'params' => $viewObject->params,
                 'top' => $viewObject->position_top);
 
         // Если тип объекта термометр

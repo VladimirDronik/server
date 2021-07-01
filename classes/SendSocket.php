@@ -315,7 +315,14 @@ class SendSocket
                 $dimmer->setValue($status);
 
 
-        } elseif ($object->type == 'virtual') {
+        } elseif ($object->type == 'curtain') {
+            if ($status == 'on')
+                Curtain::open($idObject);
+            else
+                Curtain::close($idObject);
+        }
+
+        elseif ($object->type == 'virtual') {
 
         $virtual = new Virtuals($idObject);
 

@@ -79,8 +79,10 @@ class System
      * @param string $sound "name of sound file"
      * @return null
      */
-    function playSound($sound)
+    public static function playSound($idSound)
     {
+        $sql = self::$db->query("SELECT `sound` FROM `sounds` WHERE `id`= $idSound");
+        $sound = $sql->fetch(PDO::FETCH_OBJ)->sound;
         exec("aplay /var/www/smarthome/sounds/$sound");
     }
 

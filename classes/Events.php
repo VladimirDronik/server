@@ -89,9 +89,59 @@ class Events extends System
                         $script->runscript($action->relate, $action->params);
                         break;
 
+                    case 'method' :
+                        Objects::runMethod($action->relate, $action->params);
+                        break;
+
+                    case 'notification' :
+                        Messages::send(1, $action->value);
+                        break;
+
+                    case 'sound' :
+                        System::playSound($action->relate);
+                        break;
+
+                    case 'property' :
+                        self::setProperty($action->relate, $action->value);
+                        break;
+
+                    case 'view' :
+                        $view = new Views();
+                        $view->updateItem($action->relate, $action->value);
+                        break;
+
+                    case 'log' :
+                        System::addLog('message',$action->value);
+                        break;
+
                 }
             }
         }
+    }
+
+
+    /**
+     * Установка значеения свойства для выбранного объекта
+     * @param $idObject
+     * @param $propertyValue
+     */
+    private function setProperty($idObject, $propertyValue)
+    {
+
+        $propertyAndValue = explode('=',$propertyValue);
+
+        $object = new Objects();
+        $object->select($idObject);
+
+        switch ($object->type) {
+
+            case 'termostat' :
+                $termostat = new Thermostats($object->id);
+                $termostat->setProperty($propertyAndValue[0], $propertyAndValue[1]);
+                break;
+
+        }
+
     }
 
 }

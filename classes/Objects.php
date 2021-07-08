@@ -254,4 +254,20 @@ class Objects extends System
        return Megad::status($this->port,'get',$this->device);
     }
 
+
+    /**
+     * Запуск метода по его id
+     * @param $idMethod
+     */
+    public static function runMethod($idMethod, $params = null)
+    {
+        $sql = parent::$db->query("SELECT objects.id, objects.type FROM methods WHERE methods.id =  $idMethod 
+                                  INNER JOIN objects
+                                  ON methods.id_object = objects.id");
+        $object = $sql->fetch(PDO::FETCH_OBJ);
+
+
+        Action::runAction($idMethod, 'script', $object->id);
+
+    }
 }

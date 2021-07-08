@@ -126,6 +126,24 @@ class Thermostats extends Objects
     }
 
 
+    /**
+     * Установка значения свойства для термостата
+     * @param $property
+     * @param $value
+     */
+    public function setProperty($property, $value)
+    {
+
+        //Для нагрева или охлаждения модифицируем значение
+        if($property == 'нагрев')
+            $value = 1;
+        else $value = 0;
+
+
+        parent::$db->query("UPDATE termostats SET $property = '$value'
+                                         WHERE id=$this->id_termostat");
+
+    }
 
 
 
@@ -323,7 +341,7 @@ class Thermostats extends Objects
 
         }
 
-        
+
 
         if (!$error) {
 

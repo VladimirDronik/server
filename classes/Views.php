@@ -563,6 +563,7 @@ class Views extends System
                 'status' => $viewObject->status,
                 'left' => $viewObject->position_left,
                 'params' => $viewObject->params,
+                'color' => $viewObject->color,
                 'top' => $viewObject->position_top);
 
         // Если тип объекта термометр

@@ -114,6 +114,12 @@ class Events extends System
                         System::addLog('message',$action->value);
                         break;
 
+                    case 'alice' :
+                        if($action->relate = 1)
+                            YandexStation::say($action->params, $action->value);
+                        elseif ($action->relate = 2)
+                            YandexStation::cmd($action->params, $action->value);
+
                 }
             }
         }

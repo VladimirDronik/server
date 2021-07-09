@@ -50,6 +50,7 @@ require_once __DIR__. '/classes/Boiler.php';
 require_once __DIR__. '/classes/Curtain.php';
 require_once __DIR__. '/classes/Lock.php';
 require_once __DIR__. '/classes/Events.php';
+require_once __DIR__. '/libs/YandexTTS.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

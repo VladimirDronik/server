@@ -8,9 +8,10 @@
  */
 class YandexStation extends Device
 {
-    private static function init($cookie)
+    private static function init()
     {
-        $pathToCookieFile = __DIR__.'cookies/'.$cookie.'.txt';
+        $pathToCookieFile = ROOT_DIR;
+        echo "\n".$pathToCookieFile;
         $tts = new YandexTTS($pathToCookieFile, true);
         return $tts;
     }
@@ -32,7 +33,7 @@ class YandexStation extends Device
                 $stations = $sql->fetchAll(PDO::FETCH_OBJ);
 
                 foreach ($stations as $station) {
-                    $yandexStation = self::init($station->cookie);
+                    $yandexStation = self::init();
 
                     if ($volumeStation)
                         $volume = $volumeStation;
@@ -64,7 +65,7 @@ class YandexStation extends Device
             if ($sql->rowCount() > 0) {
                 $stations = $sql->fetchAll(PDO::FETCH_OBJ);
                 foreach ($stations as $station) {
-                    $yandexStation = self::init($station->cookie);
+                    $yandexStation = self::init();
 
                     if ($volumeStation)
                         $volume = $volumeStation;

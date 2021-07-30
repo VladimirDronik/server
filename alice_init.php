@@ -1,6 +1,7 @@
 <?php
 
-include 'YandexTTS.php';
+include 'libs/YandexTTS.php';
+
 
 // Путь к файлу с куки.
 $pathToCookieFile = 'cookie.txt';

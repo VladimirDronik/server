@@ -1,6 +1,9 @@
 .idea
 server.log
+cookies.txt
 /workerman
 /userscripts
 /sounds
+/speakers
+/logs
 server.code-workspace

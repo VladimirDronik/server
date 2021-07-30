@@ -1,7 +1,7 @@
 <?php
 
-const LOGS_DIR = 'logs';
-const SPEAKERS_DIR = 'speakers';
+const LOGS_DIR = ROOT_DIR.'/logs';
+const SPEAKERS_DIR = ROOT_DIR.'/speakers';
 
 class YandexTTS {
 

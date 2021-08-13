@@ -13,7 +13,7 @@ class YandexTTS {
       if($pathToCookieFile !== '') {
          $this->cookieFile = $pathToCookieFile;
       } else {
-         $this->cookieFile = 'cookie.txt';
+          $this->cookieFile = ROOT_DIR.'/cookie.txt';
       }
       $this->debug = $debug;
    }
@@ -344,7 +344,7 @@ class YandexTTS {
       if ($this->debug) {
          $today_file = 'yandextts.log';
          $data = date('H:i:s') . ' ' . $msg . PHP_EOL;
-         file_put_contents('logs/'.$today_file, $data, FILE_APPEND | LOCK_EX);
+         file_put_contents(LOGS_DIR.'/'.$today_file, $data, FILE_APPEND | LOCK_EX);
       }
    }
 }

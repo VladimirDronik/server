@@ -10,8 +10,7 @@ class YandexStation extends Device
 {
     private static function init()
     {
-        $pathToCookieFile = ROOT_DIR;
-        echo "\n".$pathToCookieFile;
+        $pathToCookieFile = ROOT_DIR.'/cookie.txt';
         $tts = new YandexTTS($pathToCookieFile, true);
         return $tts;
     }

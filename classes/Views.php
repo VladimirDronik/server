@@ -201,6 +201,7 @@ class Views extends System
         }
 
         $json = json_encode(array('status'=>'TemperaturesLoad', 'items'=> $temperatures));
+
         return $json;
     }
 
@@ -297,7 +298,7 @@ class Views extends System
                     $temperatureLog[] = array('date' => $temperatures->date, 'value' => round($temperatures->value, 1));
                 }
 
-                $datagrapf[] = array('id_termostat' => $termostat->id, 'trrmostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
+                $datagrapf[] = array('id_termostat' => $termostat->id, 'termostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
             }
  //       }
 
@@ -398,7 +399,6 @@ class Views extends System
             $newObject->select($idObject);
 
 
-
                 //Если объект является термостатом или гигрометром
                 if(($itemType=='temp')||($itemType=='humidity')){
 
@@ -417,13 +417,35 @@ class Views extends System
                     self::updateItem($itemID);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')||($itemType == 'label')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+
 
                     self::updateItem($itemID, $itemStatus);
 
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                    System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');
+                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
+                } elseif ($itemType == 'label') {
+
+//                    $sql = parent::$db->query("SELECT * FROM `view_items` WHERE id = $itemID");
+//                    while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
+//
+//                        $item = self::getItem($viewObject);
+//                    }
+//
+//
+//                    if($item['params'] != ""){
+//                       $params = explode('&', $item['params']);
+//
+//
+//                       if (explode('=', $params[0])[1] == 'true')
+//                           self::updateItem($itemID, $itemStatus);
+//                    }
+
+                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
+
+                }
 
                 } elseif  ($itemType == 'dimmer') {
 
@@ -463,7 +485,7 @@ class Views extends System
         }
 
 
-    }
+
 
 
     /**
@@ -537,6 +559,8 @@ class Views extends System
         return $sql->fetch(PDO::FETCH_OBJ);
         else return false;
     }
+
+
 
 
     /**

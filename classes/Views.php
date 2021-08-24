@@ -427,21 +427,6 @@ class Views extends System
 
                 } elseif ($itemType == 'label') {
 
-//                    $sql = parent::$db->query("SELECT * FROM `view_items` WHERE id = $itemID");
-//                    while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
-//
-//                        $item = self::getItem($viewObject);
-//                    }
-//
-//
-//                    if($item['params'] != ""){
-//                       $params = explode('&', $item['params']);
-//
-//
-//                       if (explode('=', $params[0])[1] == 'true')
-//                           self::updateItem($itemID, $itemStatus);
-//                    }
-
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                         System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 

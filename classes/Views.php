@@ -354,7 +354,7 @@ class Views extends System
         $data_array = json_decode($data);
 
         //Если клиент отправил запрос на изменение состояния термометра на странице термометров
-        if ($data_array->status=='temperaturesChange'){
+        if ($data_array->status == 'temperaturesChange') {
 
             $itemID = $data_array->item->id;
             $itemValue = $data_array->item->value;
@@ -367,7 +367,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния события
-        if ($data_array->status=='eventChange'){
+        if ($data_array->status == 'eventChange') {
 
             //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
             parent::$db->exec("UPDATE `sheduler_points` SET `status` = '$itemStatus', `value` = $itemValue  WHERE `view_items`.`id` = $itemID");
@@ -376,7 +376,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния итема
-        if ($data_array->status == 'itemChange'){
+        if ($data_array->status == 'itemChange') {
 
             $itemID = $data_array->items[0]->id;
             $itemDescription = $data_array->items[0]->description;
@@ -391,16 +391,16 @@ class Views extends System
 
             if ($object->id_object != null) {
 
-            $idObject = $object->id_object;
-            $onMethod = $object->on_method;
-            $offMethod = $object->off_method;
+                $idObject = $object->id_object;
+                $onMethod = $object->on_method;
+                $offMethod = $object->off_method;
 
-            $newObject = new Objects();
-            $newObject->select($idObject);
+                $newObject = new Objects();
+                $newObject->select($idObject);
 
 
                 //Если объект является термостатом или гигрометром
-                if(($itemType=='temp')||($itemType=='humidity')){
+                if (($itemType == 'temp') || ($itemType == 'humidity')) {
 
 
                     if ($set_value == '') $set_value = 'NULL';
@@ -417,7 +417,7 @@ class Views extends System
                     self::updateItem($itemID);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch') || ($itemType == 'button')) { //Если объект является переключателем или кнопкой
 
 
                     self::updateItem($itemID, $itemStatus);
@@ -430,9 +430,8 @@ class Views extends System
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                         System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
-                }
 
-                } elseif  ($itemType == 'dimmer') {
+                } elseif ($itemType == 'dimmer') {
 
                     $dimmer = new Dimmer($idObject);
 
@@ -440,7 +439,7 @@ class Views extends System
                     if ($itemValue === null) {
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен', 'dimmer');
+                            System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
 
                     } else { //пришло конкретное значение диммера
 
@@ -458,7 +457,6 @@ class Views extends System
                     }
 
 
-
                 }
 
 
@@ -469,7 +467,7 @@ class Views extends System
 
         }
 
-
+    }
 
 
 

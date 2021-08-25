@@ -400,7 +400,7 @@ class Views extends System
 
 
                 //Если объект является термостатом или гигрометром
-                if (($itemType == 'temp') || ($itemType == 'humidity')) {
+                if (($itemType == 'termostat') || ($itemType == 'humidity')) {
 
 
                     if ($set_value == '') $set_value = 'NULL';
@@ -500,7 +500,7 @@ class Views extends System
         while ($viewItem = $sql->fetch(PDO::FETCH_OBJ)) {
 
            //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
-            if($viewItem->type == 'temp'){
+            if($viewItem->type == 'termostat'){
 
                 $itemTermostat = $this->getTermostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';

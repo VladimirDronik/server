@@ -9,12 +9,12 @@
 class Events extends System
 {
 
-    public static function exicute($object, $nameEvent)
+    public static function exicute($idObject, $nameEvent)
     {
 
 
         //Выполнение действий, которые соответствуют событиям
-        $sql = parent::$db->query("SELECT * FROM `events` WHERE `id_object`= $object->id AND `event` = '$nameEvent'");
+        $sql = parent::$db->query("SELECT * FROM `events` WHERE `id_object`= $idObject AND `event` = '$nameEvent'");
 
 
         if($sql->rowCount() > 0) {
@@ -22,7 +22,7 @@ class Events extends System
 
             foreach ($events as $event) {
 
-                self::checkCondition($object, $event);
+                self::checkCondition($idObject, $event);
             }
         }
 

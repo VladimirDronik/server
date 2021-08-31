@@ -39,8 +39,11 @@ class YandexStation extends Device
                     else
                         $volume = $station->volume;
 
+                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
                     $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
                     $yandexStation->say($message, $station->speaker_id);
+                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+                    $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
                 }
 
             }
@@ -71,8 +74,12 @@ class YandexStation extends Device
                     else
                         $volume = $station->volume;
 
+
+                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
                     $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
                     $yandexStation->cmd($command, $station->speaker_id);
+                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+                    $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
                 }
 
             }

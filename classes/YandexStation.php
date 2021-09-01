@@ -34,7 +34,7 @@ class YandexStation extends Device
                 foreach ($stations as $station) {
                     $yandexStation = self::init();
 
-                    if ($volumeStation)
+                    if ($volumeStation != '?')
                         $volume = $volumeStation;
                     else
                         $volume = $station->volume;
@@ -69,7 +69,7 @@ class YandexStation extends Device
                 foreach ($stations as $station) {
                     $yandexStation = self::init();
 
-                    if ($volumeStation)
+                    if ($volumeStation != '?')
                         $volume = $volumeStation;
                     else
                         $volume = $station->volume;

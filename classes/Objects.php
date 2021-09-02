@@ -261,9 +261,10 @@ class Objects extends System
      */
     public static function runMethod($idMethod, $params = null)
     {
-        $sql = parent::$db->query("SELECT objects.id, objects.type FROM methods WHERE methods.id =  $idMethod 
+        $sql = parent::$db->query("SELECT objects.id, objects.type FROM methods  
                                   INNER JOIN objects
-                                  ON methods.id_object = objects.id");
+                                  ON methods.id_object = objects.id
+                                  WHERE methods.id =  $idMethod ");
         $object = $sql->fetch(PDO::FETCH_OBJ);
 
 

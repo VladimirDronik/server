@@ -137,7 +137,7 @@ class Thermostats extends Objects
         //Для нагрева или охлаждения модифицируем значение
         if($property == 'нагрев')
             $value = 1;
-        else $value = 0;
+        elseif($property == 'охлаждение') $value = 0;
 
 
         parent::$db->query("UPDATE termostats SET $property = '$value'

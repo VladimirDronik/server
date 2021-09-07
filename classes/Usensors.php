@@ -57,6 +57,9 @@ class Usensors extends Objects
             $lux = get_lux1750();
         }
 
+        //Если не подключен датчик освещения
+        if($lux='NA') $lux=0;
+
         //Добавляем данные в таблицу унивесального датчика
         parent::$db->exec("UPDATE `usensors` SET `temp` = $temperature, `hum` = $humidity, `lux` = $lux WHERE `id_object` = $idObject");
 

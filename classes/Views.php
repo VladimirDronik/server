@@ -42,7 +42,8 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`,
-                                              `view_items`.`on_method_params`, 
+                                              `view_items`.`params`,  
+                                              `view_items`.`color`, 
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`name` AS room_name,
                                               `rooms`.`image` AS room_image
@@ -96,7 +97,8 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
-                                              `view_items`.`on_method_params`, 
+                                              `view_items`.`params`,
+                                              `view_items`.`color`,  
                                               `rooms`.`id` AS room_id,
                                               `rooms`.`image` AS room_image,
                                               `rooms`.`style` AS room_style,
@@ -199,6 +201,7 @@ class Views extends System
         }
 
         $json = json_encode(array('status'=>'TemperaturesLoad', 'items'=> $temperatures));
+
         return $json;
     }
 
@@ -210,7 +213,7 @@ class Views extends System
     static private function getTermostats($view, $typeOutput = 'array')
     {
         $sql = parent::$db->query("SELECT  `termostats`.`current`, `termostats`.`optimal`, 
-                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title`, `view_items`.`on_method_params` 
+                                            `termostats`.`gisteresis`, `view_items`.`title` AS `title`, `view_items`.`params` 
                                     FROM `termostats` INNER JOIN view_items 
                                     ON termostats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
@@ -223,9 +226,9 @@ class Views extends System
 
 
             if($typeOutput == 'array')
-            $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $viewObject->icon,
+            $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
                 'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $termostat->title,
-                'left' => $view->position_left, 'top' => $view->position_top,  'params' => $termostat->on_method_params);
+                'left' => $view->position_left, 'top' => $view->position_top,  'params' => $termostat->params);
             else
 
             $item = '{"id":'.$view->id.',
@@ -234,7 +237,7 @@ class Views extends System
             "title":"'.$view->title.'",
             "left":"'.$view->position_left.'",
             "top":"'.$view->position_top.'",
-            "params":"'.$termostat->on_method_params.'"
+            "params":"'.$termostat->params.'"
             }';
 
             return $item;
@@ -295,7 +298,7 @@ class Views extends System
                     $temperatureLog[] = array('date' => $temperatures->date, 'value' => round($temperatures->value, 1));
                 }
 
-                $datagrapf[] = array('id_termostat' => $termostat->id, 'trrmostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
+                $datagrapf[] = array('id_termostat' => $termostat->id, 'termostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
             }
  //       }
 
@@ -351,7 +354,7 @@ class Views extends System
         $data_array = json_decode($data);
 
         //Если клиент отправил запрос на изменение состояния термометра на странице термометров
-        if ($data_array->status=='temperaturesChange'){
+        if ($data_array->status == 'temperaturesChange') {
 
             $itemID = $data_array->item->id;
             $itemValue = $data_array->item->value;
@@ -364,7 +367,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния события
-        if ($data_array->status=='eventChange'){
+        if ($data_array->status == 'eventChange') {
 
             //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
             parent::$db->exec("UPDATE `sheduler_points` SET `status` = '$itemStatus', `value` = $itemValue  WHERE `view_items`.`id` = $itemID");
@@ -373,7 +376,7 @@ class Views extends System
 
 
         //Если клиент отправил запрос на изменение состояния итема
-        if ($data_array->status == 'itemChange'){
+        if ($data_array->status == 'itemChange') {
 
             $itemID = $data_array->items[0]->id;
             $itemDescription = $data_array->items[0]->description;
@@ -388,17 +391,16 @@ class Views extends System
 
             if ($object->id_object != null) {
 
-            $idObject = $object->id_object;
-            $onMethod = $object->on_method;
-            $offMethod = $object->off_method;
+                $idObject = $object->id_object;
+                $onMethod = $object->on_method;
+                $offMethod = $object->off_method;
 
-            $newObject = new Objects();
-            $newObject->select($idObject);
-
+                $newObject = new Objects();
+                $newObject->select($idObject);
 
 
                 //Если объект является термостатом или гигрометром
-                if(($itemType=='temp')||($itemType=='humidity')){
+                if (($itemType == 'termostat') || ($itemType == 'humidity')) {
 
 
                     if ($set_value == '') $set_value = 'NULL';
@@ -415,15 +417,21 @@ class Views extends System
                     self::updateItem($itemID);
 
 
-                } elseif (($itemType == 'switch')||($itemType == 'button')||($itemType == 'label')) { //Если объект является переключателем или кнопкой
+                } elseif (($itemType == 'switch') || ($itemType == 'button')) { //Если объект является переключателем или кнопкой
+
 
                     self::updateItem($itemID, $itemStatus);
 
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                    System::addlog('error','Метод для кнопки "'.$itemDescription.'"" не определен', 'button');
+                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
+
+                } elseif ($itemType == 'label') {
+
+                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
 
-                } elseif  ($itemType == 'dimmer') {
+                } elseif ($itemType == 'dimmer') {
 
                     $dimmer = new Dimmer($idObject);
 
@@ -431,7 +439,7 @@ class Views extends System
                     if ($itemValue === null) {
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                            System::addlog('error','Метод для диммера "'.$itemDescription.'"" не определен', 'dimmer');
+                            System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
 
                     } else { //пришло конкретное значение диммера
 
@@ -449,7 +457,6 @@ class Views extends System
                     }
 
 
-
                 }
 
 
@@ -460,8 +467,8 @@ class Views extends System
 
         }
 
-
     }
+
 
 
     /**
@@ -470,7 +477,7 @@ class Views extends System
      * @var int idItem - ид итема у которого будем менять статус
      * @var string itemStatus - значение статуса для итема
      */
-    function updateItem($idItem, $itemStatus = null)
+    public function updateItem($idItem, $itemStatus = null)
     {
 
         global $localsocket;
@@ -493,7 +500,7 @@ class Views extends System
         while ($viewItem = $sql->fetch(PDO::FETCH_OBJ)) {
 
            //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
-            if($viewItem->type == 'temp'){
+            if($viewItem->type == 'termostat'){
 
                 $itemTermostat = $this->getTermostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
@@ -504,7 +511,7 @@ class Views extends System
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
             "title":"'.$viewItem->title.'",
-            "params":"'.$viewItem->on_method_params.'"}]}';
+            "params":"'.$viewItem->params.'"}]}';
 
 
             $res_json = (['user' => 'all', 'message' => $message]);
@@ -537,6 +544,8 @@ class Views extends System
     }
 
 
+
+
     /**
      * Формирование массива с параметрами итема
      *
@@ -562,11 +571,12 @@ class Views extends System
                 'title' => $viewObject->title,
                 'status' => $viewObject->status,
                 'left' => $viewObject->position_left,
-                'params' => $viewObject->on_method_params,
+                'params' => $viewObject->params,
+                'color' => $viewObject->color,
                 'top' => $viewObject->position_top);
 
         // Если тип объекта термометр
-        if ($viewObject->type == 'temp') {
+        if ($viewObject->type == 'termostat') {
             return self::getTermostats($viewObject, 'array');
         }
     }

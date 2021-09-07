@@ -177,7 +177,7 @@ class Device extends System
                 "instance":"brightness"},"retrievable":true}]';
                 break;
 
-            case 'curtian':
+            case 'curtain':
                 $type = 'devices.types.openable.curtain';
                 $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
                 break;
@@ -206,7 +206,10 @@ class Device extends System
         else
             $on = null;
 
-        if (($device->type == 'lamp') || ($device->type == 'relay') || ($device->type == 'socket'))
+        if (($device->type == 'lamp') || ($device->type == 'relay') || ($device->type == 'socket') )
+            $status = array('on' => $on);
+
+        if (($device->type == 'curtain'))
             $status = array('on' => $on);
 
         if ($device->type == 'dimmer') {

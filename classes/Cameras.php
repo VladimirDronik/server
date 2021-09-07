@@ -3,18 +3,20 @@
 /**
 Класс работы с изображением от камер видеонаблюдения
  */
-class Cameras
+class Cameras extends Device
 {
     /**
      * Извлекает из БД все доступные камеры и отдает название и превью в сокет
      */
     public function getAllCameras()
     {
-        $sql = parent::$db->query("SELECT id, name, image FROM cameras WHERE active=1 ORDER BY sort");
+        $sql = parent::$db->query("SELECT cameras.id, cameras.name, cameras.image, rooms.name AS roomName FROM cameras INNER JOIN rooms 
+            ON rooms.id = cameras.room WHERE cameras.active=1 ORDER BY cameras.sort");
         while ($cameras = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
-            $cameras_array = array('id'=>(int)$cameras->id, 'name'=>$cameras->name, 'type'=>$cameras->image);
+            $cameras_array = array('id'=>(int)$cameras->id, 'name'=>$cameras->name,
+                'room'=>$cameras->roomName, 'image'=>$cameras->image);
             $camsarr[] = $cameras_array;
 
         }

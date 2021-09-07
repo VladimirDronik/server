@@ -61,9 +61,90 @@ class Thermostats extends Objects
             $this->name = $termostat->name;
             $this->hitepro_dev = $termostat->subdev_id;
 
+
         }
 
     }
+
+    /**
+     * Проверка условий выполнения действия при возникновении события
+     * @param $comparison
+     */
+    public function getProperty($event)
+    {
+
+
+        switch ($event->property) {
+
+            case 'current' :
+                $property = $this->termostat->current;
+                break;
+
+            case 'optimal' :
+                $property = $this->termostat->optimal;
+                break;
+
+            case 'gisteresis' :
+                $property = $this->termostat->gisteresis;
+                break;
+
+            case 'type' :
+                if($this->termostat->termostat == 1)
+                $property = 'нагрев';
+                else
+                    $property = 'охлаждение';
+                break;
+
+            case 'min_threshold' :
+                $property = $this->termostat->min_threshold;
+                break;
+
+            case 'max_threshold' :
+                $property = $this->termostat->max_threshold;
+                break;
+
+            case 'min_alarm' :
+                $property = $this->termostat->min_alarm;
+                break;
+
+            case 'max_alarm' :
+                $property = $this->termostat->max_alarm;
+                break;
+
+            case 'room' :
+                //TODO: Здесь сделать запрос названия комнаты по его id
+                break;
+
+            case 'battery' :
+                //TODO: Здесь сделать запрос заряда батареи для беспроводного термостата
+                break;
+
+        }
+
+        return $property;
+
+    }
+
+
+    /**
+     * Установка значения свойства для термостата
+     * @param $property
+     * @param $value
+     */
+    public function setProperty($property, $value)
+    {
+
+        //Для нагрева или охлаждения модифицируем значение
+        if($property == 'нагрев')
+            $value = 1;
+        elseif($property == 'охлаждение') $value = 0;
+
+
+        parent::$db->query("UPDATE termostats SET $property = '$value'
+                                         WHERE id=$this->id_termostat");
+
+    }
+
 
 
     /**
@@ -75,10 +156,13 @@ class Thermostats extends Objects
 
     function check()
     {
+
         $sendMessage = false;
 
         $object = new Objects();
         $object->select($this->idObject);
+
+        Events::exicute($this->idObject, 'onStatus');
 
         if($this->termostat->current) {
         //Если термостат с фйнкцией нагрева
@@ -153,6 +237,8 @@ class Thermostats extends Objects
         $alarm_cnt = 0;
         $alarm_cnt_avail = 0;
 
+        Events::exicute($this->idObject, 'onCheck');
+
 
         if(($this->placetype == 'port') || ($this->placetype == '1wire')) {
 
@@ -212,6 +298,7 @@ class Thermostats extends Objects
                         System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
 
                         Messages::send(1, 'Термостат '.$this->name.' недоступен');
+                        Events::exicute($this->idObject, 'onError');
 
                         $error = true;
                         break 2;
@@ -230,6 +317,7 @@ class Thermostats extends Objects
                     System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
 
                     Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
+                    Events::exicute($this->idObject, 'onThreshold');
 
                     $error = true;
                     break 1;
@@ -252,7 +340,6 @@ class Thermostats extends Objects
             $this->checkValue($termometr_value);
 
         }
-
 
 
 
@@ -287,6 +374,8 @@ class Thermostats extends Objects
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
+
+
     }
 
 
@@ -307,6 +396,8 @@ class Thermostats extends Objects
 
             System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
             Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
+
+            Events::exicute($this->idObject, 'onThreshold');
 
         }
     }

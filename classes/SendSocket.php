@@ -77,6 +77,7 @@ class SendSocket
      */
     public function getTempLog()
     {
+        echo $this->views->getGraphs($this->param1, $this->param2);
         $this->send($this->views->getGraphs($this->param1, $this->param2));
     }
 
@@ -122,6 +123,7 @@ class SendSocket
      */
     public function getAllCameras()
     {
+        var_dump($this->cameras->getAllCameras());
         $this->send($this->cameras->getAllCameras());
     }
 
@@ -315,7 +317,14 @@ class SendSocket
                 $dimmer->setValue($status);
 
 
-        } elseif ($object->type == 'virtual') {
+        } elseif ($object->type == 'curtain') {
+            if ($status == 'on')
+                Curtain::open($idObject);
+            else
+                Curtain::close($idObject);
+        }
+
+        elseif ($object->type == 'virtual') {
 
         $virtual = new Virtuals($idObject);
 

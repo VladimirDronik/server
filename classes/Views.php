@@ -400,7 +400,7 @@ class Views extends System
 
 
                 //Если объект является термостатом или гигрометром
-                if (($itemType == 'termostat') || ($itemType == 'humidity')) {
+                if (($itemType == 'termostat') || ($itemType == 'temp') ||  ($itemType == 'humidity')) {
 
 
                     if ($set_value == '') $set_value = 'NULL';
@@ -749,25 +749,26 @@ class Views extends System
     public function getMenu()
     {
         //Сначала находим все родительские пункты
-        $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = 0 ORDER BY sort";
+        $sql = "SELECT id, title, link, image, params FROM menu WHERE active = 1 AND parent = 0 ORDER BY sort";
 
         $queryParrent = parent::$db->query($sql);
         while ($parrent = $queryParrent->fetch(PDO::FETCH_OBJ)) {
 
             unset($childs);
 
-            $sql = "SELECT id, title, link, image FROM menu WHERE active = 1 AND parent = {$parrent->id} ORDER BY sort";
+            $sql = "SELECT id, title, link, image, params FROM menu WHERE active = 1 AND parent = {$parrent->id} ORDER BY sort";
             $queryChild = parent::$db->query($sql);
 
 
             while ($child = $queryChild->fetch(PDO::FETCH_OBJ)) {
 
                 $imageChild = explode('.',$child->image)[0];
-                $childs[] = array('image'=>$imageChild, 'title'=>$child->title, 'link'=>$child->link);
+                $childs[] = array('image'=>$imageChild, 'title'=>$child->title, 'link'=>$child->link, 'params'=>$child->params);
             }
 
             $imageParrent = explode('.',$parrent->image)[0];
-            $parents[] = array('image'=>$imageParrent, 'title'=>$parrent->title, 'link'=>$parrent->link, 'childs'=>$childs);
+            $parents[] = array('image'=>$imageParrent, 'title'=>$parrent->title, 'link'=>$parrent->link,
+                'params'=>$parrent->params, 'childs'=>$childs);
         }
 
         return  $json = json_encode(array('status'=>'menuLoad', 'elements' => $parents));

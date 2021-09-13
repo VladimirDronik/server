@@ -127,7 +127,7 @@ class Events extends System
 
 
     /**
-     * Установка значеения свойства для выбранного объекта
+     * Установка значения свойства для выбранного объекта
      * @param $idObject
      * @param $propertyValue
      */

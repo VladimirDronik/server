@@ -135,10 +135,13 @@ class Thermostats extends Objects
     {
 
         //Для нагрева или охлаждения модифицируем значение
-        if($property == 'нагрев')
-            $value = 1;
-        elseif($property == 'охлаждение') $value = 0;
+        if($property == 'type') {
+            $property = 'thermostat';
 
+            if($value == 'нагрев')
+                $value = 1;
+            elseif($value == 'охлаждение') $value = 0;
+        }
 
         parent::$db->query("UPDATE termostats SET $property = '$value'
                                          WHERE id=$this->id_termostat");
@@ -319,7 +322,7 @@ class Thermostats extends Objects
                     Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
                     Events::exicute($this->idObject, 'onThreshold');
 
-                    $error = true;
+                   // $error = true;
                     break 1;
                 }
 

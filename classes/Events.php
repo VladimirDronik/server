@@ -21,7 +21,6 @@ class Events extends System
             $events = $sql->fetchAll(PDO::FETCH_OBJ);
 
             foreach ($events as $event) {
-
                 self::checkCondition($idObject, $event);
             }
         }

@@ -156,7 +156,7 @@ class Messages
             }
 
             return $json = json_encode(array('status'=>'countMessages',
-                'counts' => ['unread' => $unreadMessages, 'read' => $readMessages, 'total' => $unreadMessages+$readMessages]));
+                'counts' => ['unread' => (string)$unreadMessages, 'read' => (string)$readMessages, 'total' => (string)$unreadMessages+$readMessages]));
         }
 
     }

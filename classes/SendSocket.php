@@ -123,7 +123,6 @@ class SendSocket
      */
     public function getAllCameras()
     {
-        var_dump($this->cameras->getAllCameras());
         $this->send($this->cameras->getAllCameras());
     }
 

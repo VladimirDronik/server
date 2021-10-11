@@ -89,6 +89,7 @@ class Thermostats extends Objects
                 break;
 
             case 'type' :
+            case 'thermostat':
                 if($this->termostat->termostat == 1)
                 $property = 'нагрев';
                 else

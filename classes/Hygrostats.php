@@ -251,11 +251,10 @@ class Hygrostats extends Objects
             $this->checkValue($humidity_value);
 
         }
-
-
+        
 
             //проверка на слишком резкое изменеие значения
-            $sql = parent::$db->query("SELECT MAX(id), `value` FROM id_hygrostats
+            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_hygrostats
                                       WHERE id_hygrostat = $this->id_hygrostat
                                       AND (NOW() - `datetime`) < 300 ");
 

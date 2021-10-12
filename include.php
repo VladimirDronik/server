@@ -28,6 +28,7 @@ require_once __DIR__.'/classes/Objects.php';
 require_once __DIR__.'/classes/Megad.php';
 require_once __DIR__.'/classes/Scripts.php';
 require_once __DIR__.'/classes/Thermostats.php';
+require_once __DIR__.'/classes/Hygrostats.php';
 require_once __DIR__.'/classes/Views.php';
 require_once __DIR__.'/classes/Users.php';
 require_once __DIR__.'/classes/Demostand.php';

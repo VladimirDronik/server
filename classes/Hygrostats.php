@@ -36,7 +36,7 @@ class Hygrostats extends Objects
             $this->script = new Scripts();
 
             //Получаем все данные гигростата
-            $scriptsql = parent::$db->query("SELECT  hygrostats.id AS id, current, optimal, gisteresis, type, object, method_on, 
+            $scriptsql = parent::$db->query("SELECT  hygrostats.id AS id, current, optimal, gisteresis, hygrostats.type AS type, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
                                             `placetype`, `usensor_id`, hygrostats.`name`, `subdev_id`
                                             FROM hygrostats 

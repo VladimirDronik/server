@@ -39,7 +39,7 @@ class Hygrostats extends Objects
             $scriptsql = parent::$db->query("SELECT  hygrostats.id AS id, current, optimal, gisteresis, type, object, method_on, 
                                             method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
                                             `placetype`, `usensor_id`, hygrostats.`name`, `subdev_id`
-                                            FROM termostats 
+                                            FROM hygrostats 
                                             INNER JOIN objects ON  id_object=objects.id
                                             WHERE id_object=$idObjectHygrost");
 

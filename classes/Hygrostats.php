@@ -256,7 +256,7 @@ class Hygrostats extends Objects
 
             //проверка на слишком резкое изменеие значения
             $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_hygrostats
-                                      WHERE id_termostat = $this->id_hygrostat
+                                      WHERE id_hygrostat = $this->id_hygrostat
                                       AND (NOW() - `datetime`) < 300 ");
 
             $hygrostat= $sql->fetch(PDO::FETCH_OBJ);

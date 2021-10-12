@@ -48,7 +48,7 @@ class Hygrostats extends Objects
             $this->hygrostat = $hygrostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
             $this->idObject = $idObjectHygrost;
-            $this->id_termostat = $hygrostat->id;
+            $this->id_hygrostat = $hygrostat->id;
             $this->min_threshold = $hygrostat->min_threshold;
             $this->max_threshold = $hygrostat->max_threshold;
             $this->min_alarm = $hygrostat->min_alarm;
@@ -255,7 +255,7 @@ class Hygrostats extends Objects
 
 
             //проверка на слишком резкое изменеие значения
-            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_hygrostats
+            $sql = parent::$db->query("SELECT MAX(id), `value` FROM id_hygrostats
                                       WHERE id_hygrostat = $this->id_hygrostat
                                       AND (NOW() - `datetime`) < 300 ");
 

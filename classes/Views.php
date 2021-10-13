@@ -245,6 +245,47 @@ class Views extends System
 
     }
 
+
+    /**
+     * Отдаем значение температуры визуальному отображению термостата
+     * @param object $view -  итем с термостатом
+     */
+    static private function getHygrostats($view, $typeOutput = 'array')
+    {
+        $sql = parent::$db->query("SELECT  `hygrostats`.`current`, `hygrostats`.`optimal`, 
+                                            `hygrostats`.`gisteresis`, `view_items`.`title` AS `title`, 
+                                            `view_items`.`params` 
+                                    FROM `hygrostats` INNER JOIN view_items 
+                                    ON hygrostats.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $view->id");
+        if($sql->rowCount() > 0)
+            while ($hygrostat = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+                $curTemp = round($hygrostat->current);
+                $newTemp = (float)$hygrostat->optimal;
+
+
+                if($typeOutput == 'array')
+                    $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
+                        'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $hygrostat->title,
+                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $hygrostat->params);
+                else
+
+                    $item = '{"id":'.$view->id.',
+            "type":"'.$view->type.'","cur_value":"'.$curTemp.'",
+            "set_value":"'.$newTemp.'",
+            "title":"'.$view->title.'",
+            "left":"'.$view->position_left.'",
+            "top":"'.$view->position_top.'",
+            "params":"'.$hygrostat->params.'"
+            }';
+
+                return $item;
+            } else return false;
+
+    }
+
     
     /** 
      * Получаем данные из таблицы графиков
@@ -578,6 +619,11 @@ class Views extends System
         // Если тип объекта термометр
         if ($viewObject->type == 'termostat') {
             return self::getTermostats($viewObject, 'array');
+        }
+
+        // Если тип объекта гигрометр
+        if ($viewObject->type == 'hygrostat') {
+            return self::getHygrostats($viewObject, 'array');
         }
     }
 

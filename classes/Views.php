@@ -340,6 +340,7 @@ class Views extends System
                 }
 
                 $datagrapf[] = array('id_termostat' => $termostat->id, 'termostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
+                unset($temperatureLog);
             }
  //       }
 

@@ -77,7 +77,6 @@ class SendSocket
      */
     public function getTempLog()
     {
-        echo $this->views->getGraphs($this->param1, $this->param2);
         $this->send($this->views->getGraphs($this->param1, $this->param2));
     }
 

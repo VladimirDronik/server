@@ -163,43 +163,56 @@ class Hygrostats extends Objects
         Events::exicute($this->idObject, 'onStatus');
 
         if($this->hygrostat->current) {
-        //Если гигростат с функцией увлажнения
+            //Если гигростат с функцией осушения
             if ($this->hygrostat->type == 0)
             {
 
                 if ($this->hygrostat->current >=($this->hygrostat->optimal))
                 {
-                    if ($object->status == 'ON') $sendMessage = true;
+                    if ($object->status == 'OFF') $sendMessage = true;
 
-                    $object->setStatus('OFF',true,false);
+                    $object->setStatus('ON',true,false);
 
                     // Вызываем метод off
                     if($this->hygrostat->method_off)
-                    Action::runAction($this->hygrostat->method_off, 'hygrostat', $this->idObject, null, $sendMessage);
+                        Action::runAction($this->hygrostat->method_off, 'hygrostat', $this->idObject, null, $sendMessage);
                     return 0;
 
                 }
 
                 if ($this->hygrostat->current < ($this->hygrostat->optimal-$this->hygrostat->gisteresis))
                 {
-                    if ($object->status == 'OFF') $sendMessage = true;
+                    if ($object->status == 'ON') $sendMessage = true;
 
-                    $object->setStatus('ON',true,false);
+                    $object->setStatus('OFF',true,false);
 
                     // Вызываем метод on
                     if($this->hygrostat->method_on)
-                    Action::runAction($this->hygrostat->method_on, 'hygrostat', $this->idObject, null, $sendMessage);
+                        Action::runAction($this->hygrostat->method_on, 'hygrostat', $this->idObject, null, $sendMessage);
                     return 1;
                 }
 
 
-            } else //Если гигростат с функцией осушения
+            } else //Если гигростат с функцией увлажнения
             {
-                if ($this->hygrostat->current <=($this->hygrostat->optimal-$this->hygrostat->gisteresis))
+                if ($this->hygrostat->current >=($this->hygrostat->optimal+$this->hygrostat->gisteresis))
                 {
                     if ($object->status == 'ON') $sendMessage = true;
 
                     $object->setStatus('OFF',true,false);
+
+                    // Вызываем метод off
+                    if($this->hygrostat->method_on)
+                        Action::runAction($this->hygrostat->method_off, 'hygrostat', $this->idObject, null, $sendMessage);
+                    return 0;
+                }
+
+
+                if ($this->hygrostat->current < $this->hygrostat->optimal)
+                {
+                    if ($object->status == 'OFF') $sendMessage = true;
+
+                    $object->setStatus('ON',true,false);
 
                     // Вызываем метод off
                     if($this->hygrostat->method_off)

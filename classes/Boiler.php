@@ -132,6 +132,19 @@ class Boiler extends System
      */
     public function check() {
 
+        //ОТправляем данные из БД на котел
+        if ($this->boiler->thermostat == 1) $cmd = 'on';
+        else $cmd = 'off';
+
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=$cmd");
+
+        if($this->boiler->boiler == 0) $boiler = 'off';
+        else $boiler = 'on';
+
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat={$this->boiler->target_heat_temp}".
+            "&water={$this->boiler->target_water_temp}&boiler=$boiler");
+
+
         //Опрашиваем котёл, заносим параметры в переменные и в таблицу котла
         $stateBoilerResponse = file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=get");
 
@@ -145,6 +158,7 @@ class Boiler extends System
         $this->boiler->boiler = $stateBoiler->boiler;
         $this->boiler->water_temp = $stateBoiler->water_temp;
         $this->boiler->feed_water_temp = $stateBoiler->feed_water_temp;
+
 
         parent::$db->exec("UPDATE boiler SET `feed_heat_temp` =  {$this->boiler->feed_heat_temp},
                                 `back_heat_temp` = {$this->boiler->back_heat_temp},
@@ -164,27 +178,45 @@ class Boiler extends System
     //Установить температуру отопления для котла
     public function setHeat(int $temperature) {
 
-        $stateBoilerResponse = file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat=$temperature");
+        parent::$db->exec("UPDATE boiler SET `target_heat_temp` = {$temperature}
+                                  WHERE `id_object` = {$this->boiler->id_object}");
 
-        $this->check();
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat=$temperature}");
     }
 
 
     //Установить температуру отопления для воды
     public function setWater(int $temperature) {
 
-        $stateBoilerResponse = file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&water=$temperature");
+        parent::$db->exec("UPDATE boiler SET `target_water_temp` = {$temperature}
+                                  WHERE `id_object` = {$this->boiler->id_object}");
 
-        $this->check();
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&water=$temperature}");
     }
 
 
     //Установить режим котла
-    public function setBoiler(bool $boiler) {
+    public function setBoiler(string $boiler) {
 
-        $stateBoilerResponse = file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&boiler=$boiler");
+        parent::$db->exec("UPDATE boiler SET `boiler` =  {$this->boiler->boiler}
+                                  WHERE `id_object` = {$this->boiler->id_object}");
 
-        $this->check();
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&boiler=$boiler");
+    }
+
+
+    //Установить режим котла
+    public function setMode(string $mode) {
+
+        if($mode == 'auto') {$thermostat = 0; $cmd='off';}
+        elseif ($mode == 'server') {$thermostat = 1;  $cmd='on';}
+        else exit;
+
+        parent::$db->exec("UPDATE boiler SET `thermostat` =  {$thermostat}
+                                  WHERE `id_object` = {$this->boiler->id_object}");
+
+        file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=$cmd");
+
     }
 
 

@@ -3,12 +3,17 @@
 
 require_once '../include.php';
 
-$boiler = new Boiler(286);
-$boiler->setBoiler(true);
-$boiler->setHeat(20);
-$boiler->setWater(20);
+$boiler = new Boiler(337);
+//$boiler->setBoiler('off');
+//$boiler->setHeat(20);
+//$boiler->setWater(20);
+//$boiler->setMode('auto');
 
-//$boiler->check();
+$boiler->check();
+
+
+
+
 //Device::checkAvailible('devices');
 
 

@@ -2,7 +2,14 @@
 //тестовый скрипт для всякой всячины
 
 require_once '../include.php';
-Device::checkAvailible('devices');
+
+$boiler = new Boiler(286);
+$boiler->setBoiler(true);
+$boiler->setHeat(20);
+$boiler->setWater(20);
+
+//$boiler->check();
+//Device::checkAvailible('devices');
 
 
 

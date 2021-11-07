@@ -161,6 +161,7 @@ class Device extends System
 
             case 'socket':
             case 'relay':
+            case 'virtual':
                 $type = 'devices.types.socket';
                 $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
                 break;

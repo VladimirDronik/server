@@ -144,8 +144,8 @@ class Boiler extends System
         $this->boiler->target_water_temp = $stateBoiler->target_water_temp;
         $this->boiler->thermostat = $stateBoiler->thermostat;
         $this->boiler->boiler = $stateBoiler->boiler;
-        $this->boiler->target_heat_temp = $stateBoiler->target_heat_temp;
-        $this->boiler->target_water_temp = $stateBoiler->target_water_temp;
+        $this->boiler->water_temp = $stateBoiler->water_temp;
+        $this->boiler->feed_water_temp = $stateBoiler->feed_water_temp;
 
         parent::$db->exec("UPDATE boiler SET `feed_heat_temp` =  {$this->boiler->feed_heat_temp},
                                 `back_heat_temp` = {$this->boiler->back_heat_temp},
@@ -153,8 +153,8 @@ class Boiler extends System
                                 `target_water_temp` = {$this->boiler->target_water_temp},
                                 `thermostat` = {$this->boiler->thermostat},
                                 `boiler` =  {$this->boiler->boiler},
-                                `target_heat_temp` = {$this->boiler->target_heat_temp},
-                                `target_water_temp` = {$this->boiler->target_water_temp}
+                                `water_temp` = {$this->boiler->water_temp},
+                                `feed_water_temp` = {$this->boiler->feed_water_temp}
                                   WHERE `id_object` = {$this->boiler->id_object}");
 
 

@@ -3,11 +3,14 @@
 
 require_once '../include.php';
 
-$boiler = new Boiler(337);
-//$boiler->setBoiler('off');
-//$boiler->setHeat(20);
-//$boiler->setWater(20);
-//$boiler->setMode('auto');
+$boiler = new Boiler(342);
+
+$boiler->lockChanges(false);
+$boiler->setBoiler('off');
+$boiler->setHeat(33);
+$boiler->setWater(33);
+$boiler->setThermostat('on');
+$boiler->lockChanges(true);
 
 $boiler->check();
 

@@ -208,6 +208,9 @@ class SendSocket
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
                 $this->send($data1);
                 $this->send($data2);
+
+                var_dump($data1);
+                var_dump($data2);
             } else
                 $this->send('{ "status": "error", "errorMessage": "access denied"}');
 

@@ -1,2 +1,4 @@
- ### Версия ядра
- ver 1.6
+# CORE for TouchOn project 
+=======
+current ver 1.9
+

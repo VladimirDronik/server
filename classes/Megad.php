@@ -143,7 +143,7 @@ class Megad extends System
         $value = round(4095*$value/100);
 
         if($device->active)
-            $value = file_get_contents("http://$device->ip_address/sec/?cmd=30e".$numPort.
+            file_get_contents("http://$device->ip_address/sec/?cmd=30e".$numPort.
                 ":".$value);
 
 

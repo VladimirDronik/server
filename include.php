@@ -16,7 +16,7 @@ $localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';
 $VPN_server = '10.35.0.254';
 
-
+$host = 'mysql';
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
 $dbpass = 'Alli80ed!';
@@ -66,4 +66,4 @@ require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
 require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 
-System::dbConnect($dbname, $dbuser, $dbpass);
+System::dbConnect($host, $dbname, $dbuser, $dbpass);

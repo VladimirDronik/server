@@ -69,6 +69,7 @@ class SendSocket
      */
     public function readyTemperatures()
     {
+        echo $this->views->getTemperatures($this->param1);
         $this->send($this->views->getTemperatures($this->param1));
     }
 
@@ -93,6 +94,8 @@ class SendSocket
      */
     public function getMessages()
     {
+        echo "##########################################";
+        echo $this->message->getMessages($this->param1);
         $this->send($this->message->getMessages($this->param1));
     }
 

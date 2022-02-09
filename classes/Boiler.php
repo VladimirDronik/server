@@ -61,17 +61,20 @@ class Boiler extends System
 
 
 
-        //Обновление режима работы котла (вато или ручной)
-        if($this->boiler->lock == 1) {
-            $auto = '[{"status": "off", "settings": "true"}]';
-        } else {
+        //Обновление режима работы котла (авто или ручной)
+        if($this->boiler->mode == 'auto') {
             $auto = '[{"status": "on", "settings": "true"}]';
+            $manual = '[{"status": "off", "settings": "true"}]';
+        } else {
+            $auto = '[{"status": "off", "settings": "true"}]';
+            $manual = '[{"status": "on", "settings": "true"}]';
         }
 
         parent::$db->exec("UPDATE elements SET `value` = '$auto'
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'automode'");
 
-
+        parent::$db->exec("UPDATE elements SET `value` = '$manual'
+                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'manualmode'");
 
 
 
@@ -237,7 +240,8 @@ class Boiler extends System
     }
 
 
-    //Установить режим котла
+    //Установить режим котла, при котором внешние изменения не будут влиять на параметры котла, например нельзя
+    //будет установить программно температуру котла, пока lock=1
     public function lockChanges(bool $lock) {
 
         if($lock) $this->boiler->lock = true;

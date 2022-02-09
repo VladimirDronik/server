@@ -349,7 +349,7 @@ class Thermostats extends Objects
 
         if (!$error) {
 
-            //проверка на слишком резкое изменеие значения
+            //проверка на слишком резкое изменение значения
             $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats 
                                       WHERE id_termostat = $this->id_termostat
                                       AND (NOW() - `datetime`) < 300 ");

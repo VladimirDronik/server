@@ -701,7 +701,7 @@ class Views extends System
         $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
         $todayDate = date('Y-m-d');
 
-        $month_start = date('Y').date('m').'-01';
+        $month_start = date('Y').date('-m').'-01';
         $year_start = date('Y').'-01-01';
 
 

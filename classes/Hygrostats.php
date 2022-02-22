@@ -281,7 +281,7 @@ class Hygrostats extends Objects
                 parent::$db->query("UPDATE hygrostats SET `current` = $humidity_value
                                          WHERE id=$this->id_hygrostat");
 
-                Graphs::insertToTermostats($this->id_hygrostat, $humidity_value);
+                Graphs::insertToHygrostats($this->id_hygrostat, $humidity_value);
 
             }
 

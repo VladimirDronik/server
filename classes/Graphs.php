@@ -35,6 +35,20 @@ class Graphs extends System
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$termostatValue')");
     }
 
+
+    /**
+     * Добавление значения в график гигростатов
+     *
+     * @param $idHygrostat
+     * @param $hygrostatValue
+     */
+    static function insertToHygrostats($idHygrostat, $hygrostatValue)
+    {
+        parent::$db->query("INSERT INTO graph_hygrostats (`id`, `id_hygrostat`, `datetime`, `value`)
+                            VALUES (null, '$idHygrostat',
+                            CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$hygrostatValue')");
+    }
+
     /**
      * Добавление значения в график светостатов
      *

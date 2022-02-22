@@ -44,7 +44,7 @@ class Graphs extends System
      */
     static function insertToHygrostats($idHygrostat, $hygrostatValue)
     {
-        parent::$db->query("INSERT INTO graph_hygrostats (`id`, `id_hygrostat`, `datetime`, `value`)
+        parent::$db->query("INSERT INTO graph_humidities (`id`, `id_hygrostat`, `datetime`, `value`)
                             VALUES (null, '$idHygrostat',
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$hygrostatValue')");
     }

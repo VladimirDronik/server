@@ -283,6 +283,14 @@ class SendSocket
     }
 
     /**
+     * Получение внутренней страницы для элемента
+     */
+    public function getInternalPage()
+    {
+        $this->send($this->views->getInternalPage($this->param1));
+    }
+
+    /**
      * Изменеие статуса какого-либо собъекта
      * @param $fulldata - данные, которые пришли из сокета
      */

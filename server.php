@@ -289,6 +289,10 @@ var_dump($data);
                     $send->getPage();
                     break;
 
+                case 'getInternalPage':
+                    $send->getInternalPage();
+                    break;
+
                 case 'pagesItemChange':
                     $send->changePageItem();
                     break;

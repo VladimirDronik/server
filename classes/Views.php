@@ -876,8 +876,8 @@ class Views extends System
 
         //Запрашиваем данные о нужных внутренних страницах
         $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
-                elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minvalue,
-                internalPages.max AS maxvalue   
+                elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minval,
+                internalPages.max AS maxval   
                 FROM internalPages 
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
@@ -887,33 +887,33 @@ class Views extends System
 
             if ($page->handle == 'automode') {
 
-            $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
-                            AND position=1 ORDER BY sort";
+                $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
+                                AND position=1 ORDER BY sort";
 
-            $queryElements = parent::$db->query($elementsSQL);
-            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
+                $queryElements = parent::$db->query($elementsSQL);
+                while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
-                $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
-                    'value'=>$element->value);
-            }
+                    $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
+                        'value'=>$element->value);
+                }
 
-            // Извлекаем значения температуры для котла
-            $valuesSQL = "SELECT id, id_out, id_water FROM boiler_values WHERE id_intpage = {$page->intpage}
-                            ORDER BY `t_out`";
-            $queryValues = parent::$db->query($valuesSQL);
+                // Извлекаем значения температуры для котла
+                $valuesSQL = "SELECT id, id_out, id_water FROM boiler_values WHERE id_intpage = {$page->intpage}
+                                ORDER BY `t_out`";
+                $queryValues = parent::$db->query($valuesSQL);
 
-            while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
+                while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
 
-                $values[] = array('id' => $element->id, 'id_out' => $element->id_out, 'id_water' => $element->id_water);
-            }
-                $items[] = array('elements' => $elements, 'values' => $values);
+                    $values[] = array('id' => $element->id, 'id_out' => $element->id_out, 'id_water' => $element->id_water);
+                }
+                    $items[] = array('elements' => $elements, 'values' => $values);
 
-                return  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                    'items' => $items));
+                    return  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
+                        'items' => $items));
 
-        } else {
+            } else {
 
-                $items[] = array('set_value' => $page->set_value, 'min' => $page->minvalue, 'max' => $page->maxvalue);
+                $items[] = array('set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
 
                 return  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
                     'items' => $items));

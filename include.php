@@ -16,7 +16,7 @@ $localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';
 $VPN_server = '10.35.0.254';
 
-$host = 'mysql';
+$host = 'localhost';
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
 $dbpass = 'Alli80ed!';

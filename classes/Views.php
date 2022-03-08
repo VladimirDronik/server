@@ -905,7 +905,7 @@ class Views extends System
 
                 while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
 
-                    $values[] = array('id' => $element->id, 'id_out' => $element->id_out, 'id_water' => $element->id_water);
+                    $values[] = array('id' => $element->id, 't_out' => $element->t_out, 't_water' => $element->t_water);
                 }
                     $items[] = array('elements' => $elements, 'values' => $values);
 

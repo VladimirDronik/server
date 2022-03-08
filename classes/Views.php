@@ -897,7 +897,7 @@ class Views extends System
                         'value'=>$element->value);
                 }
 
-                
+
                 // Извлекаем значения температуры для котла
                 $valuesSQL = "SELECT id, t_out, t_water FROM boiler_values WHERE id_intpage = {$page->intpage}
                                 ORDER BY `t_out`";
@@ -909,16 +909,21 @@ class Views extends System
                 }
                     $items[] = array('elements' => $elements, 'values' => $values);
 
-                    return  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
+                      $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
                         'items' => $items));
+
+                      echo $json;
+                return $json;
 
             } else {
 
                 $items[] = array('set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
 
-                return  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
+                  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
                     'items' => $items));
 
+                  echo $json;
+                  return $json;
             }
         }
     }

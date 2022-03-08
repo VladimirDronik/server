@@ -897,8 +897,9 @@ class Views extends System
                         'value'=>$element->value);
                 }
 
+                
                 // Извлекаем значения температуры для котла
-                $valuesSQL = "SELECT id, id_out, id_water FROM boiler_values WHERE id_intpage = {$page->intpage}
+                $valuesSQL = "SELECT id, t_out, t_water FROM boiler_values WHERE id_intpage = {$page->intpage}
                                 ORDER BY `t_out`";
                 $queryValues = parent::$db->query($valuesSQL);
 

@@ -910,7 +910,7 @@ class Views extends System
                     $items[] = array('elements' => $elements, 'values' => $values);
 
                       $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                        'items' => $items));
+                        'pages' => $items));
 
                       echo $json;
                 return $json;

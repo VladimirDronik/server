@@ -894,7 +894,7 @@ class Views extends System
                 while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
                     $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
-                        'value'=>json_decode($element->value));
+                       'position' => "1", 'value'=>json_decode($element->value));
                 }
 
 

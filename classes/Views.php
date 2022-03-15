@@ -885,18 +885,19 @@ class Views extends System
         $queryPage = parent::$db->query($sql);
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
 
-            if ($page->handle == 'automode') {
 
-                $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
+            $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
                                 AND position=1 ORDER BY sort";
 
-                $queryElements = parent::$db->query($elementsSQL);
-                while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
+            $queryElements = parent::$db->query($elementsSQL);
+            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
-                    $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
-                       'position' => "1", 'value'=>json_decode($element->value));
-                }
+                $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
+                    'position' => "1", 'value'=>json_decode($element->value));
+            }
 
+
+            if ($page->handle == 'automode') {
 
                 // Извлекаем значения температуры для котла
                 $valuesSQL = "SELECT id, t_out, t_water FROM boiler_values WHERE id_intpage = {$page->intpage}

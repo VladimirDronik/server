@@ -290,6 +290,44 @@ class SendSocket
         $this->send($this->views->getInternalPage($this->param1));
     }
 
+
+    /**
+     * Установка значения элемента для внутренней страницы
+     */
+    public function setInternalPage($fulldata)
+    {
+
+        $data_array = json_decode($fulldata);
+
+        $type = $data_array->items[0]->type;
+        $idObject = $data_array->items[0]->idObject;
+        $mode = $data_array->items[0]->mode;
+        $value = $data_array->items[0]->value;
+
+
+        $sql = parent::$db->query("SELECT id FROM internalPages WHERE `idObject` = $idObject");
+        $page = $sql->fetch(PDO::FETCH_OBJ);
+
+        if ($type == 'BoilerAuto') {
+            if ($mode == 'add') {
+
+                $temperatures = explode(":",$value);
+
+                parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_vater`, `id_intpage`)
+                                      VALUES (null,  $temperatures[0], $temperatures[1], {$page->id})");
+
+            } elseif ($mode == 'del') {
+
+                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = {$page->id} )");
+
+            }
+        } else {
+
+            parent::$db->exec("UPDATE internalPages SET `set_value` = $value
+                                   WHERE `id` = {$page->id}");
+        }
+    }
+
     /**
      * Изменеие статуса какого-либо собъекта
      * @param $fulldata - данные, которые пришли из сокета

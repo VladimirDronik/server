@@ -917,7 +917,7 @@ class Views extends System
 
             } else {
 
-                $items[] = array('set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
+                $items[] = array('cur_value' => $page->set_value, 'set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
 
                   $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
                     'items' => $items));
@@ -926,5 +926,11 @@ class Views extends System
                   return $json;
             }
         }
+    }
+
+
+    public function setInternalPage($items) {
+
+
     }
 }

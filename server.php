@@ -293,6 +293,10 @@ var_dump($data);
                     $send->getInternalPage();
                     break;
 
+                case 'setInternalPage':
+                    $send->setInternalPage($data);
+                    break;
+
                 case 'pagesItemChange':
                     $send->changePageItem();
                     break;

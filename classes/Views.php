@@ -918,10 +918,12 @@ class Views extends System
 
             } else {
 
-                $items[] = array('cur_value' => $page->set_value, 'set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
+                $values[] = array('cur_value' => $page->set_value, 'set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
+
+                $items[] = array('elements' => $elements, 'values' => $values);
 
                   $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
-                    'items' => $items));
+                    'pages' => $items));
 
                   echo $json;
                   return $json;

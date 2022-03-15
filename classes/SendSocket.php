@@ -9,6 +9,7 @@
 use Views;
 use Messages;
 use Cameras;
+use Page;
 
 class SendSocket
 {
@@ -22,8 +23,9 @@ class SendSocket
     private $param2;
     private $device;
     private $cameras;
+    private $page;
 
-    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras)
+    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras, Page $page)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
@@ -36,6 +38,7 @@ class SendSocket
         $this->message = $message;
         $this->device = $device;
         $this->cameras = $cameras;
+        $this->page = $page;
     }
 
     /**
@@ -296,36 +299,7 @@ class SendSocket
      */
     public function setInternalPage($fulldata)
     {
-
-        $data_array = json_decode($fulldata);
-
-        $type = $data_array->items[0]->type;
-        $idObject = $data_array->items[0]->idObject;
-        $mode = $data_array->items[0]->mode;
-        $value = $data_array->items[0]->value;
-
-
-        $sql = parent::$db->query("SELECT id FROM internalPages WHERE `idObject` = $idObject");
-        $page = $sql->fetch(PDO::FETCH_OBJ);
-
-        if ($type == 'BoilerAuto') {
-            if ($mode == 'add') {
-
-                $temperatures = explode(":",$value);
-
-                parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_vater`, `id_intpage`)
-                                      VALUES (null,  $temperatures[0], $temperatures[1], {$page->id})");
-
-            } elseif ($mode == 'del') {
-
-                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = {$page->id} )");
-
-            }
-        } else {
-
-            parent::$db->exec("UPDATE internalPages SET `set_value` = $value
-                                   WHERE `id` = {$page->id}");
-        }
+        $this->page->setIntPages($fulldata);
     }
 
     /**

@@ -159,12 +159,13 @@ var_dump($data);
         $messages = new Messages();
         $device = new Device();
         $cameras = new Cameras();
+        $page = new Page();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras);
+        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras, $page);
 
         $status = $data_array[0];
 

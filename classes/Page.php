@@ -21,12 +21,12 @@ class Page extends System {
 
                 $temperatures = explode(":",$value);
 
-                parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_vater`, `id_intpage`)
+                parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_water`, `id_intpage`)
                                           VALUES (null,  $temperatures[0], $temperatures[1], {$page->id})");
 
             } elseif ($mode == 'del') {
 
-                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = {$page->id} )");
+                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = {$page->id} AND t_out = $value )");
 
             }
         } else {

@@ -911,7 +911,7 @@ class Views extends System
                     $items[] = array('elements' => $elements, 'values' => $values);
 
                       $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                          'idPage' => $element->intpage, 'pages' => $items));
+                          'idPage' => $page->intpage, 'pages' => $items));
 
                       echo $json;
                 return $json;
@@ -923,7 +923,7 @@ class Views extends System
                 $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
                   $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
-                      'idPage' => $element->intpage, 'pages' => $items));
+                      'idPage' => $page->intpage, 'pages' => $items));
 
                   echo $json;
                   return $json;

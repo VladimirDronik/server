@@ -27,7 +27,7 @@ class Page extends System {
 
             } elseif ($mode == 'del') {
 
-                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = {$page->id} AND t_out = $value )");
+                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = $idPage AND t_out = $value )");
 
             }
         } else {

@@ -877,7 +877,7 @@ class Views extends System
         //Запрашиваем данные о нужных внутренних страницах
         $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
                 elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minval,
-                internalPages.max AS maxval   
+                internalPages.max AS maxval, internalPages.idObject AS idObject
                 FROM internalPages 
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
@@ -911,7 +911,7 @@ class Views extends System
                     $items[] = array('elements' => $elements, 'values' => $values);
 
                       $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                        'pages' => $items));
+                          'idObject' => $element->idObject, 'pages' => $items));
 
                       echo $json;
                 return $json;
@@ -923,7 +923,7 @@ class Views extends System
                 $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
                   $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
-                    'pages' => $items));
+                      'idObject' => $element->idObject, 'pages' => $items));
 
                   echo $json;
                   return $json;

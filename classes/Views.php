@@ -882,6 +882,13 @@ class Views extends System
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
 
+        echo "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
+                elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minval,
+                internalPages.max AS maxval, internalPages.idObject AS idObject
+                FROM internalPages 
+                INNER JOIN elements ON internalPages.idelement = elements.id     
+                WHERE idelement = $idElement ORDER BY sort";
+
         $queryPage = parent::$db->query($sql);
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
 

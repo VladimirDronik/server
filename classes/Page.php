@@ -11,6 +11,7 @@ class Page extends System {
         $idObject = $data_array->items[0]->idObject;
         $mode = $data_array->items[0]->mode;
         $value = $data_array->items[0]->value;
+        $idPage = $data_array->items[0]->idPage;
 
 
         $sql = parent::$db->query("SELECT id FROM internalPages WHERE `idObject` = $idObject");
@@ -22,7 +23,7 @@ class Page extends System {
                 $temperatures = explode(":",$value);
 
                 parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_water`, `id_intpage`)
-                                          VALUES (null,  $temperatures[0], $temperatures[1], {$page->id})");
+                                          VALUES (null,  $temperatures[0], $temperatures[1], $idPage)");
 
             } elseif ($mode == 'del') {
 
@@ -32,7 +33,7 @@ class Page extends System {
         } else {
 
             parent::$db->exec("UPDATE internalPages SET `set_value` = $value
-                                       WHERE `id` = {$page->id}");
+                                       WHERE `id` = $idPage");
         }
 
     }

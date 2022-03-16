@@ -11,7 +11,7 @@ class Page extends System {
         $mode = $data_array->items[0]->mode;
         $value = $data_array->items[0]->value;
         $idPage = $data_array->items[0]->idPage;
-        
+
 
         if ($type == 'BoilerAuto') {
             if ($mode == 'add') {
@@ -23,7 +23,7 @@ class Page extends System {
 
             } elseif ($mode == 'del') {
 
-                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = $idPage AND t_out = $value )");
+                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = $idPage AND t_out = $value");
 
             }
         } else {

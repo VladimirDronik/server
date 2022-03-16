@@ -8,14 +8,10 @@ class Page extends System {
         $data_array = json_decode($fulldata);
 
         $type = $data_array->items[0]->type;
-        $idObject = $data_array->items[0]->idObject;
         $mode = $data_array->items[0]->mode;
         $value = $data_array->items[0]->value;
         $idPage = $data_array->items[0]->idPage;
-
-
-        $sql = parent::$db->query("SELECT id FROM internalPages WHERE `idObject` = $idObject");
-        $page = $sql->fetch(PDO::FETCH_OBJ);
+        
 
         if ($type == 'BoilerAuto') {
             if ($mode == 'add') {

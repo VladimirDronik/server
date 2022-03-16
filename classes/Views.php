@@ -920,7 +920,7 @@ class Views extends System
 
                 $values[] = array('cur_value' => $page->set_value, 'set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
 
-                $items[] = array('elements' => $elements, 'values' => $values);
+                $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
                   $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
                     'pages' => $items));

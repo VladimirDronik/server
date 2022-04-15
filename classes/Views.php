@@ -923,10 +923,6 @@ class Views extends System
                                     WHERE id_object = {$page->idObject}";
                 $queryManValue = parent::$db->query($manualValueSQL);
 
-                while ($manualValue = $queryManValue->fetch(PDO::FETCH_OBJ)) {
-
-                }
-
                 if ($queryManValue->rowCount() != 0) {
                     $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
 

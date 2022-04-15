@@ -876,11 +876,12 @@ class Views extends System
 
         //Запрашиваем данные о нужных внутренних страницах
         $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
-                elements.handle AS handle, internalPages.idObject AS idObject
+                elements.handle AS handle
                 FROM internalPages 
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
 
+        echo $sql;
 
         $queryPage = parent::$db->query($sql);
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {

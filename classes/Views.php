@@ -876,18 +876,11 @@ class Views extends System
 
         //Запрашиваем данные о нужных внутренних страницах
         $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
-                elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minval,
-                internalPages.max AS maxval, internalPages.idObject AS idObject
+                elements.handle AS handle, internalPages.idObject AS idObject
                 FROM internalPages 
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
 
-        echo "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
-                elements.handle AS handle, internalPages.set_value AS set_value, internalPages.min AS minval,
-                internalPages.max AS maxval, internalPages.idObject AS idObject
-                FROM internalPages 
-                INNER JOIN elements ON internalPages.idelement = elements.id     
-                WHERE idelement = $idElement ORDER BY sort";
 
         $queryPage = parent::$db->query($sql);
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
@@ -907,7 +900,7 @@ class Views extends System
             if ($page->handle == 'automode') {
 
                 // Извлекаем значения температуры для котла
-                $valuesSQL = "SELECT id, t_out, t_water FROM boiler_values WHERE id_intpage = {$page->intpage}
+                $valuesSQL = "SELECT id, t_out, t_water FROM boiler_auto WHERE id_object = {$page->idObject}
                                 ORDER BY `t_out`";
                 $queryValues = parent::$db->query($valuesSQL);
 
@@ -925,15 +918,27 @@ class Views extends System
 
             } else {
 
-                $values[] = array('cur_value' => $page->set_value, 'set_value' => $page->set_value, 'min' => $page->minval, 'max' => $page->maxval);
+                $manualValueSQL = "SELECT id, set_value, min_value, max_value FROM boiler_manual 
+                                    WHERE id_idobject = {$page->idObject}";
+                $queryManValue = parent::$db->query($manualValueSQL);
 
-                $items[] = array('elements' => $elements, 'valuesManual' => $values);
+                while ($manualValue = $queryManValue->fetch(PDO::FETCH_OBJ)) {
 
-                  $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerManual',
-                      'idPage' => $page->intpage, 'pages' => $items));
+                }
 
-                  echo $json;
-                  return $json;
+                if ($queryManValue->rowCount() != 0) {
+                    $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
+
+                    $values[] = array('cur_value' => $manualValue->set_value, 'set_value' => $manualValue->set_value, 'min' => $manualValue->min_value, 'max' => $page->max_value);
+
+                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
+
+                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
+                        'idPage' => $page->intpage, 'pages' => $items));
+
+                    echo $json;
+                    return $json;
+                }
             }
         }
     }

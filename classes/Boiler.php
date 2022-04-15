@@ -132,6 +132,30 @@ class Boiler extends System
      */
     public function check() {
 
+        // Смотрим какой режим у котла, авто или ручной
+        if ($this->boiler->mode == 'auto') {
+
+            //Ищем страницу для котла по id объекта
+            // Смотрим температуру на улице через привязанный датчик температуры и выставляем
+            // температуру котла в соответствии с таблицей
+            $sql = parent::$db->query("SELECT boiler_auto.t_water,  boiler_auto.t_out, termostats.current FROM boiler_auto 
+                                        INNER JOIN boiler ON boiler.id_object = boiler_auto.id_object
+                                        INNER JOIN termostats ON termostats.id = boiler.id_outside_thermostat
+                                        WHERE boiler.`id_object` = {$this->boiler->id_object}
+                                        AND boiler_auto.t_out <= termostats.current 
+                                        ORDER BY boiler_auto.t_out DESC LIMIT 1 ");
+
+            $boiler_autoparams = $sql->fetch(PDO::FETCH_OBJ);
+            $this->boiler->target_heat_temp = $boiler_autoparams->t_water;
+
+        } else {
+            // Если ручной режим, то у котла устанавливаем температуру, которая указаана в таблице
+            $sql = parent::$db->query("SELECT set_value FROM boiler_manual WHERE id_object = {$this->boiler->id_object}");
+            $boiler_autoparams = $sql->fetch(PDO::FETCH_OBJ);
+            $this->boiler->target_heat_temp = $boiler_autoparams->t_water;
+        }
+
+
         //ОТправляем данные из БД на котел
         if ($this->boiler->thermostat == 1) $cmd = 'on';
         else $cmd = 'off';

@@ -876,7 +876,7 @@ class Views extends System
 
         //Запрашиваем данные о нужных внутренних страницах
         $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
-                elements.handle AS handle
+                elements.handle AS handle, elements.id_object AS idObject
                 FROM internalPages 
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";

@@ -920,7 +920,7 @@ class Views extends System
             } else {
 
                 $manualValueSQL = "SELECT id, set_value, min_value, max_value FROM boiler_manual 
-                                    WHERE id_idobject = {$page->idObject}";
+                                    WHERE id_object = {$page->idObject}";
                 $queryManValue = parent::$db->query($manualValueSQL);
 
                 while ($manualValue = $queryManValue->fetch(PDO::FETCH_OBJ)) {

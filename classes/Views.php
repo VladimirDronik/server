@@ -881,7 +881,6 @@ class Views extends System
                 INNER JOIN elements ON internalPages.idelement = elements.id     
                 WHERE idelement = $idElement ORDER BY sort";
 
-        echo $sql;
 
         $queryPage = parent::$db->query($sql);
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
@@ -914,7 +913,6 @@ class Views extends System
                       $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
                           'idPage' => $page->intpage, 'pages' => $items));
 
-                      echo $json;
                 return $json;
 
             } else {

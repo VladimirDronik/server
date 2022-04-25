@@ -926,7 +926,8 @@ class Views extends System
                 if ($queryManValue->rowCount() != 0) {
                     $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
 
-                    $values[] = array('cur_value' => $manualValue->set_value, 'set_value' => $manualValue->set_value, 'min' => $manualValue->min_value, 'max' => $page->max_value);
+                    $values[] = array('cur_value' => $manualValue->set_value, 'set_value' => $manualValue->set_value,
+                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
 
                     $items[] = array('elements' => $elements, 'valuesManual' => $values);
 

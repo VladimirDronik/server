@@ -18,26 +18,21 @@ class Page extends System {
 
                 $temperatures = explode(":",$value);
 
-                parent::$db->query("INSERT INTO boiler_values (`id`, `t_out`, `t_water`, `id_intpage`)
+                parent::$db->query("INSERT INTO boiler_auto (`id`, `t_out`, `t_water`, `id_intpage`)
                                           VALUES (null,  $temperatures[0], $temperatures[1], $idPage)");
 
-                echo "INSERT INTO boiler_values (`id`, `t_out`, `t_water`, `id_intpage`)
-                                          VALUES (null,  $temperatures[0], $temperatures[1], $idPage)";
 
             } elseif ($mode == 'del') {
 
-                parent::$db->query("DELETE FROM boiler_values WHERE id_intpage = $idPage AND t_out = $value");
+                parent::$db->query("DELETE FROM boiler_auto WHERE id_intpage = $idPage AND t_out = $value");
 
-                echo "DELETE FROM boiler_values WHERE id_intpage = $idPage AND t_out = $value";
 
             }
         } else { //Если manual выбрано
 
-            parent::$db->exec("UPDATE internalPages SET `set_value` = $value
+            parent::$db->exec("UPDATE boiler_manual SET `set_value` = $value
                                        WHERE `id` = $idPage");
-
-            echo "UPDATE internalPages SET `set_value` = $value
-                                       WHERE `id` = $idPage";
+            
         }
 
     }

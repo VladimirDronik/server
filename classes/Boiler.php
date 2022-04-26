@@ -151,8 +151,8 @@ class Boiler extends System
         } else {
             // Если ручной режим, то у котла устанавливаем температуру, которая указаана в таблице
             $sql = parent::$db->query("SELECT set_value FROM boiler_manual WHERE id_object = {$this->boiler->id_object}");
-            $boiler_autoparams = $sql->fetch(PDO::FETCH_OBJ);
-            $this->boiler->target_heat_temp = $boiler_autoparams->t_water;
+            $boiler_manualparams = $sql->fetch(PDO::FETCH_OBJ);
+            $this->boiler->target_heat_temp = $boiler_manualparams->set_value;
         }
 
 

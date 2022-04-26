@@ -17,9 +17,10 @@ class Page extends System {
         $sql = "SELECT id_object FROM elements INNER JOIN internalPages ON internalPages.idElement = elements.id
                 WHERE internalPages.id = $idPage";
 
-        echo $sql;
-        if ($sql->rowCount() != 0) {
-            $element = $sql->fetch(PDO::FETCH_OBJ);
+        $queryElements = parent::$db->query($sql);
+
+        if ($queryElements->rowCount() != 0) {
+            $element = $queryElements->fetch(PDO::FETCH_OBJ);
             $idObject = $element->id_object;
         }
 

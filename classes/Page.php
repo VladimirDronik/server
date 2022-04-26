@@ -17,9 +17,11 @@ class Page extends System {
         $sql = "SELECT id_object FROM elements INNER JOIN internalPages ON internalPages.idElement = elements.id
                 WHERE internalPages.id = $idPage";
 
-        $element = $sql->fetch(PDO::FETCH_OBJ);
-        $idObject = $element->id_object;
-
+        echo $sql;
+        if ($sql->rowCount() != 0) {
+            $element = $sql->fetch(PDO::FETCH_OBJ);
+            $idObject = $element->id_object;
+        }
 
         if ($type == 'BoilerAuto') {
             if ($mode == 'add') {

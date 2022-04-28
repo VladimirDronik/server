@@ -56,6 +56,7 @@ class Page extends System {
         $sql = "SELECT * FROM elements
                 WHERE id = $idElement";
 
+        echo $sql;
 
         $queryElements = parent::$db->query($sql);
 

@@ -123,7 +123,7 @@ class Page extends System {
     public function setElementStatus($element, $status) {
 
         //Устанавливаем статус для элемента, если хендл у него automode или manualmode (элемент котла)
-        if ($element->handle) {
+        if (($element->handle == 'automode') || ($element->handle == 'manualmode')) {
 
             $objjson = json_decode($element->value);
             $settings = $objjson->{'settings'};
@@ -134,7 +134,7 @@ class Page extends System {
                                        WHERE `id` = $element->id");
 
         }
-        
+
         //Перезагружаем страницу
     }
 

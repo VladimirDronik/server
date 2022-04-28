@@ -98,7 +98,7 @@ class Page extends System {
             Boiler::setMode($element->id_object, $mode);
 
             //Меняем состояние элемента
-            setElementStatus($element, $elementStatus);
+            $this->setElementStatus($element, $elementStatus);
 
         } elseif ($element->handle == 'manualmode') {
 
@@ -107,6 +107,9 @@ class Page extends System {
             else $mode = 'auto';
 
             Boiler::setMode($element->id_object, $mode);
+
+            //Меняем состояние элемента
+            $this->setElementStatus($element, $elementStatus);
         }
     }
 
@@ -131,6 +134,7 @@ class Page extends System {
                                        WHERE `id` = $element->id");
 
         }
+        
         //Перезагружаем страницу
     }
 

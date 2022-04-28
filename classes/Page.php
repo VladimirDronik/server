@@ -62,6 +62,7 @@ class Page extends System {
         if ($queryElements->rowCount() != 0) {
             $element = $queryElements->fetch(PDO::FETCH_OBJ);
 
+            echo "-------------------------".$element->id_object;
             //Определяем тип объекта по id
             $object = new Objects();
             $object->select($element->id_object);

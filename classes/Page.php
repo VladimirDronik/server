@@ -127,10 +127,11 @@ class Page extends System {
 
             $objjson = json_decode($element->value);
             $settings = $objjson->{'settings'};
+            echo '========================'.$settings.'====================';
 
             $newValue = json_encode( array("status" => $status, "settings" => $settings));
 
-            parent::$db->exec("UPDATE elements SET `value` = '".$newValue."'
+            parent::$db->exec("UPDATE elements SET `value` = '[".$newValue."]'
                                        WHERE `id` = $element->id");
 
         }

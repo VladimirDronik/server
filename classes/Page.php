@@ -125,6 +125,7 @@ class Page extends System {
         //Устанавливаем статус для элемента, если хендл у него automode или manualmode (элемент котла)
         if (($element->handle == 'automode') || ($element->handle == 'manualmode')) {
 
+            var_dump($element);
             $objjson = json_decode($element->value);
             $settings = $objjson->{'settings'};
             echo '========================'.$settings.'====================';

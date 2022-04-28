@@ -52,11 +52,13 @@ class Page extends System {
     //Если пользователь изменил что-то на страницах меню
     public function changePageItem($idElement, $elementStatus){
 
+        //TODO: убрать это, когда в приложении сделают нормальную передачу id нажатого элемента
+        $idElement = $idElement-1;
+
         //Находим элемент страницы в таблице элементов
         $sql = "SELECT * FROM elements
                 WHERE id = $idElement";
-
-        echo $sql;
+        
 
         $queryElements = parent::$db->query($sql);
 

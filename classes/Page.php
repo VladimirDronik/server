@@ -48,4 +48,93 @@ class Page extends System {
 
     }
 
+
+    //Если пользователь изменил что-то на страницах меню
+    public function changePageItem($data){
+
+        $objjson = json_decode($data);
+        $data_array = explode(';',$objjson->{'status'});
+        $idElement = $data_array[2];
+        $elementStatus = $data_array[3];
+
+        //Находим элемент страницы в таблице элементов
+        $sql = "SELECT * FROM elements
+                WHERE id = $idElement";
+
+
+        $queryElements = parent::$db->query($sql);
+
+        if ($queryElements->rowCount() != 0) {
+            $element = $queryElements->fetch(PDO::FETCH_OBJ);
+
+            //Определяем тип объекта по id
+            $object = new Objects();
+            $object->select($element->id_object);
+
+            if ($element->type == 'switch') {
+
+                if($object->type == 'boiler') {
+                  $this->setModeBoiler($element, $elementStatus);
+                }
+
+            }
+        }
+    }
+
+    /**
+     * Активируем изменения, если что-то у элемента, к которому привязан объект типа boiler
+     * @param $element
+     * @param $elementStatus
+     */
+    private function setModeBoiler($element, $elementStatus) {
+
+        // Для реализации смены режимов работы котла
+        // определяем хэндл элемента, его состояние и меняем состояние у объекта.
+        // Также находим связанный хэндл (если есть) для того, чтобы поменять его
+        if ($element->type == 'automode') {
+
+            if ($elementStatus == 'on')
+                $mode = 'auto';
+            else $mode = 'manual';
+
+            Boiler::setMode($element->id_object, $mode);
+
+            //Меняем состояние элемента
+            setElementStatus($element, $elementStatus);
+
+        } elseif ($element->type == 'manualmode') {
+
+            if ($elementStatus == 'on')
+                $mode = 'manual';
+            else $mode = 'auto';
+
+            Boiler::setMode($element->id_object, $mode);
+        }
+    }
+
+
+    /**
+     * Устанавливаем значение для элемента по его хендлу
+     * @param $element int - элемент, у котрого меняем статус
+     * @param $handle string - хендл элемента, у которого будем менять статус
+     * @param $status string - новый статус для элемента
+     */
+    public function setElementStatus($element, $status) {
+
+        //Устанавливаем статус для элемента, если хендл у него automode или manualmode (элемент котла)
+        if ($element->handle) {
+
+            $objjson = json_decode($element->value);
+            $settings = $objjson->{'settings'};
+
+            $newValue = json_encode( array("status" => $status, "settings" => $settings));
+
+            parent::$db->exec("UPDATE elements SET `value` = $newValue
+                                       WHERE `id` = $element->id");
+
+        }
+        //Перезагружаем страницу
+    }
+
+
 }

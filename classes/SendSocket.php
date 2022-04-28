@@ -364,10 +364,12 @@ class SendSocket
 
     }
 
-
+    /**
+     * Изменения при нажатии на какой-либо элемент на странице
+     */
     public function changePageItem()
     {
-        var_dump($this->param1);
+        $this->page->changePageItem($this->param1);
     }
 
 

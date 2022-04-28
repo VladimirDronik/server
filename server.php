@@ -149,7 +149,6 @@ $ws_worker->onConnect = function($connection) use (&$users)
 /** Получение данных от клиента */
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
-var_dump($data);
     global $debugmode;
 
    if ($debugmode) print_r("=====================================\n");

@@ -277,5 +277,21 @@ class Boiler extends System
 
     }
 
+    /**
+     * Установить режим работы котла auto или manual
+     * В зависимости от этого режима котел будет работат следующим образом:
+     * auto - будет оцениваться температура с внешнего датчика id_outside_thermostat и сравниваться
+     * с значениями в таблице boiler_auto. В зависимости от этого будет выставляться температура
+     * теплоносителя.
+     * manual - будет выставляться температура теплоносителя в зависимости от значений, которые указаны в
+     * boiler_manual
+     */
+    static public function setMode($id_object, $mode) {
+
+        //меняем режим котла на auto
+        parent::$db->exec("UPDATE boiler SET `mode` = $mode
+                                       WHERE `id_object` = $id_object");
+    }
+
 
 }

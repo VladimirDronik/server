@@ -128,8 +128,8 @@ class Page extends System {
             $objjson = json_decode($element->value);
             var_dump($objjson);
 
-            $settings = $objjson->{'settings'};
-            var_dump($objjson->{'settings'});
+            $settings = $objjson[0]->{'settings'};
+            var_dump($objjson[0]->{'settings'});
             echo '========================'.$settings.'====================';
 
             $newValue = json_encode( array("status" => $status, "settings" => $settings));

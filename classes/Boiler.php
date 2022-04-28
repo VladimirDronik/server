@@ -288,9 +288,8 @@ class Boiler extends System
      */
     static public function setMode($id_object, $mode) {
 
-        echo "=====================".$id_object.$mode;
         //меняем режим котла на auto
-        parent::$db->exec("UPDATE boiler SET `mode` = $mode
+        parent::$db->exec("UPDATE boiler SET `mode` = '".$mode."'
                                        WHERE `id_object` = $id_object");
     }
 

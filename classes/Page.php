@@ -130,7 +130,7 @@ class Page extends System {
 
             $newValue = json_encode( array("status" => $status, "settings" => $settings));
 
-            parent::$db->exec("UPDATE elements SET `value` = $newValue
+            parent::$db->exec("UPDATE elements SET `value` = '".$newValue."'
                                        WHERE `id` = $element->id");
 
         }

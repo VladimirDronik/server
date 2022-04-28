@@ -50,12 +50,7 @@ class Page extends System {
 
 
     //Если пользователь изменил что-то на страницах меню
-    public function changePageItem($data){
-
-        $objjson = json_decode($data);
-        $data_array = explode(';',$objjson->{'status'});
-        $idElement = $data_array[2];
-        $elementStatus = $data_array[3];
+    public function changePageItem($idElement, $elementStatus){
 
         //Находим элемент страницы в таблице элементов
         $sql = "SELECT * FROM elements

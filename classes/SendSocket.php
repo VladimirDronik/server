@@ -369,10 +369,7 @@ class SendSocket
      */
     public function changePageItem()
     {
-        echo "00000000000000000000000000";
-        echo $this->param1;
-        echo $this->param2;
-        $this->page->changePageItem($this->param1);
+        $this->page->changePageItem($this->param1, $this->param2);
     }
 
 

@@ -91,26 +91,48 @@ class Page extends System {
         // Также находим связанный хэндл (если есть) для того, чтобы поменять его
         if ($element->handle == 'automode') {
 
+            $reverseHandle = 'manualmode';
+
             if ($elementStatus == 'on')
+            {
                 $mode = 'auto';
-            else $mode = 'manual';
+                $reverseStatus = 'off';
+            }
+            else {
+                $mode = 'manual';
+                $reverseStatus = 'on';
+            }
 
-            Boiler::setMode($element->id_object, $mode);
-
-            //Меняем состояние элемента
-            $this->setElementStatus($element, $elementStatus);
 
         } elseif ($element->handle == 'manualmode') {
 
+            $reverseHandle = 'automode';
+
             if ($elementStatus == 'on')
+            {
                 $mode = 'manual';
-            else $mode = 'auto';
+                $reverseStatus = 'on';
+            }
+            else {
+                $mode = 'auto';
+                $reverseStatus = 'off';
+            }
 
-            Boiler::setMode($element->id_object, $mode);
-
-            //Меняем состояние элемента
-            $this->setElementStatus($element, $elementStatus);
         }
+
+        Boiler::setMode($element->id_object, $mode);
+
+        //Меняем состояние элемента
+        $this->setElementStatus($element, $elementStatus);
+
+        //Ищем реверсный элемент и меняем у него состояние
+        $reverseElement = $this->findElementByHandle($element->page, $reverseHandle);
+        $this->setElementStatus($reverseElement, $reverseStatus);
+
+        //Перезагружаем страницу
+        $view = new Views();
+
+        $view->sendPage($element->page);
     }
 
 
@@ -126,21 +148,30 @@ class Page extends System {
         if (($element->handle == 'automode') || ($element->handle == 'manualmode')) {
 
             $objjson = json_decode($element->value);
-            var_dump($objjson);
-
             $settings = $objjson[0]->{'settings'};
-            var_dump($objjson[0]->{'settings'});
-            echo '========================'.$settings.'====================';
 
             $newValue = json_encode( array("status" => $status, "settings" => $settings));
 
             parent::$db->exec("UPDATE elements SET `value` = '[".$newValue."]'
                                        WHERE `id` = $element->id");
-
         }
 
-        //Перезагружаем страницу
     }
 
+    /**
+     * Ищем элемент по его хендлу
+     */
+    private function findElementByHandle($page, $hanle) {
+
+        $sql = "SELECT * FROM elements
+                WHERE handle = $hanle AND page = $page";
+
+        $queryElements = parent::$db->query($sql);
+
+        if ($queryElements->rowCount() != 0) {
+            return $queryElements->fetch(PDO::FETCH_OBJ);
+
+        }
+    }
 
 }

@@ -98,8 +98,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
            foreach ($users as $user) {
             $webconnection = $user;
-            $webconnection->send($data->message);          
-
+            $webconnection->send($data->message);
             }
 
            } else {

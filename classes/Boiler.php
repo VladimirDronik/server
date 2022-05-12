@@ -39,13 +39,13 @@ class Boiler extends System
 
 
         //Обновление целевой температуры котла
-        $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'"}]';
+        $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$target_heat_temp' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'heat_temp'");
 
         //Обновление целевой температуры контура воды
-        $target_water_temp = '[{"status":"'.$this->boiler->target_water_temp.'"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$target_water_temp' 
+        $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С"}]';
+        parent::$db->exec("UPDATE elements SET `value` = '$water_temp' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'water_temp'");
 
 
@@ -139,17 +139,18 @@ class Boiler extends System
             // Смотрим температуру на улице через привязанный датчик температуры и выставляем
             // температуру котла в соответствии с таблицей
             $sql = parent::$db->query("SELECT boiler_auto.t_water,  boiler_auto.t_out, termostats.current FROM boiler_auto 
-                                        INNER JOIN boiler ON boiler.id_object = boiler_auto.id_object
-                                        INNER JOIN termostats ON termostats.id = boiler.id_outside_thermostat
-                                        WHERE boiler.`id_object` = {$this->boiler->id_object}
-                                        AND boiler_auto.t_out <= termostats.current 
-                                        ORDER BY boiler_auto.t_out DESC LIMIT 1 ");
+                                   INNER JOIN boiler ON boiler.id_object = boiler_auto.id_object
+                                   INNER JOIN termostats ON termostats.id_object = boiler.id_outside_thermostat
+                                   WHERE boiler.`id_object` = {$this->boiler->id_object}
+                                   AND (boiler_auto.t_out <= termostats.current
+                                    OR boiler_auto.t_out = (SELECT MIN(boiler_auto.t_out) FROM boiler_auto)) 
+                                   ORDER BY boiler_auto.t_out DESC LIMIT 1 ");
 
             $boiler_autoparams = $sql->fetch(PDO::FETCH_OBJ);
             $this->boiler->target_heat_temp = $boiler_autoparams->t_water;
 
         } else {
-            // Если ручной режим, то у котла устанавливаем температуру, которая указаана в таблице
+            // Если ручной режим, то у котла устанавливаем температуру, которая указана в таблице
             $sql = parent::$db->query("SELECT set_value FROM boiler_manual WHERE id_object = {$this->boiler->id_object}");
             $boiler_manualparams = $sql->fetch(PDO::FETCH_OBJ);
             $this->boiler->target_heat_temp = $boiler_manualparams->set_value;
@@ -182,6 +183,7 @@ class Boiler extends System
         $this->boiler->boiler = $stateBoiler->boiler;
         $this->boiler->water_temp = $stateBoiler->water_temp;
         $this->boiler->feed_water_temp = $stateBoiler->feed_water_temp;
+
 
 
         parent::$db->exec("UPDATE boiler SET `feed_heat_temp` =  {$this->boiler->feed_heat_temp},

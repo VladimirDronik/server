@@ -917,15 +917,20 @@ class Views extends System
 
             } else {
 
-                $manualValueSQL = "SELECT id, set_value, min_value, max_value FROM boiler_manual 
-                                    WHERE id_object = {$page->idObject}";
+                $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
+                                    INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
+                                    WHERE boiler_manual.id_object = {$page->idObject}";
                 $queryManValue = parent::$db->query($manualValueSQL);
 
                 if ($queryManValue->rowCount() != 0) {
                     $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
 
-                    $values[] = array('cur_value' => $manualValue->set_value, 'set_value' => $manualValue->set_value,
+                    $cur_value = round($manualValue->feed_heat_temp);
+                    $set_value = round($manualValue->set_value);
+
+                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
                         'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+
 
                     $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
@@ -943,5 +948,16 @@ class Views extends System
     public function setInternalPage($items) {
 
 
+    }
+
+    public function sendPage($idPage) {
+
+        global $localsocket;
+
+        $res_json = (['user' => 'all', 'message' => $this->getPage($idPage)]);
+        $res_json = json_encode($res_json);
+        $instance = stream_socket_client($localsocket);
+        // send message
+        fwrite($instance,  $res_json . "\n");
     }
 }

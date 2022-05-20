@@ -965,13 +965,21 @@ class Views extends System
     /**
      * Отправляет значение элементов для страниц
      * @param $idElement
-     * @param $params
+     * @param $data
      */
-    public function sendPageElement($params) {
+    public function sendPageElement($data) {
 
         global $localsocket;
 
-        $res_json = (['user' => 'all', 'message' => $params ]);
+        $data_array = json_decode($data);
+
+        foreach ($data_array->items[0] AS $element) {
+            $id = $element->id;
+            $value = $element->value;
+            $message[] = array('id' => $id, 'value' => $value);
+        }
+
+        $res_json = (['user' => 'all', 'message' => $message ]);
         $res_json = json_encode($res_json);
         $instance = stream_socket_client($localsocket);
         // send message

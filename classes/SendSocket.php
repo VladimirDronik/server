@@ -375,9 +375,9 @@ class SendSocket
     /**
      * Установка внутренним элементам страницы значения
      */
-    public function setPageElement()
+    public function setPageElement($fulldata)
     {
-        $this->views->sendPageElement($this->param2);
+        $this->views->sendPageElement($fulldata);
     }
 
 

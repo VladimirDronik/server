@@ -33,9 +33,9 @@ class Boiler extends System
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
 
         //Обновление состояния давления теплоносителя
-        $pressue = '[{"status":"'.$this->boiler->pressue.'"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$pressue' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressue'");
+        $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
+        parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
+                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
 
 
         //Обновление целевой температуры котла
@@ -183,6 +183,7 @@ class Boiler extends System
         $this->boiler->boiler = $stateBoiler->boiler;
         $this->boiler->water_temp = $stateBoiler->water_temp;
         $this->boiler->feed_water_temp = $stateBoiler->feed_water_temp;
+        $this->boiler->pressure = round($stateBoiler->pressure/1000,1);
 
 
 
@@ -193,7 +194,8 @@ class Boiler extends System
                                 `thermostat` = {$this->boiler->thermostat},
                                 `boiler` =  {$this->boiler->boiler},
                                 `water_temp` = {$this->boiler->water_temp},
-                                `feed_water_temp` = {$this->boiler->feed_water_temp}
+                                `feed_water_temp` = {$this->boiler->feed_water_temp},
+                                `pressure` = {$this->boiler->pressure}
                                   WHERE `id_object` = {$this->boiler->id_object}");
 
 

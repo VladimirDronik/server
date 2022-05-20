@@ -300,6 +300,9 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
                     $send->changePageItem();
                     break;
 
+                case 'setPageElements':
+                    $send->setPageElement();
+                    break;
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

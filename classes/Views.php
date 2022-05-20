@@ -960,4 +960,21 @@ class Views extends System
         // send message
         fwrite($instance,  $res_json . "\n");
     }
+
+
+    /**
+     * Отправляет значение элементов для страниц
+     * @param $idElement
+     * @param $params
+     */
+    public function sendPageElement($params) {
+
+        global $localsocket;
+
+        $res_json = (['user' => 'all', 'message' => $params ]);
+        $res_json = json_encode($res_json);
+        $instance = stream_socket_client($localsocket);
+        // send message
+        fwrite($instance,  $res_json . "\n");
+    }
 }

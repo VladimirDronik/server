@@ -372,6 +372,13 @@ class SendSocket
         $this->page->changePageItem($this->param1, $this->param2);
     }
 
+    /**
+     * Установка внутренним элементам страницы значения
+     */
+    public function setPageElement()
+    {
+        $this->views->sendPageElement($this->param2);
+    }
 
 
 }

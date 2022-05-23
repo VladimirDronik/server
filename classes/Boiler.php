@@ -44,7 +44,7 @@ class Boiler extends System
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'heat_temp'");
 
         //Обновление целевой температуры контура воды
-        $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С"}]';
+        $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С", "settings": "true"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$water_temp' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'water_temp'");
 

@@ -59,7 +59,6 @@ $ws_worker->onWorkerStart = function() use (&$users)
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
 
-
         global $debugmode;
         $data = json_decode($data);
 

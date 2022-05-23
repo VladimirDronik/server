@@ -915,7 +915,7 @@ class Views extends System
 
                 return $json;
 
-            } else {
+            } elseif($page->handle == 'manualmode') {
 
                 $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
                                     INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
@@ -935,6 +935,31 @@ class Views extends System
                     $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
                     $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
+                        'idPage' => $page->intpage, 'pages' => $items));
+
+                    echo $json;
+                    return $json;
+                }
+            } else {
+
+                $waterValueSQL = "SELECT set_value, min_value, max_value, water_temp, target_water_temp FROM boiler_water 
+                                    INNER JOIN boiler ON boiler.id_object = boiler_water .id_object 
+                                    WHERE boiler_water.id_object = {$page->idObject}";
+                $queryWaterValue = parent::$db->query($waterValueSQL);
+
+                if ($queryWaterValue->rowCount() != 0) {
+                    $manualValue = $queryWaterValue->fetch(PDO::FETCH_OBJ);
+
+                    $cur_value = round($manualValue->water_temp);
+                    $set_value = round($manualValue->target_water_temp);
+
+                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
+                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+
+
+                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
+
+                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
                         'idPage' => $page->intpage, 'pages' => $items));
 
                     echo $json;
@@ -970,17 +995,18 @@ class Views extends System
     public function sendPageElement($data) {
 
         global $localsocket;
-
+/*
         $data_array = json_decode($data);
 
-        foreach ($data_array->items[0] AS $element) {
+        foreach ($data_array->items AS $element) {
             $id = $element->id;
             $value = $element->value;
             $message[] = array('id' => $id, 'value' => $value);
         }
-
-        $res_json = (['user' => 'all', 'message' => $message ]);
+*/
+        $res_json = (['user' => 'all', 'message' => $data ]);
         $res_json = json_encode($res_json);
+
         $instance = stream_socket_client($localsocket);
         // send message
         fwrite($instance,  $res_json . "\n");

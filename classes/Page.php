@@ -39,11 +39,14 @@ class Page extends System {
 
 
             }
-        } else { //Если manual выбрано
+        } elseif ($type == 'BoilerManual') { //Если manual выбрано
 
             parent::$db->exec("UPDATE boiler_manual SET `set_value` = $value
                                        WHERE `id_object` = $idObject");
 
+        } else {
+            parent::$db->exec("UPDATE boiler SET `target_water_temp` = $value
+                                       WHERE `id_object` = $idObject");
         }
 
     }

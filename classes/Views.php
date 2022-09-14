@@ -779,10 +779,12 @@ class Views extends System
 
 
         $sqlquery = parent::$db->query($sql);
-        while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
+        if($sqlquery ->rowCount() > 0) {
+		while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
 
-            $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
-        }
+		    $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
+		}
+        } else $graphs_value = null;
         
         return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
 

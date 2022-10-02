@@ -143,6 +143,10 @@ class Messages
 
     public function getCountMessages()
     {
+	$unreadMessages = 0;
+	$readMessages = 0;
+	
+
         $sql = system::$db->query("SELECT is_read, COUNT(is_read) AS cnt FROM `messages` GROUP BY is_read ORDER BY is_read LIMIT 30");
 
         if($sql->rowCount() > 0) {
@@ -155,9 +159,11 @@ class Messages
                     $readMessages = $messageCount->cnt;
             }
 
-            return $json = json_encode(array('status'=>'countMessages',
-                'counts' => ['unread' => (string)$unreadMessages, 'read' => (string)$readMessages, 'total' => (string)$unreadMessages+$readMessages]));
+      
         }
+        
+         return $json = json_encode(array('status'=>'countMessages',
+                'counts' => ['unread' => (string)$unreadMessages, 'read' => (string)$readMessages, 'total' => (string)$unreadMessages+$readMessages]));
 
     }
 

@@ -838,6 +838,7 @@ class Views extends System
             $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position`, `handle` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
 
             $queryElements = parent::$db->query($sql);
+            if($sql->rowCount() > 0) {
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
                 $image = explode('.', $element->image)[0];
@@ -864,6 +865,7 @@ class Views extends System
             }
 
             $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);
+            }
         }
 
         return  $json = json_encode(array('status'=>'pageLoad', 'pages' => $pages));

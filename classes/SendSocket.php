@@ -30,8 +30,8 @@ class SendSocket
         $this->data = $data;
         $this->currentUser = $data[1];
 
-        $this->param1 = $data[2];
-        $this->param2 = $data[3];
+        if (isset($data[2])) $this->param1 = $data[2];
+        if (isset($data[3])) $this->param2 = $data[3];
 
         $this->users = $users;
         $this->views = $views;
@@ -47,8 +47,10 @@ class SendSocket
      */
     private function send($data)
     {
+    	if (isset($this->users[$this->currentUser])) {
         $webconnection = $this->users[$this->currentUser];
         $webconnection->send("$data");
+        }
     }
 
     /**

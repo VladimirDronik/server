@@ -85,9 +85,11 @@ $ws_worker->onWorkerStart = function() use (&$users)
             //Записываем в файл что всё ок и сервер работает
             file_put_contents($file, $state, FILE_APPEND | LOCK_EX);
 
+            file_put_contents('server.log',date("Y-m-d H:i:s")." -> \n".$data->message." is ".$state."\n\n", FILE_APPEND | LOCK_EX); 
+            
             if ($system_message)
                print_r("Watchdog is $state\n");
-
+	
         }
 
 
@@ -105,11 +107,15 @@ $ws_worker->onWorkerStart = function() use (&$users)
                     $webconnection = $users[$data->user];
                     $webconnection->send($data->message);
                    }
+
+file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send :\n".$data->message."\n\n", FILE_APPEND | LOCK_EX); 
             }
 
-        if ($debugmode)
-            print_r('Received message: '.$data->message." \n");
 
+  
+      if ($debugmode)
+            print_r('Received message: '.$data->message." \n");
+	     	
     };
     $inner_tcp_worker->listen();
 };
@@ -149,7 +155,18 @@ $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
     global $debugmode;
 
+
    if ($debugmode) print_r("=====================================\n");
+
+
+echo "\n".date("Y-m-d H:i:s")." -> client send:\n";
+var_dump($data);
+echo "\n";
+
+
+if ($data!='watchdog')
+file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\n\n", FILE_APPEND | LOCK_EX);
+
 
         $views = new Views();
         $user = new Users();

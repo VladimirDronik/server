@@ -71,9 +71,9 @@ class Count extends Device
             $count = $sql->fetch(PDO::FETCH_OBJ);
 
             //Если счетчик воды, то значение преобразовываем в м3
-            if($count->type == 'water')
-                $today = $count->today_value / 1000;
-            else
+            //if($count->type == 'water')
+            //    $today = $count->today_value / 1000;
+            //else
                 $today = $count->today_value;
 
             parent::$db->query("UPDATE counts SET 

@@ -12,12 +12,13 @@ $message = 'watchdog';
 $restart = false;
 
 
+/*
 //Пингуем туннель, если не работает, то пробуем его запустить
 exec("ping -c 5 $VPN_server",$output, $status);
 if ($status!=0)
     //перезапускаем сервер сокетов
     exec("/etc/init.d/xl2tpd restart");
-
+*/
 
 
 
@@ -29,7 +30,7 @@ if (!$instance) {
    $restart = true;
 }
 
-else {
+//else {
 
     //Читаем файл первый раз на предмет ошибок
     $handle = @fopen("watchdog.txt", "r");
@@ -43,7 +44,10 @@ else {
         fclose($handle);
     }
 
-   if (!$restart) {
+
+   if ($restart == false) {
+
+
        //Шлем тестовое сообщеение через сокет
        fwrite($instance, json_encode(['user' => $user, 'message' => $message]) . "\n");
 
@@ -62,9 +66,9 @@ else {
        }
    }
 
-    if (file_exists('watchdog.txt'))
+   if (file_exists('watchdog.txt'))
     unlink('watchdog.txt');
-}
+//}
 
 
 //Если есть флаг рестарта сервера сокетов

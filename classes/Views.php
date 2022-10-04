@@ -838,7 +838,7 @@ class Views extends System
             $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position`, `handle` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
 
             $queryElements = parent::$db->query($sql);
-            if($sql->rowCount() > 0) {
+            if($queryElements->rowCount() > 0) {
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
                 $image = explode('.', $element->image)[0];

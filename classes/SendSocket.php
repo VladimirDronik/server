@@ -9,6 +9,7 @@
 use Views;
 use Messages;
 use Cameras;
+use Page;
 
 class SendSocket
 {
@@ -22,20 +23,22 @@ class SendSocket
     private $param2;
     private $device;
     private $cameras;
+    private $page;
 
-    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras)
+    function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras, Page $page)
     {
         $this->data = $data;
         $this->currentUser = $data[1];
 
-        $this->param1 = $data[2];
-        $this->param2 = $data[3];
+        if (isset($data[2])) $this->param1 = $data[2];
+        if (isset($data[3])) $this->param2 = $data[3];
 
         $this->users = $users;
         $this->views = $views;
         $this->message = $message;
         $this->device = $device;
         $this->cameras = $cameras;
+        $this->page = $page;
     }
 
     /**
@@ -44,8 +47,10 @@ class SendSocket
      */
     private function send($data)
     {
+    	if (isset($this->users[$this->currentUser])) {
         $webconnection = $this->users[$this->currentUser];
         $webconnection->send("$data");
+        }
     }
 
     /**
@@ -69,6 +74,7 @@ class SendSocket
      */
     public function readyTemperatures()
     {
+        echo $this->views->getTemperatures($this->param1);
         $this->send($this->views->getTemperatures($this->param1));
     }
 
@@ -93,6 +99,8 @@ class SendSocket
      */
     public function getMessages()
     {
+        echo "##########################################";
+        echo $this->message->getMessages($this->param1);
         $this->send($this->message->getMessages($this->param1));
     }
 
@@ -280,6 +288,23 @@ class SendSocket
     }
 
     /**
+     * Получение внутренней страницы для элемента
+     */
+    public function getInternalPage()
+    {
+        $this->send($this->views->getInternalPage($this->param1));
+    }
+
+
+    /**
+     * Установка значения элемента для внутренней страницы
+     */
+    public function setInternalPage($fulldata)
+    {
+        $this->page->setIntPages($fulldata);
+    }
+
+    /**
      * Изменеие статуса какого-либо собъекта
      * @param $fulldata - данные, которые пришли из сокета
      */
@@ -341,12 +366,21 @@ class SendSocket
 
     }
 
-
+    /**
+     * Изменения при нажатии на какой-либо элемент на странице
+     */
     public function changePageItem()
     {
-        var_dump($this->param1);
+        $this->page->changePageItem($this->param1, $this->param2);
     }
 
+    /**
+     * Установка внутренним элементам страницы значения
+     */
+    public function setPageElement($fulldata)
+    {
+        $this->views->sendPageElement($fulldata);
+    }
 
 
 }

@@ -10,18 +10,25 @@ class Cameras extends Device
      */
     public function getAllCameras()
     {
-        $sql = parent::$db->query("SELECT cameras.id, cameras.name, cameras.image, rooms.name AS roomName FROM cameras INNER JOIN rooms 
-            ON rooms.id = cameras.room WHERE cameras.active=1 ORDER BY cameras.sort");
-        while ($cameras = $sql->fetch(PDO::FETCH_OBJ)) {
+    
+    $query = parent::$db->query("SHOW TABLES FROM smarthome LIKE 'cameras';");
+    if($query->fetch(PDO::FETCH_OBJ))
+    	{
+    
+		$sql = parent::$db->query("SELECT cameras.id, cameras.name, cameras.image, rooms.name AS roomName FROM cameras INNER JOIN rooms 
+		    ON rooms.id = cameras.room WHERE cameras.active=1 ORDER BY cameras.sort");
+		while ($cameras = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
-            $cameras_array = array('id'=>(int)$cameras->id, 'name'=>$cameras->name,
-                'room'=>$cameras->roomName, 'image'=>$cameras->image);
-            $camsarr[] = $cameras_array;
+		    $cameras_array = array('id'=>(int)$cameras->id, 'name'=>$cameras->name,
+		        'room'=>$cameras->roomName, 'image'=>$cameras->image);
+		    $camsarr[] = $cameras_array;
 
-        }
+		}
 
-        return $json = json_encode(array('status'=>'allCamerasLoad', 'cameras'=>$camsarr));
+		return $json = json_encode(array('status'=>'allCamerasLoad', 'cameras'=>$camsarr));
+        } else
+        	return $json = json_encode(array('status'=>'allCamerasLoad', 'cameras'=>null));
     }
 
     /**

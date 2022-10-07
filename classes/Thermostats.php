@@ -349,7 +349,7 @@ class Thermostats extends Objects
 
         if (!$error) {
 
-            //проверка на слишком резкое изменеие значения
+            //проверка на слишком резкое изменение значения
             $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats 
                                       WHERE id_termostat = $this->id_termostat
                                       AND (NOW() - `datetime`) < 300 ");
@@ -363,6 +363,11 @@ class Thermostats extends Objects
 
                 parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id=$this->id_termostat");
+
+                //Заносим температуру в таблицу элементов
+                $temperature = '[{"status":"'.$termometr_value.'°С"}]';
+                parent::$db->exec("UPDATE elements SET `value` = '$temperature' 
+                                   WHERE `id_object` = {$this->idObject} AND handle = 'temperature'");
 
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
 

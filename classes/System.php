@@ -25,9 +25,9 @@ class System
      * @param string $dbpass "password of database"
      * @return  null
      */
-    static function dbConnect($dbname, $dbuser, $dbpass)
+    static function dbConnect($host, $dbname, $dbuser, $dbpass)
     {
-        $db = new PDO("mysql:host=localhost;dbname=$dbname", $dbuser, $dbpass);
+        $db = new PDO("mysql:host=$host;dbname=$dbname", $dbuser, $dbpass);
         Self::$db = $db;
 
         $db->exec("set charset utf8");

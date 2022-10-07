@@ -701,7 +701,7 @@ class Views extends System
         $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
         $todayDate = date('Y-m-d');
 
-        $month_start = date('Y').date('m').'-01';
+        $month_start = date('Y').date('-m').'-01';
         $year_start = date('Y').'-01-01';
 
 
@@ -767,7 +767,7 @@ class Views extends System
 
     public function getCountsGraphs($idCount, $period) {
 
-        if ($period == 'month')
+         if (($period == 'month')||($period == '(period)'))
         $sql = "SELECT DATE_FORMAT(datetime,'%d') AS date, SUM(value) AS value FROM `graph_counts` 
                 WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
                 GROUP BY DAY(datetime)  ORDER BY datetime";
@@ -779,10 +779,12 @@ class Views extends System
 
 
         $sqlquery = parent::$db->query($sql);
-        while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
+        if($sqlquery ->rowCount() > 0) {
+		while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
 
-            $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
-        }
+		    $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
+		}
+        } else $graphs_value = null;
         
         return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
 
@@ -833,37 +835,184 @@ class Views extends System
             unset($elements);
 
             //Запрашиваем данные для компонентов страницы
-            $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
+            $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position`, `handle` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
 
             $queryElements = parent::$db->query($sql);
+            if($queryElements->rowCount() > 0) {
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
                 $image = explode('.', $element->image)[0];
 
                 //Если тип - аккордеон, то ищем еще дочерние элементы
                 if($element->type == 'accordeon') {
-                    $sqlChildElements = "SELECT id, name, type, image, value FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
+                    $sqlChildElements = "SELECT id, name, type, image, value, `handle` FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
                     $queryChildElements = parent::$db->query($sqlChildElements);
                     while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
 
                         $imageChild = explode('.', $childElement->image)[0];
 
                         $value[] = array('id' => $childElement->id, 'image' => $imageChild, 'title' => $childElement->name, 'type' => $childElement->type,
-                            'value' => json_decode($childElement->value));
+                            'handle' => $childElement->handle, 'value' => json_decode($childElement->value));
                     }
                     $element->value = json_encode($value);
 
                     $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $element->position, 'elements'=>json_decode($element->value));
+                        'position' => $element->position, 'handle' => $element->handle, 'elements'=>json_decode($element->value));
                 }else
                     $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $element->position, 'value'=>json_decode($element->value));
+                        'position' => $element->position, 'handle' => $element->handle, 'value'=>json_decode($element->value));
 
             }
 
             $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);
+            }
         }
 
         return  $json = json_encode(array('status'=>'pageLoad', 'pages' => $pages));
+    }
+
+
+    /**
+     * Получение внутренней страницы для выбранного элемента
+     */
+    public function getInternalPage($idElement)
+    {
+
+        //Запрашиваем данные о нужных внутренних страницах
+        $sql = "SELECT internalPages.id AS intpage, internalPages.type, elements.page AS idpage, 
+                elements.handle AS handle, elements.id_object AS idObject
+                FROM internalPages 
+                INNER JOIN elements ON internalPages.idelement = elements.id     
+                WHERE idelement = $idElement ORDER BY sort";
+
+
+        $queryPage = parent::$db->query($sql);
+        while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
+
+
+            $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
+                                AND position=1 ORDER BY sort";
+
+            $queryElements = parent::$db->query($elementsSQL);
+            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
+
+                $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
+                    'position' => "1", 'value'=>json_decode($element->value));
+            }
+
+
+            if ($page->handle == 'automode') {
+
+                // Извлекаем значения температуры для котла
+                $valuesSQL = "SELECT id, t_out, t_water FROM boiler_auto WHERE id_object = {$page->idObject}
+                                ORDER BY `t_out`";
+                $queryValues = parent::$db->query($valuesSQL);
+
+                while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
+
+                    $values[] = array('id' => $element->id, 't_out' => $element->t_out, 't_water' => $element->t_water);
+                }
+                    $items[] = array('elements' => $elements, 'values' => $values);
+
+                      $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
+                          'idPage' => $page->intpage, 'pages' => $items));
+
+                return $json;
+
+            } elseif($page->handle == 'manualmode') {
+
+                $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
+                                    INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
+                                    WHERE boiler_manual.id_object = {$page->idObject}";
+                $queryManValue = parent::$db->query($manualValueSQL);
+
+                if ($queryManValue->rowCount() != 0) {
+                    $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
+
+                    $cur_value = round($manualValue->feed_heat_temp);
+                    $set_value = round($manualValue->set_value);
+
+                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
+                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+
+
+                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
+
+                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
+                        'idPage' => $page->intpage, 'pages' => $items));
+
+                    echo $json;
+                    return $json;
+                }
+            } else {
+
+                $waterValueSQL = "SELECT set_value, min_value, max_value, water_temp, target_water_temp FROM boiler_water 
+                                    INNER JOIN boiler ON boiler.id_object = boiler_water .id_object 
+                                    WHERE boiler_water.id_object = {$page->idObject}";
+                $queryWaterValue = parent::$db->query($waterValueSQL);
+
+                if ($queryWaterValue->rowCount() != 0) {
+                    $manualValue = $queryWaterValue->fetch(PDO::FETCH_OBJ);
+
+                    $cur_value = round($manualValue->water_temp);
+                    $set_value = round($manualValue->target_water_temp);
+
+                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
+                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+
+
+                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
+
+                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
+                        'idPage' => $page->intpage, 'pages' => $items));
+
+                    echo $json;
+                    return $json;
+                }
+            }
+        }
+    }
+
+
+    public function setInternalPage($items) {
+
+
+    }
+
+    public function sendPage($idPage) {
+
+        global $localsocket;
+
+        $res_json = (['user' => 'all', 'message' => $this->getPage($idPage)]);
+        $res_json = json_encode($res_json);
+        $instance = stream_socket_client($localsocket);
+        // send message
+        fwrite($instance,  $res_json . "\n");
+    }
+
+
+    /**
+     * Отправляет значение элементов для страниц
+     * @param $idElement
+     * @param $data
+     */
+    public function sendPageElement($data) {
+
+        global $localsocket;
+/*
+        $data_array = json_decode($data);
+
+        foreach ($data_array->items AS $element) {
+            $id = $element->id;
+            $value = $element->value;
+            $message[] = array('id' => $id, 'value' => $value);
+        }
+*/
+        $res_json = (['user' => 'all', 'message' => $data ]);
+        $res_json = json_encode($res_json);
+
+        $instance = stream_socket_client($localsocket);
+        // send message
+        fwrite($instance,  $res_json . "\n");
     }
 }

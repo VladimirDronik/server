@@ -33,19 +33,19 @@ class Boiler extends System
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
 
         //Обновление состояния давления теплоносителя
-        $pressue = '[{"status":"'.$this->boiler->pressue.'"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$pressue' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressue'");
+        $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
+        parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
+                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
 
 
         //Обновление целевой температуры котла
-        $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'"}]';
+        $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$target_heat_temp' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'heat_temp'");
 
         //Обновление целевой температуры контура воды
-        $target_water_temp = '[{"status":"'.$this->boiler->target_water_temp.'"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$target_water_temp' 
+        $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С", "settings": "true"}]';
+        parent::$db->exec("UPDATE elements SET `value` = '$water_temp' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'water_temp'");
 
 
@@ -61,17 +61,20 @@ class Boiler extends System
 
 
 
-        //Обновление режима работы котла (вато или ручной)
-        if($this->boiler->lock == 1) {
-            $auto = '[{"status": "off", "settings": "true"}]';
-        } else {
+        //Обновление режима работы котла (авто или ручной)
+        if($this->boiler->mode == 'auto') {
             $auto = '[{"status": "on", "settings": "true"}]';
+            $manual = '[{"status": "off", "settings": "true"}]';
+        } else {
+            $auto = '[{"status": "off", "settings": "true"}]';
+            $manual = '[{"status": "on", "settings": "true"}]';
         }
 
         parent::$db->exec("UPDATE elements SET `value` = '$auto'
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'automode'");
 
-
+        parent::$db->exec("UPDATE elements SET `value` = '$manual'
+                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'manualmode'");
 
 
 
@@ -129,6 +132,31 @@ class Boiler extends System
      */
     public function check() {
 
+        // Смотрим какой режим у котла, авто или ручной
+        if ($this->boiler->mode == 'auto') {
+
+            //Ищем страницу для котла по id объекта
+            // Смотрим температуру на улице через привязанный датчик температуры и выставляем
+            // температуру котла в соответствии с таблицей
+            $sql = parent::$db->query("SELECT boiler_auto.t_water,  boiler_auto.t_out, termostats.current FROM boiler_auto 
+                                   INNER JOIN boiler ON boiler.id_object = boiler_auto.id_object
+                                   INNER JOIN termostats ON termostats.id_object = boiler.id_outside_thermostat
+                                   WHERE boiler.`id_object` = {$this->boiler->id_object}
+                                   AND (boiler_auto.t_out <= termostats.current
+                                    OR boiler_auto.t_out = (SELECT MIN(boiler_auto.t_out) FROM boiler_auto)) 
+                                   ORDER BY boiler_auto.t_out DESC LIMIT 1 ");
+
+            $boiler_autoparams = $sql->fetch(PDO::FETCH_OBJ);
+            $this->boiler->target_heat_temp = $boiler_autoparams->t_water;
+
+        } else {
+            // Если ручной режим, то у котла устанавливаем температуру, которая указана в таблице
+            $sql = parent::$db->query("SELECT set_value FROM boiler_manual WHERE id_object = {$this->boiler->id_object}");
+            $boiler_manualparams = $sql->fetch(PDO::FETCH_OBJ);
+            $this->boiler->target_heat_temp = $boiler_manualparams->set_value;
+        }
+
+
         //ОТправляем данные из БД на котел
         if ($this->boiler->thermostat == 1) $cmd = 'on';
         else $cmd = 'off';
@@ -155,6 +183,8 @@ class Boiler extends System
         $this->boiler->boiler = $stateBoiler->boiler;
         $this->boiler->water_temp = $stateBoiler->water_temp;
         $this->boiler->feed_water_temp = $stateBoiler->feed_water_temp;
+        $this->boiler->pressure = round($stateBoiler->pressure/1000,1);
+
 
 
         parent::$db->exec("UPDATE boiler SET `feed_heat_temp` =  {$this->boiler->feed_heat_temp},
@@ -164,7 +194,8 @@ class Boiler extends System
                                 `thermostat` = {$this->boiler->thermostat},
                                 `boiler` =  {$this->boiler->boiler},
                                 `water_temp` = {$this->boiler->water_temp},
-                                `feed_water_temp` = {$this->boiler->feed_water_temp}
+                                `feed_water_temp` = {$this->boiler->feed_water_temp},
+                                `pressure` = {$this->boiler->pressure}
                                   WHERE `id_object` = {$this->boiler->id_object}");
 
 
@@ -237,7 +268,8 @@ class Boiler extends System
     }
 
 
-    //Установить режим котла
+    //Установить режим котла, при котором внешние изменения не будут влиять на параметры котла, например нельзя
+    //будет установить программно температуру котла, пока lock=1
     public function lockChanges(bool $lock) {
 
         if($lock) $this->boiler->lock = true;
@@ -247,6 +279,22 @@ class Boiler extends System
         parent::$db->exec("UPDATE boiler SET `automode` =  {$this->boiler->lock}
                                   WHERE `id_object` = {$this->boiler->id_object}");
 
+    }
+
+    /**
+     * Установить режим работы котла auto или manual
+     * В зависимости от этого режима котел будет работат следующим образом:
+     * auto - будет оцениваться температура с внешнего датчика id_outside_thermostat и сравниваться
+     * с значениями в таблице boiler_auto. В зависимости от этого будет выставляться температура
+     * теплоносителя.
+     * manual - будет выставляться температура теплоносителя в зависимости от значений, которые указаны в
+     * boiler_manual
+     */
+    static public function setMode($id_object, $mode) {
+
+        //меняем режим котла на auto
+        parent::$db->exec("UPDATE boiler SET `mode` = '".$mode."'
+                                       WHERE `id_object` = $id_object");
     }
 
 

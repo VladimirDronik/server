@@ -27,6 +27,7 @@ class Users extends System
             //$success = true;
         }
         else {
+
             //Возврат ошибки при несуществующем клиенте
             return false;
             //$message = '{ "status": "error", "errorMessage": "access denied"}';

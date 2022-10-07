@@ -267,7 +267,7 @@ class Hygrostats extends Objects
         
 
             //проверка на слишком резкое изменеие значения
-            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_hygrostats
+            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_humidities
                                       WHERE id_hygrostat = $this->id_hygrostat
                                       AND (NOW() - `datetime`) < 300 ");
 
@@ -281,7 +281,7 @@ class Hygrostats extends Objects
                 parent::$db->query("UPDATE hygrostats SET `current` = $humidity_value
                                          WHERE id=$this->id_hygrostat");
 
-                Graphs::insertToTermostats($this->id_hygrostat, $humidity_value);
+                Graphs::insertToHygrostats($this->id_hygrostat, $humidity_value);
 
             }
 
@@ -376,7 +376,7 @@ class Hygrostats extends Objects
      */
     static function deleteGraphOldValues(){
 
-        Graphs::deleteOldValues('graph_hygrostats');
+        Graphs::deleteOldValues('graph_humidities');
     }
 
 }

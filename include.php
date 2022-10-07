@@ -16,7 +16,7 @@ $localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';
 $VPN_server = '10.35.0.254';
 
-
+$host = 'localhost';
 $dbname = 'smarthome';
 $dbuser = 'smarthome';
 $dbpass = 'Alli80ed!';
@@ -51,8 +51,10 @@ require_once __DIR__. '/classes/Boiler.php';
 require_once __DIR__. '/classes/Curtain.php';
 require_once __DIR__. '/classes/Lock.php';
 require_once __DIR__. '/classes/Events.php';
+require_once __DIR__. '/classes/Page.php';
 require_once __DIR__. '/classes/YandexStation.php';
 require_once __DIR__. '/libs/YandexTTS.php';
+
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';
@@ -66,4 +68,4 @@ require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
 require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 
-System::dbConnect($dbname, $dbuser, $dbpass);
+System::dbConnect($host, $dbname, $dbuser, $dbpass);

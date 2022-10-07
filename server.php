@@ -59,7 +59,6 @@ $ws_worker->onWorkerStart = function() use (&$users)
     // когда на локальный tcp-сокет приходит сообщение
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
 
-
         global $debugmode;
         $data = json_decode($data);
 
@@ -86,9 +85,11 @@ $ws_worker->onWorkerStart = function() use (&$users)
             //Записываем в файл что всё ок и сервер работает
             file_put_contents($file, $state, FILE_APPEND | LOCK_EX);
 
+            file_put_contents('server.log',date("Y-m-d H:i:s")." -> \n".$data->message." is ".$state."\n\n", FILE_APPEND | LOCK_EX); 
+            
             if ($system_message)
                print_r("Watchdog is $state\n");
-
+	
         }
 
 
@@ -98,8 +99,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
 
            foreach ($users as $user) {
             $webconnection = $user;
-            $webconnection->send($data->message);          
-
+            $webconnection->send($data->message);
             }
 
            } else {
@@ -107,11 +107,15 @@ $ws_worker->onWorkerStart = function() use (&$users)
                     $webconnection = $users[$data->user];
                     $webconnection->send($data->message);
                    }
+
+file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send :\n".$data->message."\n\n", FILE_APPEND | LOCK_EX); 
             }
 
-        if ($debugmode)
-            print_r('Received message: '.$data->message." \n");
 
+  
+      if ($debugmode)
+            print_r('Received message: '.$data->message." \n");
+	     	
     };
     $inner_tcp_worker->listen();
 };
@@ -149,22 +153,33 @@ $ws_worker->onConnect = function($connection) use (&$users)
 /** Получение данных от клиента */
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
-var_dump($data);
     global $debugmode;
 
+
    if ($debugmode) print_r("=====================================\n");
+
+
+echo "\n".date("Y-m-d H:i:s")." -> client send:\n";
+var_dump($data);
+echo "\n";
+
+
+if ($data!='watchdog')
+file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\n\n", FILE_APPEND | LOCK_EX);
+
 
         $views = new Views();
         $user = new Users();
         $messages = new Messages();
         $device = new Device();
         $cameras = new Cameras();
+        $page = new Page();
 
 
         $objjson = json_decode($data);
         $data_array = explode(';',$objjson->{'status'});
 
-        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras);
+        $send = new SendSocket($data_array, $users, $views, $messages, $device, $cameras, $page);
 
         $status = $data_array[0];
 
@@ -289,10 +304,21 @@ var_dump($data);
                     $send->getPage();
                     break;
 
+                case 'getInternalPage':
+                    $send->getInternalPage();
+                    break;
+
+                case 'setInternalPage':
+                    $send->setInternalPage($data);
+                    break;
+
                 case 'pagesItemChange':
                     $send->changePageItem();
                     break;
 
+                case 'setPageElements':
+                    $send->setPageElement($data);
+                    break;
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

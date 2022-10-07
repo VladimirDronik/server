@@ -36,17 +36,18 @@ class Dimmer extends Device
      */
     public function setValue($value)
     {
+
         $object = new Objects();
         $object->select(self::$idObject);
         $object->device;
         $object->port;
 
-        $valuePWM = round(255*$value/100);
+        //$valuePWM = round(255*$value/100);
 
         //Отправляем данные устройству
         $mega = new Megad();
-        $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
-
+        //$mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
+        $mega->setValueToDimmerExt($object->device, $object->port, $value);
 
         if($value != 0) $oldvalue = " ,`oldvalue` = $value";
 

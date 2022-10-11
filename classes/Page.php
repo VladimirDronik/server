@@ -129,7 +129,7 @@ class Page extends System {
         $this->setElementStatus($element, $elementStatus);
 
         //Ищем реверсный элемент и меняем у него состояние
-        $reverseElement = $this->findElementByHandle($element->page, $reverseHandle);
+        $reverseElement = $this->findElementByHandle($element->page, $element->id_object, $reverseHandle);
         $this->setElementStatus($reverseElement, $reverseStatus);
 
         //Перезагружаем страницу
@@ -164,10 +164,10 @@ class Page extends System {
     /**
      * Ищем элемент по его хендлу
      */
-    private function findElementByHandle($page, $hanle) {
+    private function findElementByHandle($page, $idObject $hanle) {
 
         $sql = "SELECT * FROM elements
-                WHERE handle = $hanle AND page = $page";
+                WHERE handle = '$hanle' AND id_object = $idObject AND page = $page";
 
         $queryElements = parent::$db->query($sql);
 

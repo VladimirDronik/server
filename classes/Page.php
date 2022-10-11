@@ -56,7 +56,7 @@ class Page extends System {
     public function changePageItem($idElement, $elementStatus){
 
         //TODO: убрать это, когда в приложении сделают нормальную передачу id нажатого элемента
-        $idElement = $idElement-1;
+        //$idElement = $idElement-1;
 
         //Находим элемент страницы в таблице элементов
         $sql = "SELECT * FROM elements

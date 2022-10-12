@@ -65,19 +65,22 @@ class Page extends System {
 
         $queryElements = parent::$db->query($sql);
 
-        if ($queryElements->rowCount() != 0) {
+        if ($queryElements->rowCount() > 0) {
             $element = $queryElements->fetch(PDO::FETCH_OBJ);
 
-            //Определяем тип объекта по id
-            $object = new Objects();
-            $object->select($element->id_object);
+	    if	($element->id_object != null)
+	    {
+		    //Определяем тип объекта по id
+		    $object = new Objects();
+		    $object->select($element->id_object);
 
-            if ($element->type == 'switch') {
+		    if ($element->type == 'switch') {
 
-                if($object->type == 'boiler') {
-                  $this->setModeBoiler($element, $elementStatus);
-                }
+		        if($object->type == 'boiler') {
+		          $this->setModeBoiler($element, $elementStatus);
+		        }
 
+		    }
             }
         }
     }
@@ -114,11 +117,11 @@ class Page extends System {
             if ($elementStatus == 'on')
             {
                 $mode = 'manual';
-                $reverseStatus = 'on';
+                $reverseStatus = 'off';
             }
             else {
                 $mode = 'auto';
-                $reverseStatus = 'off';
+                $reverseStatus = 'on';
             }
 
         }

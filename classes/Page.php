@@ -167,7 +167,7 @@ class Page extends System {
     /**
      * Ищем элемент по его хендлу
      */
-    private function findElementByHandle($page, $idObject $hanle) {
+    private function findElementByHandle($page, $idObject, $hanle) {
 
         $sql = "SELECT * FROM elements
                 WHERE handle = '$hanle' AND id_object = $idObject AND page = $page";

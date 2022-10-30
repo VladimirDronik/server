@@ -127,7 +127,7 @@ class Action extends Megad
 
             //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
             if($whence == 'device') {
-                $idCausing->setStatus($state);
+                //$idCausing->setStatus($state);
 
                 //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
                 if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))

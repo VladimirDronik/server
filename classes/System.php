@@ -27,7 +27,7 @@ class System
      */
     static function dbConnect($host, $dbname, $dbuser, $dbpass)
     {
-        $db = new PDO("mysql:host=$host;dbname=$dbname", $dbuser, $dbpass);
+        $db = new PDO("mysql:host=$host;dbname=$dbname", $dbuser, $dbpass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         Self::$db = $db;
 
         $db->exec("set charset utf8");

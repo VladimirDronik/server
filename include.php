@@ -22,23 +22,23 @@ $dbuser = 'smarthome';
 $dbpass = 'Alli80ed!';
 
 
-require_once __DIR__.'/classes/System.php';
-require_once __DIR__.'/classes/Device.php';
-require_once __DIR__.'/classes/Objects.php';
-require_once __DIR__.'/classes/Megad.php';
-require_once __DIR__.'/classes/Scripts.php';
-require_once __DIR__.'/classes/Thermostats.php';
-require_once __DIR__.'/classes/Hygrostats.php';
-require_once __DIR__.'/classes/Views.php';
-require_once __DIR__.'/classes/Users.php';
-require_once __DIR__.'/classes/Demostand.php';
-require_once __DIR__.'/classes/Action.php';
-require_once __DIR__.'/classes/Graphs.php';
-require_once __DIR__.'/classes/Count.php';
+require_once __DIR__. '/classes/System.php';
+require_once __DIR__. '/classes/Device.php';
+require_once __DIR__. '/classes/Objects.php';
+require_once __DIR__. '/classes/Megad.php';
+require_once __DIR__. '/classes/Scripts.php';
+require_once __DIR__. '/classes/Thermostats.php';
+require_once __DIR__. '/classes/Hygrostats.php';
+require_once __DIR__. '/classes/Views.php';
+require_once __DIR__. '/classes/Users.php';
+require_once __DIR__. '/classes/Demostand.php';
+require_once __DIR__. '/classes/Action.php';
+require_once __DIR__. '/classes/Graphs.php';
+require_once __DIR__. '/classes/Count.php';
 require_once __DIR__. '/classes/Dimmer.php';
 require_once __DIR__. '/classes/Usensors.php';
 require_once __DIR__. '/classes/SendSocket.php';
-require_once __DIR__ . '/classes/Messages.php';
+require_once __DIR__. '/classes/Messages.php';
 require_once __DIR__. '/classes/Lightstats.php';
 require_once __DIR__. '/classes/Motionsensor.php';
 require_once __DIR__. '/classes/HitePro.php';
@@ -66,6 +66,9 @@ require_once __DIR__.'/libs/mod_i2c_bh1750.php';
 require_once __DIR__ . '/classes/Scriptlang/MyObject.php';
 require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
 require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
+
+// ModbusTCP library
+require_once __DIR__.'/libs/modbus_tcp_lib.php';
 
 
 System::dbConnect($host, $dbname, $dbuser, $dbpass);

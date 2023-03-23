@@ -455,6 +455,12 @@ class Views extends System
                     $termostat = new Thermostats();
                     $termostat->set_temperature($idObject, $set_value);
 
+                    //Запускаем метод 
+                    Action::runAction($onMethod, 'view', $idObject);
+
+                    //Добавляем запись в лог
+                    system::addLog('user', "Оптимальная температура для термостата ID $idObject изменена на " . $set_value . "°C.", 'socket_server');
+
                     //Отпарвляем данные о температуре остальным клиентам
                     self::updateItem($itemID);
 

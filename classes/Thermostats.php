@@ -60,6 +60,7 @@ class Thermostats extends Objects
             $this->usensor = $termostat->usensor_id;
             $this->name = $termostat->name;
             $this->hitepro_dev = $termostat->subdev_id;
+            $this->optimal = $termostat->optimal;
 
 
         }
@@ -240,6 +241,7 @@ class Thermostats extends Objects
     {
         $alarm_cnt = 0;
         $alarm_cnt_avail = 0;
+        $error = false;
 
         Events::exicute($this->idObject, 'onCheck');
 
@@ -346,21 +348,24 @@ class Thermostats extends Objects
         }
 
 
-
         if (!$error) {
 
             //проверка на слишком резкое изменение значения
-            $sql = parent::$db->query("SELECT MAX(id), `value` FROM graph_termostats 
+            $sql = parent::$db->query("SELECT `value` FROM graph_termostats 
                                       WHERE id_termostat = $this->id_termostat
-                                      AND (NOW() - `datetime`) < 300 ");
+                                      AND id=(SELECT MAX(id) FROM graph_termostats WHERE id_termostat = $this->id_termostat)
+                                      AND `datetime` > DATE_ADD(NOW(), INTERVAL -1 HOUR)");
 
             $termostat = $sql->fetch(PDO::FETCH_OBJ);
+var_dump ($termostat->value);
+var_dump ($termometr_value);
 
-            //Если разница меньше 10 град или если данные были слишком давно, то заносим в графики значения
-            if ((abs($termostat->value - $termometr_value) < 10) || (!$termostat->value)) {
+            //Если разница меньше 10 град или если данные были слишком давно 
+            //и температура изменилась больше чем на 0.25 градуса, то заносим в графики значения
+            if (((abs($termostat->value - $termometr_value) < 10) || (!$termostat->value)) 
+                && ($termometr_value > $termostat->value+0.25) || ($termometr_value < $termostat->value-0.25)) {
 
                 //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
-
                 parent::$db->query("UPDATE termostats SET `current` = $termometr_value
                                          WHERE id=$this->id_termostat");
 
@@ -371,6 +376,7 @@ class Thermostats extends Objects
 
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
 
+                return $termometr_value;
             }
 
         }

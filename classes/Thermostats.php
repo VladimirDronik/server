@@ -374,9 +374,7 @@ class Thermostats extends Objects
 
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
 
-                return $termometr_value;
             }
-
         }
 
         //Отдаем значение визуальному компоненту
@@ -387,7 +385,8 @@ class Thermostats extends Objects
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
-
+        
+        return $termometr_value;
 
     }
 

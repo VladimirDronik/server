@@ -357,8 +357,6 @@ class Thermostats extends Objects
                                       AND `datetime` > DATE_ADD(NOW(), INTERVAL -1 HOUR)");
 
             $termostat = $sql->fetch(PDO::FETCH_OBJ);
-var_dump ($termostat->value);
-var_dump ($termometr_value);
 
             //Если разница меньше 10 град или если данные были слишком давно 
             //и температура изменилась больше чем на 0.25 градуса, то заносим в графики значения

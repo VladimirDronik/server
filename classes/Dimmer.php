@@ -127,7 +127,7 @@ class Dimmer extends Device
 	$object->select(self::$idObject);
 	$object->device;
 	$object->port;
-
+echo self::$idObject;
 	$mega = new Megad();
         $currentValue = $mega->status($object->port, 'get', $object->device);
 
@@ -135,10 +135,10 @@ class Dimmer extends Device
         $value = round($currentValue*100/255);
 
         if($value != 0) $oldvalue = " ,`oldvalue` = $value";
-        else $oldvalue = self::getOldValue();
+        else $oldvalue = " ,`oldvalue` = " . self::getOldValue();
 
         //Заносим текущее состояние в таблицу
-        System::$db->query("UPDATE dimmers SET `value` = $value $oldvalue WHERE id_object = " . self::$idObject);
+        parent::$db->query("UPDATE dimmers SET `value` = $value $oldvalue WHERE id_object = ".self::$idObject);
 
         //Отображение у объекта приводим в состояние "включено" или "выключено"
         if ($value>0) $object->setStatus('ON');

@@ -201,8 +201,8 @@ class Objects extends System
 
         $status = $this->checkSwitchState($status);
 
-        if ($status=='on' || $status=='ON') $statusport=1;
-        if ($status=='off' || $status=='OFF') $statusport=0;
+        if ($status=='on') $statusport=1;
+        if ($status=='off') $statusport=0;
 
         //назначаем порту новое значение
         return $script->set($this->port, $statusport, $this->device);

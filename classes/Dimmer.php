@@ -42,17 +42,24 @@ class Dimmer extends Device
         $object->device;
         $object->port;
 
-        //$valuePWM = round(255*$value/100);
-
-        //Отправляем данные устройству
         $mega = new Megad();
-        //$mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
-        $mega->setValueToDimmerExt($object->device, $object->port, $value);
+
+        if ($object->portstate == "OUT")
+        {
+            $valuePWM = round(255*$value/100);
+            //Отправляем данные на порт контроллера
+            $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
+        }
+            elseif ($object->portstate == "EXT")
+        {
+            //Отправляем данные на модуль 0-10В
+            $mega->setValueToDimmerExt($object->device, $object->port, $value);
+        }
 
         if($value != 0) $oldvalue = " ,`oldvalue` = $value";
 
         //Заносим текущее состояние в таблицу
-            parent::$db->query("UPDATE dimmers SET 
+            parent::$db->query("UPDATE dimmers SET
                                 `value` = $value $oldvalue
                                 WHERE id_object =".self::$idObject);
     }
@@ -112,6 +119,32 @@ class Dimmer extends Device
         return $dimer->oldvalue;
     }
 
+
+    public function getValueFromCtr()
+    {
+
+	$object = new Objects();
+	$object->select(self::$idObject);
+	$object->device;
+	$object->port;
+
+	$mega = new Megad();
+        $currentValue = $mega->status($object->port, 'get', $object->device);
+
+        //Вычисляем значение в процентах и заносим в таблицу
+        $value = round($currentValue*100/255);
+
+        if($value != 0) $oldvalue = " ,`oldvalue` = $value";
+        else $oldvalue = self::getOldValue();
+
+        //Заносим текущее состояние в таблицу
+        System::$db->query("UPDATE dimmers SET `value` = $value $oldvalue WHERE id_object = " . self::$idObject);
+
+        //Отображение у объекта приводим в состояние "включено" или "выключено"
+        if ($value>0) $object->setStatus('ON');
+        else $object->setStatus('OFF');
+
+    }
 
     /**
      * Включить диммер на предыдущем занчении

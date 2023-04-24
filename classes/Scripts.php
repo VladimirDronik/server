@@ -23,8 +23,10 @@ class Scripts extends Megad
 
 
 
-    /** Ищем и выполняем скрипты, которые сответсвуют объектам и их методам,
-     подходящим по текущему периоду времени */
+    /** 
+     * Ищем и выполняем скрипты, которые сответсвуют объектам и их методам,
+     * подходящим по текущему периоду времени 
+    */
 
     function cron(int $time)
     {
@@ -54,15 +56,18 @@ class Scripts extends Megad
                                     WHERE scheduler_points.days LIKE '%$day%' AND scheduler_points.time = '$time'
                                     AND `scheduler_points`.`type` = '$type' AND scheduler_tasks.`active` = 1 ");
 
-
         while ($action = $sql->fetch(PDO::FETCH_OBJ))
         {
             //Выполняем действие для метода, если он указан. Если не указан, то для скрипта
-            if($action->method != null)
-            Action::runAction($action->method, 'scheduler', $action->id_object );
+            if($action->method)
+            {
+                echo "Run method";
+                Action::runAction($action->method, 'scheduler', $action->id_object );
+            }
             else
+            {
                 $this->runscript($action->script);
-
+            }
         }
 
     }

@@ -10,7 +10,7 @@ class Views extends System
 {
 
     /** Получаем список итемов для главной страницы, упаковываем его в json и отдаем скрипту server.php, который
-     отправляет этот json клиенту, запрашивающему данные
+     * отправляет этот json клиенту, запрашивающему данные
      *
      * @param string $viewType - указание на то, какие типы элементов ожидаются из БД, если не указано, то все загружаем
      */
@@ -454,6 +454,12 @@ class Views extends System
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем
                     $termostat = new Thermostats();
                     $termostat->set_temperature($idObject, $set_value);
+
+                    //Запускаем метод 
+                    Action::runAction($onMethod, 'view', $idObject);
+
+                    //Добавляем запись в лог
+                    system::addLog('user', "Оптимальная температура для термостата ID $idObject изменена на " . $set_value . "°C.", 'socket_server');
 
                     //Отпарвляем данные о температуре остальным клиентам
                     self::updateItem($itemID);
@@ -982,12 +988,22 @@ class Views extends System
     public function sendPage($idPage) {
 
         global $localsocket;
-
-        $res_json = (['user' => 'all', 'message' => $this->getPage($idPage)]);
+        
+        $sql = "SELECT link FROM pages WHERE id = $idPage";
+        $queryResult = parent::$db->query($sql);
+        if ($queryResult->rowCount()>0) {
+        
+        $page = $queryResult->fetch(PDO::FETCH_OBJ);
+              	
+        
+        $res_json = (['user' => 'all', 'message' => $this->getPage($page->link)]);
         $res_json = json_encode($res_json);
         $instance = stream_socket_client($localsocket);
         // send message
         fwrite($instance,  $res_json . "\n");
+        
+        }
+
     }
 
 

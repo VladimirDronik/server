@@ -70,7 +70,8 @@ class Action extends Megad
                     self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
 
             Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
-            Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+            if ($idCausing != $method->id_object)
+                Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
         }
     }
 
@@ -127,7 +128,7 @@ class Action extends Megad
 
             //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
             if($whence == 'device') {
-                $idCausing->setStatus($state);
+                //$idCausing->setStatus($state);
 
                 //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
                 if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
@@ -218,23 +219,29 @@ class Action extends Megad
         $object->select($idObject);
         
         if ($object->type == 'drycontact') {
-
+            
             //Получаем состояние порта, на котором висит данный элемент
             $status = $object->getPortState();
-
+            
             //Присваиваем объекту это состояние
-            $object->setStatus($status,true, false);
+            $object->setStatus($status, true, false);
 
 
             $sql = parent::$db->query("SELECT `method_on`, `method_off`, `param_method_on`, `param_method_off` 
                                         FROM `drycontacts` WHERE `id_object`=$idObject");
             $drycontQuery = $sql->fetch(PDO::FETCH_OBJ);
+            
+            Messages::sendByObject($idObject);
 
             if ($object->status == 'ON')
-                self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on);
+            {
+                self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on, false);
+            }
             else
-                self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off);
-
+            {
+                self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off, false);
+            }
+            
         }
     }
 

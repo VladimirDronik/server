@@ -26,21 +26,29 @@ flush();
 
         //Определяем сработал одинарый, двойной клик или длительное нажатие
         if ($click == 2)
+        {
             $method = $port->dc_method;
-        elseif (($long == 1)||($long == 2)) {
+        }
+        elseif (($long == 1)||($long == 2)) 
+        {
             $method = $port->lc_method;
             $params = $long;
         }
         else
+        {
             $method = $port->method;
-
-
-        //Взяли объект и метод в тиблице портов, выполняем действие для данного объекта
+        }
+        
+        //Взяли объект и метод в таблице портов, выполняем действие для данного объекта
         if($method)
-        Action::runAction($method, 'device', $port->object, $params);
+        {
+            Action::runAction($method, 'device', $port->object, $params);
+        }
         else //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
-            Action::runWithoutMethod($port->object);
-
-
-
+        {
+            if ($params != 2)
+            {
+                Action::runWithoutMethod($port->object);
+            }
+        }
 

@@ -1032,3 +1032,41 @@ class Views extends System
         fwrite($instance,  $res_json . "\n");
     }
 }
+
+
+/** Функция отдает параметры выбранного кондицинера
+     *
+     */
+    function getConditioner($idConditioner) {
+
+//        $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
+//                                   `view_items`.`description` AS description,
+//                                    `objects`.`status` AS state
+//                                   FROM `dimmers`
+//                                   INNER JOIN objects ON objects.id = dimmers.id_object 
+//                                   INNER JOIN view_items ON view_items.id_object = objects.id 
+//                                   WHERE view_items.id = $idDimmer");
+//
+//        if($sql->rowCount() > 0) {
+//
+//            $dimmer = $sql->fetch(PDO::FETCH_OBJ);
+//
+//            //Если нужно отправлять статус ON, когда value > 0
+//            /*
+//            if ($dimmer->value > 0)
+//                $state = 'OFF';
+//            else
+//                $state = 'ON';
+//            */
+//
+//            $items = array('id' => $idDimmer,
+//                'type' => 'dimmer',
+//                'name' => $dimmer->description,
+//                'status' => $dimmer->state,
+//                'value' => $dimmer->value);
+//
+//          return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));
+//
+//        }  else System::addlog('error','Данные для отображения"'.$idDimmer.'"" не найдены', 'conditioner');
+
+    }

@@ -382,5 +382,13 @@ class SendSocket
         $this->views->sendPageElement($fulldata);
     }
 
+    /**
+    * Отдает данные о запрашиваемом кондиционере
+    **/
+    public function getConditioner()
+    {
+         $this->send($this->views->getConditioner($this->param1));
+    }
+
 
 }

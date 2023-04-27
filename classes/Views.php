@@ -1057,8 +1057,8 @@ class Views extends System
                 'operation' => $conditioner->operation,
                 'fan' => $conditioner->fan,
                 'precision' => $conditioner->prec,
-                'operation_modes' => $conditioner->operationModes,
-                'fan_modes' => $conditioner->operation,
+                'operation_modes' => $conditioner->operation,
+                'fan_modes' => $conditioner->fan,
                 'min' => $conditioner->min,
                 'max' => $conditioner->max
           );

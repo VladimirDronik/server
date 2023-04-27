@@ -1031,7 +1031,6 @@ class Views extends System
         // send message
         fwrite($instance,  $res_json . "\n");
     }
-}
 
 
 /** Функция отдает параметры выбранного кондицинера
@@ -1069,3 +1068,9 @@ class Views extends System
         }  else System::addlog('error','Данные для отображения"'.$idConditioner.'"" не найдены', 'conditioner');
 
     }
+
+
+}
+
+
+

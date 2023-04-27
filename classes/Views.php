@@ -1050,6 +1050,9 @@ class Views extends System
 
             $conditioner = $sql->fetch(PDO::FETCH_OBJ);
 
+            $operationModes = json_decode($conditioner->operationModes);
+            $fanModes = json_decode($conditioner->fanModes);
+
             $items = array('id' => $idConditioner,
                 'type' => 'conditioner',
                 'state' => $conditioner->state,
@@ -1057,8 +1060,8 @@ class Views extends System
                 'operation' => $conditioner->operation,
                 'fan' => $conditioner->fan,
                 'precision' => $conditioner->prec,
-                'operation_modes' => $conditioner->operationModes,
-                'fan_modes' => $conditioner->fanModes,
+                'operation_modes' => $operationModes->{'modes'},
+                'fan_modes' => $fanModes->{'modes'},
                 'min' => $conditioner->min,
                 'max' => $conditioner->max
           );

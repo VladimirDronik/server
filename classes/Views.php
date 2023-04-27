@@ -1037,9 +1037,9 @@ class Views extends System
 /** Функция отдает параметры выбранного кондицинера
      *
      */
-    function getConditioner($idConditioner) {
+    public function getConditioner($idConditioner) {
 
-   $sql = parent::$db->query("SELECT min, max, operationModes, fanModes, precision, conditioner.mode AS mode, conditioner.temp AS temp, conditioner.operation AS operation, conditioner.fan AS fan    
+   $sql = parent::$db->query("SELECT min, max, operationModes, fanModes, precision, conditioner.state AS state, conditioner.temp AS temp, conditioner.operation AS operation, conditioner.fan AS fan    
                                FROM `conditioner_kinds` 
                                INNER JOIN conditioner_models ON conditioner_models.kind = conditioner_kinds.id 
                                INNER JOIN conditioners ON conditioner_models.id = conditioners.model 
@@ -1053,7 +1053,7 @@ class Views extends System
 
             $items = array('id' => $idConditioner,
                 'type' => 'conditioner',
-                'mode' => $conditioner->mode,
+                'state' => $conditioner->state,
                 'temp' => $conditioner->temp,
                 'operation' => $conditioner->operation,
                 'fan' => $conditioner->fan,

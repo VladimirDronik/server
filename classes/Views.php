@@ -1039,34 +1039,33 @@ class Views extends System
      */
     function getConditioner($idConditioner) {
 
-//        $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
-//                                   `view_items`.`description` AS description,
-//                                    `objects`.`status` AS state
-//                                   FROM `dimmers`
-//                                   INNER JOIN objects ON objects.id = dimmers.id_object 
-//                                   INNER JOIN view_items ON view_items.id_object = objects.id 
-//                                   WHERE view_items.id = $idDimmer");
-//
-//        if($sql->rowCount() > 0) {
-//
-//            $dimmer = $sql->fetch(PDO::FETCH_OBJ);
-//
-//            //Если нужно отправлять статус ON, когда value > 0
-//            /*
-//            if ($dimmer->value > 0)
-//                $state = 'OFF';
-//            else
-//                $state = 'ON';
-//            */
-//
-//            $items = array('id' => $idDimmer,
-//                'type' => 'dimmer',
-//                'name' => $dimmer->description,
-//                'status' => $dimmer->state,
-//                'value' => $dimmer->value);
-//
-//          return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));
-//
-//        }  else System::addlog('error','Данные для отображения"'.$idDimmer.'"" не найдены', 'conditioner');
+   $sql = parent::$db->query("SELECT min, max, operationModes, fanModes, precision, conditioner.mode AS mode, conditioner.temp AS temp, conditioner.operation AS operation, conditioner.fan AS fan    
+                               FROM `conditioner_kinds` 
+                               INNER JOIN conditioner_models ON conditioner_models.kind = conditioner_kinds.id 
+                               INNER JOIN conditioners ON conditioner_models.id = conditioners.model 
+                               INNER JOIN objects ON objects.id = conditioners.id_object 
+                               INNER JOIN view_items ON view_items.id_object = objects.id 
+                               WHERE view_items.id = $idConditioner");
+
+        if($sql->rowCount() > 0) {
+
+            $conditioner = $sql->fetch(PDO::FETCH_OBJ);
+
+            $items = array('id' => $idConditioner,
+                'type' => 'conditioner',
+                'mode' => $conditioner->mode,
+                'temp' => $conditioner->temp,
+                'operation' => $conditioner->operation,
+                'fan' => $conditioner->fan,
+                'precision' => $conditioner->precision,
+                'operation_modes' => $conditioner->operationModes,
+                'fan_modes' => $conditioner->operation,
+                'min' => $conditioner->min,
+                'max' => $conditioner->max
+          );
+
+         return  $json = json_encode(array('status' => 'condiionerLoad', 'entity'=> $items));
+
+        }  else System::addlog('error','Данные для отображения"'.$idConditioner.'"" не найдены', 'conditioner');
 
     }

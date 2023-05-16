@@ -323,6 +323,7 @@ file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\
                 case 'getConditioner':
                     $send->getConditioner();
                     break;
+            
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

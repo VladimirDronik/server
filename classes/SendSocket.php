@@ -318,6 +318,7 @@ class SendSocket
         $status = $data_array->items[0]->status;
         $instance = $data_array->items[0]->instance;
 
+
         if($status == 1)
             $status = 'on';
         elseif($status == 0)
@@ -341,6 +342,16 @@ class SendSocket
             $dimmer->setValue($status);
             elseif ($instance == 'on')
                 $dimmer->setValue($status);
+        
+        } elseif ($object->type == 'conditioner') {
+
+           $value = $data_array->items[0]->value;
+           $oper = $data_array->items[0]->params->oper;
+           $fan = $data_array->items[0]->params->fan;
+        
+           $conditioner = new Conditioner($idObject);
+           $conditioner->setValue($value, $status, $oper, $fan)
+        }
 
 
         } elseif ($object->type == 'curtain') {
@@ -389,6 +400,7 @@ class SendSocket
     {
          $this->send($this->views->getConditioner($this->param1));
     }
+
 
 
 }

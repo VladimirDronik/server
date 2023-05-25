@@ -38,7 +38,7 @@
                                     curtains.id_object AS `id_object`,
                                     devices.ip_address AS `gateway_ip`,
                                     devices.port AS `gateway_port`
-                                    FROM curtains LEFT JOIN devices ON devices.id=curtains.gw_id
+                                    FROM curtains LEFT JOIN devices ON devices.id=curtains.device_id
                                     WHERE curtains.id_object = $idObject");
 
         $curtain =  $sql->fetch(PDO::FETCH_OBJ);

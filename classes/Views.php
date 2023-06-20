@@ -478,6 +478,12 @@ class Views extends System
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                         System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
+                 } elseif ($itemType == 'label') {
+
+
+                    $conditioner = new Conditioner($idObject);
+
+
 
                 } elseif ($itemType == 'dimmer') {
 
@@ -611,6 +617,7 @@ class Views extends System
             ($viewObject->type == 'light-own') ||
             ($viewObject->type == 'label') ||
             ($viewObject->type == 'link') ||
+            ($viewObject->type == 'conditioner') ||
             ($viewObject->type == 'socket'))
 
             return array('id' => (int)$viewObject->id,
@@ -700,6 +707,7 @@ class Views extends System
         } else return false;
 
     }
+
 
     public function getCounts() {
 
@@ -982,7 +990,7 @@ class Views extends System
 
     public function setInternalPage($items) {
 
-
+ 
     }
 
     public function sendPage($idPage) {
@@ -1066,7 +1074,7 @@ class Views extends System
                 'max' => $conditioner->max
           );
 
-         return  $json = json_encode(array('status' => 'condiionerLoad', 'entity'=> $items));
+         return  $json = json_encode(array('status' => 'conditionerLoad', 'entity'=> $items));
 
         }  else System::addlog('error','Данные для отображения"'.$idConditioner.'"" не найдены', 'conditioner');
 

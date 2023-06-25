@@ -127,7 +127,7 @@ class Dimmer extends Device
 	$object->select(self::$idObject);
 	$object->device;
 	$object->port;
-echo self::$idObject;
+
 	$mega = new Megad();
         $currentValue = $mega->status($object->port, 'get', $object->device);
 

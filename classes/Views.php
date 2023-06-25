@@ -478,11 +478,14 @@ class Views extends System
                     if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
                         System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
-                 } elseif ($itemType == 'label') {
-
+                 } elseif ($itemType == 'conditioner') {
+             
+                    $temperature = $data_array->items[0]->temp;
+                    $mode = $data_array->items[0]->mode;
+                    $fan = $data_array->items[0]->fan;
 
                     $conditioner = new Conditioner($idObject);
-
+                    $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
 
 
                 } elseif ($itemType == 'dimmer') {

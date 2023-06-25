@@ -350,9 +350,7 @@ class SendSocket
            $fan = $data_array->items[0]->params->fan;
         
            $conditioner = new Conditioner($idObject);
-           $conditioner->setValue($value, $status, $oper, $fan)
-        }
-
+           $conditioner->setValue($value, $status, $oper, $fan);
 
         } elseif ($object->type == 'curtain') {
             if ($status == 'on')

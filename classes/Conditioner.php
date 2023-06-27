@@ -43,7 +43,7 @@ class Conditioner extends Device
 
         //Заносим текущее состояние кондиционера в таблицу
             parent::$db->query("UPDATE conditioners SET 
-                                `temp` = $temperature, `state` = $state, `operation` = \"$oper\", `fan` = \"$fan\"   
+                                `temp` = $temperature, `state` = \"$state\", `operation` = \"$oper\", `fan` = \"$fan\"   
                                 WHERE id_object =".self::$idObject);
 
 

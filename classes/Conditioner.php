@@ -26,7 +26,7 @@ class Conditioner extends Device
             $object->setStatus('ON', true, false);
             $query = 'SELECT `code`, conditioners.wb_mir AS modbus_addr, devices.ip_address AS ip_addr FROM `conditioner_codes` INNER JOIN `conditioner_models` ON conditioner_codes.kind = conditioner_models.kind INNER JOIN `conditioners` ON conditioners.model = conditioner_models.id  
                 INNER JOIN devices ON devices.id = conditioners.device_id
-                WHERE `conditioner_codes.temperature` = '.$temperature.' AND `conditioner_codes.operationMode` = "'.$oper.'" AND `conditioner_codes.fanMode` = "'.$fan.'" AND conditioners.id_object = '.self::$idObject;
+                WHERE conditioner_codes.temperature = '.$temperature.' AND conditioner_codes.operationMode = "'.$oper.'" AND conditioner_codes.fanMode = "'.$fan.'" AND conditioners.id_object = '.self::$idObject;
          } else {
             $object->setStatus('OFF', true, false);
             $query = 'SELECT `code`, conditioners.wb_mir AS modbus_addr, devices.ip_address AS ip_addr FROM `conditioner_codes` INNER JOIN `conditioner_models` ON conditioner_codes.kind = conditioner_models.kind INNER JOIN `conditioners` ON conditioners.model = conditioner_models.id  
@@ -34,7 +34,6 @@ class Conditioner extends Device
                 WHERE conditioner_codes.status = "'.$state.'" AND conditioners.id_object = '.self::$idObject;
 
          }
-
 
         //Ищем в таблице нужный код для команды
         $sql = parent::$db->query($query);

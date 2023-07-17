@@ -47,10 +47,8 @@ class Conditioner extends Device
                                 WHERE id_object =".self::$idObject);
 
 
-        //Отправляем команду скрипту кондиционера        
-        exec('cd /usr/bin && ./rs_control ir_raw -d wb-mir --ip '.$conditioner->ip_addr.' -u '.$conditioner->modbus_addr.' --ir_signal "'.$conditioner->code.'"');
-
+        //Отправляем команду скрипту кондиционера
+        exec('rs_control ir_raw -d wb-mir --ip ' .$conditioner->ip_addr. ' -u ' .$conditioner->modbus_addr. ' --ir_json \'{"signal": [' .$conditioner->code. ']}\'');
     }
-    
 }
 

@@ -16,10 +16,10 @@ $localwebsocket = '192.168.100.201:8000';
 $localsocket = 'tcp://127.0.0.1:5678';
 $VPN_server = '10.35.0.254';
 
-$host = 'localhost';
-$dbname = 'smarthome';
-$dbuser = 'smarthome';
-$dbpass = 'Alli80ed!';
+$host = getenv('MYSQL_HOST');
+$dbname = getenv('MYSQL_DATABASE');
+$dbuser = getenv('MYSQL_USER');
+$dbpass = getenv('MYSQL_PASSWORD');
 
 
 require_once __DIR__. '/classes/System.php';
@@ -69,7 +69,10 @@ require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
 require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 // ModbusTCP library
-require_once __DIR__.'/libs/modbus_tcp_lib.php';
+require_once __DIR__.'/libs/modbus/ModbusTcp.php';
+
+// ModbusSerial library
+require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';
 
 
 System::dbConnect($host, $dbname, $dbuser, $dbpass);

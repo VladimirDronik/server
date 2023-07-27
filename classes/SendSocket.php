@@ -246,7 +246,7 @@ class SendSocket
         //Вызываем метод, отвечающий за внесение изменений в БД и активацию действий
         if ($debugmode) $this->views->resData($fulldata);
         else
-            passthru("(php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
+            passthru("(cd ".ROOT_DIR." && php -f thread.php views resData '$fulldata' & ) >> /dev/null 2>&1");
 
     /*
         //отдаем данные об изменении всем другим зарегестрированным клиентам

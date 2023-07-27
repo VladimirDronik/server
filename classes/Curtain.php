@@ -12,19 +12,12 @@
 
  class Curtain extends Device
 {
-
-    // public $openPort;
-    // public $closePort;
-    // public $time;
-    // private $place;
-    // private $device;
-    // private $idObject;
+    private static $_curtain = null;
 
     public function __construct($idObject)
     {
         $this->initCurtain($idObject);
     }
-
 
     private function initCurtain($idObject)
     {
@@ -37,12 +30,14 @@
                                     curtains.percent AS `percent`,
                                     curtains.id_object AS `id_object`,
                                     devices.ip_address AS `gateway_ip`,
-                                    devices.port AS `gateway_port`
-                                    FROM curtains LEFT JOIN devices ON devices.id=curtains.device_id
+                                    devices.port AS `gateway_port`,
+                                    devtypes.name AS `gateway_type`
+                                    FROM curtains 
+                                    JOIN devices ON devices.id=curtains.device_id
+                                    JOIN devtypes ON devtypes.id=devices.type
                                     WHERE curtains.id_object = $idObject");
 
         $curtain =  $sql->fetch(PDO::FETCH_OBJ);
-
         $this->idObject = $curtain->id_object;
         $this->place = $curtain->place;
         
@@ -50,9 +45,13 @@
         {
             $this->address = $curtain->address;
             $this->group = $curtain->group;
-            $this->gateway_ip = $curtain->gateway_ip;
-            $this->gateway_port = $curtain->gateway_port;
+            if ($curtain->gateway_type == 'ModbusTCP')
+            {
+                $this->gateway_ip = $curtain->gateway_ip;
+                $this->gateway_port = $curtain->gateway_port;
+            }
             $this->percent = $curtain->percent;
+            $this->gateway_type = $curtain->gateway_type;
         }
         else
         {
@@ -62,50 +61,87 @@
             if($curtain->place == 'port' || $curtain->place == 'phase') 
             $this->device = Device::getDevice($idObject);
         }
+        self::$_curtain = $this;
     }
 
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private function packetAssembling ($transactionId, $address, $group, $cmd, $percent=null, $direction=null)
+    private function packetAssembling ($address, $group, $cmd, $percent=null, $direction=null)
     {
-        $modbusMsg = '55';
-        $modbusMsg .= str_pad(dechex($address), 2, "0", STR_PAD_LEFT);
-        $modbusMsg .= str_pad(dechex($group), 2, "0", STR_PAD_LEFT);
-        $modbusMsg .= $cmd;
-        if (isset($percent)) 
-        {
-            $modbusMsg .= str_pad(dechex($percent), 2, "0", STR_PAD_LEFT);
-        }
-        if (isset($direction)) 
-        {
-            $modbusMsg .= str_pad(dechex($direction), 2, "0", STR_PAD_LEFT);
-        }
-        $packet = '';
-        $packet .= $transactionId; // Transaction ID
-        $packet .= '0000'; // Protocol Identifier, 0000 = Master
-        $packet .= str_pad((dechex((string)(strlen($modbusMsg)/2))), 4, "0", STR_PAD_LEFT); // Cmd length
-        $packet .= $modbusMsg;
-        $packet .= modbusTcpCrc($modbusMsg); // CRC-16 Modbus
-        //var_dump ($packet);
+        $packet = array_merge([0x55, $address, $group], $cmd);
+        $packet = pack ('c*', ...$packet);
+        if ($percent) $packet .= pack ("c", $percent);
+        if ($direction) $packet .= pack ("c", $direction);
         return $packet;
     }
+
+    private function sendCmd ($packet)
+	{
+        $curtain = self::$_curtain;
+
+	    if ($curtain->gateway_type == "ModbusTCP")
+        {
+            $modbus = new ModbusTcp();
+            $modbus->debug = false;
+            $modbus->socketCreate();
+            $modbus->socketSetOption();
+            $modbus->socketConnect($curtain->gateway_ip, $curtain->gateway_port);
+            $f = $modbus->modbusTcpTransactionId()."\x00\x00".pack('n', strlen($packet)).$packet.$modbus->crc16($packet);
+            $modbus->socketWrite($f);
+            $result = $modbus->socketRead();
+            $result = unpack('C*', $result);
+            $result = $result[count($result)];
+            $modbus->socketClose();
+        }
+        else
+        {
+            if ($curtain->gateway_type == "JetHomeModbusSerial0") $dev = '/dev/ttyUSB0';
+            if ($curtain->gateway_type == "JetHomeModbusSerial1") $dev = '/dev/ttyUSB1';
+
+            $modbus = new PhpSerialModbus;
+            $modbus->deviceInit($dev, 9600, 'none', 8, 1, 'none');
+            $modbus->deviceOpen();
+            $modbus->debug = false;
+            $modbus->sendRawQuery($packet.$modbus->crc16($packet),false);
+            $result = $modbus->getResponse(true);
+            $result = unpack('C*', $result);
+            $result = $result[count($result)-2];
+            $modbus->deviceClose();
+        }
+        return $result;
+	}
     
+    /**
+     * Считывание текущего состояния двигателя (для штор с RS485)
+     */
+    public static function getInfo()
+    {
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0x05, 0x01]); // 010501 - команда считывания текущего состояния привода
+        $response = self::sendCmd($packet);
+            // Возможные ответы
+            // 0 - остановлен
+            // 1 - открывается
+            // 2 - закрывается
+            // 3 - режим настройки
+        return $response;
+    }
+
     /**
      * Открытие шторы
      */
-    public static function open($idObject)
+    public function open()
     {
-        $curtain = new Curtain($idObject);
+        $curtain = self::$_curtain;
         if($curtain->place == 'rs485')
         {
-            if (self::getInfo($idObject) != 0) self::stop($idObject);
+            if (self::getInfo() != 0) self::stop();
             else
             {
-                $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                                    $curtain->address, $curtain->group, '0301')); // 0301 - команда открытия
-                modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port);
-                self::percent_db($idObject, 100);
+                $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x01]); // 0301 - команда открытия
+                self::sendCmd($packet);
+                self::percent_db(100);
             }
         }
         elseif ($curtain->place == 'port')
@@ -139,18 +175,17 @@
     /**
      * Закрытие шторы
      */
-    public static function close($idObject)
+    public static function close()
     {
-        $curtain = new Curtain($idObject);
+        $curtain = self::$_curtain;
         if($curtain->place == 'rs485')
         {
-            if (self::getInfo($idObject) != 0) self::stop($idObject);
+            if (self::getInfo() != 0) self::stop();
             else
             {
-                $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                                    $curtain->address, $curtain->group, '0302')); // 0302 - команда закрытия
-                modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port);
-                self::percent_db($idObject, 0);
+                $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x02]); // 0302 - команда закрытия
+                self::sendCmd($packet);
+                self::percent_db(0);
             }
         }
         elseif ($curtain->place == 'port')
@@ -184,253 +219,102 @@
     /**
      * Остановка привода (для приводов с RS-485)
      */
-    public static function stop($idObject)
+    public static function stop()
     {
-        $curtain = new Curtain($idObject);
+        $curtain = self::$_curtain;
         if($curtain->place == 'rs485')
         {
-            $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                                $curtain->address, $curtain->group, '0303')); // 0303 - команда остановки
-            modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port);
-            self::getPercent($idObject);
+            $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x03]); // 0303 - команда остановки
+            self::sendCmd($packet);
+            self::getPercent();
         }
     }
 
     /**
      * Открытие шторы на процент (для приводов с RS-485)
      */
-    public static function openPercent($idObject, $percent)
+    public static function openPercent($percent)
     {
         if ($percent >= 0 && $percent <= 100)
         {
-            $curtain = new Curtain($idObject);
-            if($curtain->place == 'rs485')
-            {
-                $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                                    $curtain->address, $curtain->group, '0304', $percent)); 
-                                    // 0304 - команда установки процента открытия
-                $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-                // var_dump ($response);
-        
-                if ($response > 100)
-                {
-                    if (self::getMotorType($idObject) == 17)
-                    {
-                        echo "[WARNING] Set the limits first!\n";
-                        self::percent_db($idObject, $response);
-                    }
-                    else
-                    {
-                        self::open($idObject);
-                        while (self::getInfo($idObject) != 0) usleep(500000);
-                        self::close($idObject);
-                        while (self::getInfo($idObject) != 0) usleep(500000);
-                        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-                        // var_dump ($response);
-                    }
-                }
+            $curtain = self::$_curtain;
+            $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x04], $percent); 
+                // 0304 - команда установки процента открытия
+            $response = self::sendCmd($packet);
 
-                self::percent_db($idObject, $response);
+            if ($response > 100)
+            {
+                if (self::getMotorType() == 17)
+                {
+                    echo "[WARNING] Set the limits first!\n";
+                }
+                else
+                {
+                    self::open();
+                    while (self::getInfo() != 0) usleep(500000);
+                    self::close();
+                    while (self::getInfo() != 0) usleep(500000);
+                    $response = self::sendCmd($packet);
+                }
             }
-            // elseif ($curtain->place == 'port')
-            // {
-            //     // $mega = new Megad();
-            //     $currentPercent = $curtain->percent;
-            //     if ($percent == 0) 
-            //     {
-            //         // $mega = new Megad();
-            //         // $port = Device::getNumPort($curtain->closePort);
-            //         // $mega->set($port,1,$curtain->device);
-            //         // usleep(500000);
-            //         // $mega->set($port,0,$curtain->device);
-            //         // self::percent_db($idObject, '0');
-            //         self::close($idObject);
-            //     }
-            //     elseif ($percent == 100)
-            //     {
-            //         // $mega = new Megad();
-            //         // $port = Device::getNumPort($curtain->openPort);
-            //         // $mega->set($port,1,$curtain->device);
-            //         // usleep(500000);
-            //         // $mega->set($port,0,$curtain->device);
-            //         // self::percent_db($idObject, '100');
-            //         self::open($idObject);
-            //     }
-            //     elseif ($currentPercent < $percent)
-            //     {
-            //         self::portPercent($curtain, Device::getNumPort($curtain->openPort), $percent);
-            //         self::percent_db($idObject, $percent);
-            //     }
-            //     else
-            //     {
-            //         self::portPercent($curtain, Device::getNumPort($curtain->closePort), $percent);
-            //         self::percent_db($idObject, $percent);
-            //     }
-            // }
-            // elseif ($curtain->place == 'phase')
-            // {
-            //     $currentPercent = $curtain->percent;
-            //     $mega = new Megad();
-            //     $port = Device::getNumPort($curtain->closePort);
-            //     $mega->set($port,1,$curtain->device);
-            //     sleep($curtain->time+1);
-            //     $mega->set($port,0,$curtain->device);
-            //     self::percent_db($idObject, '0');
-            // }
+            self::percent_db($response);
         }
     }
 
     /**
-     * Включение порта контроллера для открытия шторы на порту на заданный процент
-     */
-    // private static function portPercent($curtain, $port, $percent)
-    // {
-    //     $mega = new Megad();
-    //     $mega->set($port,1,$curtain->device);
-    //     usleep(500000);
-    //     $mega->set($port,0,$curtain->device);
-    //     usleep((abs($percent-$curtain->percent)/100)*($curtain->time*1000000)-500000);
-    //     $mega->set($port,1,$curtain->device);
-    //     usleep(500000);
-    //     $mega->set($port,0,$curtain->device);
-    // }
-
-    // private static function setValue($curtain, $command, $status, $time)
-    // {
-    //     //var_dump ($curtain);
-    //     if($command == 'open')
-    //         $port = $curtain->openPort;
-    //     else $port = $curtain->closePort;
-
-    //     if($curtain->place == 'port') {
-
-    //         $port = Device::getNumPort($port);
-
-    //         //Включаем порт на определенное время
-
-    //         $mega = new Megad();
-
-    //         if(($status == 'open') || ($status == 'close')) {
-    //             $mega->set($port,1,$curtain->device);
-    //             usleep(500000);
-    //             $mega->set($port,0,$curtain->device);
-    //         }else {
-    //             $mega->set($port,1,$curtain->device);
-    //             usleep(500000);
-    //             $mega->set($port,0,$curtain->device);
-    //             usleep($time*1000000);
-    //             $mega->set($port,1,$curtain->device);
-    //             usleep(500000);
-    //             $mega->set($port,0,$curtain->device);
-    //         }
-
-
-    //     } else {
-    //         //Включаем устройство хитпро на определенное время
-    //         $hitePro = HitePro::getDeviceParams($curtain->device);
-
-    //         if(($status == 'open') || ($status == 'close')) {
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
-    //             usleep(500000);
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
-    //         } else {
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
-    //             usleep( 500000);
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
-    //             usleep($time * 1000000);
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 1);
-    //             usleep( 500000);
-    //             HitePro::setHiteProCommand($hitePro->ip_address, $hitePro->password, $port, 0);
-    //         }
-    //     }
-
-    //     //Устанавливаем шторе статус "открыто", связанной кнопке статус on
-    //     $object = new Objects();
-    //     $object->select($curtain->idObject);
-    //     $object->setStatus($status, true, false);
-
-    // }
-
-    /**
      * Получение процента открытия шторы (для штор с RS485)
      */
-    public static function getPercent($idObject)
+    public static function getPercent()
     {
-        $curtain = new Curtain($idObject);
-        $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                            $curtain->address, $curtain->group, '010201')); // 010201 - команда считывания текущего процента открытия
-        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-        self::percent_db($idObject, $response);
-        // var_dump ($response);
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0x02, 0x01]); 
+            // 010201 - команда считывания текущего процента открытия
+        $response = self::sendCmd($packet);
+        self::percent_db($response);
     }
 
     /**
      * Запись процента открытия в БД
      */
-    private function percent_db($idObject, $value)
+    private function percent_db($value)
     {
+        $curtain = self::$_curtain;
         //Заносим процент открытия в БД
-        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object='$idObject'");
-    }
-
-    /**
-     * Считывание текущего состояния двигателя (для штор с RS485)
-     */
-    public static function getInfo($idObject)
-    {
-        $curtain = new Curtain($idObject);
-        $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                            $curtain->address, $curtain->group, '010501')); 
-                            // 010501 - команда считывания текущего состояния привода
-        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-                            // Возможные ответы
-                            // 0 - остановлен
-                            // 1 - открывается
-                            // 2 - закрывается
-                            // 3 - режим настройки
-        //var_dump ($response);
-        return $response;
+        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object='$curtain->idObject'");
     }
 
     /**
      * Считывание типа двигателя (для штор с RS485)
      */
-    public static function getMotorType($idObject)
+    public static function getMotorType()
     {
-        $curtain = new Curtain($idObject);
-        $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                            $curtain->address, $curtain->group, '01F001')); 
-                            // 01F001 - в ответ 17(0x11) - рулонка, 17(0x11) - жалюзи
-        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-        //var_dump ($response);
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0xF0, 0x01]); 
+            // 01F001 - в ответ 17(0x11) - рулонка, ???17(0x11)??? - жалюзи
+        $response = self::sendCmd($packet);
         return $response;
     }
 
     /**
      * Сброс конечных положений (для штор с RS485)
      */
-    public static function resetLimits($idObject)
+    public static function resetLimits()
     {
-        $curtain = new Curtain($idObject);
-        $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                            $curtain->address, $curtain->group, '0307')); 
-                            // 0307 - команда сброса выставленных пределов
-        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-        //var_dump ($response);
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x07]); 
+            // 0307 - команда сброса выставленных пределов
+       self::sendCmd($packet);
     }
 
     /**
      * Изменение направления привода (для штор с RS485)
      */
-    public static function changeDirection($idObject, $direction) // 0 - мотор слева, 1 - мотор справа
+    public static function changeDirection($direction) // 0 - мотор слева, 1 - мотор справа
     {
-        $curtain = new Curtain($idObject);
-        $packet = hex2bin(self::packetAssembling(modbusTcpTransactionId(), 
-                            $curtain->address, $curtain->group, '020301', $direction)); 
-                            // 020301 - команда сброса выставленных пределов
-                            // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        $response = hexdec(substr((bin2hex(modbusTcpSendCmd($packet, $curtain->gateway_ip, $curtain->gateway_port))), -2));
-        //var_dump ($response)
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x02, 0x03, 0x01], $direction); 
+            // 020301 - команда сброса выставленных пределов
+            // $direction = 0 - левый мотор или $direction = 1 - правый мотор
+        self::sendCmd($packet);
     }
-
 }

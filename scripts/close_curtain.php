@@ -3,5 +3,5 @@
  * Скрипт закрытия шторы
  */
 require_once '../include.php';
-
-Curtain::close($argv[1]);
+$curtain = new Curtain($argv[1]);
+$curtain->close();

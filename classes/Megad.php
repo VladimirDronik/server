@@ -123,14 +123,18 @@ class Megad extends System
      *
      * @return string $value - значение датчика
      */
-    static function getI2C($idDevice, $SDA, $SCL, $sensorType, $i2cParametr)
+    static function getI2C($idDevice, $SDA, $SCL, $sensorType, $i2cParametr=null)
     {
         $device = self::getDeviceParams($idDevice);
         
         if($device->active)
-            $value = file_get_contents("http://$device->ip_address/sec/?pt=$SDA&scl=$SCL&i2c_dev=$sensorType&i2c_par=$i2cParametr");
-
-        return $value;
+        {
+            $get_str = "http://$device->ip_address/sec/?pt=$SDA&scl=$SCL&i2c_dev=$sensorType";
+            if ($i2cParametr) $get_str .= "&i2c_par=$i2cParametr";
+            $value = file_get_contents($get_str);
+            return $value;
+        }
+        
     }
 
 

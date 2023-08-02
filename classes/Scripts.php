@@ -62,7 +62,7 @@ class Scripts extends Megad
             if($action->method)
             {
                 echo "Run method";
-                Action::runAction($action->method, 'scheduler', $action->id_object );
+                Action::runAction($action->method, 'scheduler', $action->id_object, null, false);
             }
             else
             {

@@ -3,8 +3,6 @@
 /**
  * Класс работы с светостатами
  */
-
-
 class Lightstats extends Objects
 {
     private static $lightstat = null;
@@ -44,60 +42,101 @@ class Lightstats extends Objects
         }
     }
 
-
     /**
      * Проверяем параметры светостата с которым рабоатем
      *
      * @return int
      *
      */
-
     function check()
     {
         $lightstat = self::$lightstat;
+        $sendMessage = false;
+        $object = new Objects();
+        $object->select($lightstat->idObject);
 
         //Если светостат с реакцией на посветление
         if ($lightstat->mode == 1)
         {
-
-            if ($lightstat->current >= ($lightstat->optimal+$lightstat->gisteresis/2))
+            if ($lightstat->current >= $lightstat->optimal)
             {
+                if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                $object->setStatus('ON',true,false);
+                Messages::sendByObject($lightstat->idObject, $sendMessage);
+                $sendMessage = false;
+
                 // Вызываем метод on
                 if($lightstat->method_on)
-                Action::runAction($lightstat->method_on, 'lightstat', $lightstat->idObject);
+                {
+                    $object = new Objects();
+                    $object->select($lightstat->object);
+                    if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                    Action::runAction($lightstat->method_on, 'lightstat', $lightstat->idObject, null, false);
+                    Messages::sendByObject($lightstat->object, $sendMessage);
+                }
                 return 1;
             }
 
-            if ($lightstat->current < ($lightstat->optimal-$lightstat->gisteresis/2))
+            if ($lightstat->current < $lightstat->optimal) 
             {
+                if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                $object->setStatus('OFF',true,false);
+                Messages::sendByObject($lightstat->idObject, $sendMessage);
+                $sendMessage = false;
+
                 // Вызываем метод off
                 if($lightstat->method_off)
-                Action::runAction($lightstat->method_off, 'lightstat', $lightstat->idObject);
+                {
+                    $object = new Objects();
+                    $object->select($lightstat->object);
+                    if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                    Action::runAction($lightstat->method_off, 'lightstat', $lightstat->idObject, null, false);
+                    Messages::sendByObject($lightstat->object, $sendMessage);
+                }
                 return 0;
             }
-
-
         } 
         else //Если светостат с реакцией на потемнение
         {
-            if ($lightstat->current <= ($lightstat->optimal-$lightstat->gisteresis/2))
+            if ($lightstat->current <= $lightstat->optimal)
             {
+                if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                $object->setStatus('ON',true,false);
+                Messages::sendByObject($lightstat->idObject, $sendMessage);
+                $sendMessage = false;
+
                 // Вызываем метод on
                 if($lightstat->method_on)
-                Action::runAction($lightstat->method_on, 'lightstat', $lightstat->idObject);
+                {
+                    $object = new Objects();
+                    $object->select($lightstat->object);
+                    if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                    Action::runAction($lightstat->method_on, 'lightstat', $lightstat->idObject, null, false);
+                    Messages::sendByObject($lightstat->object, $sendMessage);
+                }
                 return 1;
             }
 
-            if ($lightstat->current > $lightstat->optimal+$lightstat->gisteresis/2)
+            if ($lightstat->current > $lightstat->optimal)
             {
+                if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                $object->setStatus('OFF',true,false);
+                Messages::sendByObject($lightstat->idObject, $sendMessage);
+                $sendMessage = false;
+
                 // Вызываем метод off
                 if($lightstat->method_off)
-                Action::runAction($lightstat->method_off, 'lightstat', $lightstat->idObject);
+                {
+                    $object = new Objects();
+                    $object->select($lightstat->object);
+                    if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                    Action::runAction($lightstat->method_off, 'lightstat', $lightstat->idObject, null, false);
+                    Messages::sendByObject($lightstat->object, $sendMessage);
+                }
                 return 0;
             }
         }
     }
-
 
     /**
      * Получение значение светостата
@@ -107,8 +146,7 @@ class Lightstats extends Objects
     function getLux()
     {
         $lightstat = self::$lightstat;
-        $error = false;
-        
+
         if($lightstat->placetype == 'port') 
         {
             //Ищем к какому порту и устройству принадлежит светостат
@@ -133,12 +171,17 @@ class Lightstats extends Objects
 
         $error = self::validateValue($lux);
 
-
         if (!$error)
         {
+            //Если считаноое значение не равно предыдущему, то пишем данные в БД
+            if ($lux != $lightstat->current)
+            {
             //Заносим значение светостата в БД в таблицу светостатов и в таблицу графиков
             parent::$db->query("UPDATE lightstats SET `current` = $lux WHERE `id_object` = $lightstat->idObject");      
             Graphs::insertToLightstats($lightstat->lighstat_id, $lux);
+            //Далее работаем с полученным от датчика значением
+            $lightstat->current = $lux;
+            }
         }
 
         //Отдаем значение визуальному компоненту
@@ -150,7 +193,6 @@ class Lightstats extends Objects
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
-
         return $lux;
     }
 
@@ -170,34 +212,44 @@ class Lightstats extends Objects
     private static function validateValue ($lux)
     {
         $lightstat = self::$lightstat;
-
-        if ($lux > $lightstat->max_alarm) 
-        {
-            System::addLog('error', 
-                'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
-                '). Значение '.$lightstat->current.' ед. выше аварийного порога.',
-                'sensor');
-            $error=false;
-        }
         
-        if ($lux < $lightstat->min_alarm)
+        //Проверяем является ли значение числом
+        if(!is_numeric($lux))
         {
             System::addLog('error', 
                 'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
-                '). Значение '.$lightstat->current.' ед. ниже аварийного порога.',
+                '). Некорректное значение '.$lux.'.',
                 'sensor');
-            $error=false;
+            return $error = true;
         }
-        
-
-        if (($lux < $lightstat->min_threshold) || ($lux > $lightstat->max_threshold))
+        //Проверяем входит ли значение в диапазон измерений
+        elseif (($lux < $lightstat->min_threshold) || ($lux > $lightstat->max_threshold))
         {
             System::addLog('error', 
-                'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
-                '). Значение '.$lightstat->current.' выходит за пределы измерения.',
+                'Гигростат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
+                '). Значение '.$lux.' выходит за пределы измерения.',
                 'sensor');
-            $error=true;
+            return $error = true;
         }
-        return $error;
+        //Проверяем входит ли значение в диапазон аварийных значений
+        else
+        {
+            if ($lux > $lightstat->max_alarm)
+            {
+                System::addLog('warning', 
+                    'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
+                    '). Значение '.$lux.' ед. выше аварийного порога.',
+                    'sensor');
+            }
+            
+            if ($lux < $lightstat->min_alarm)
+            {
+                System::addLog('warning', 
+                    'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
+                    '). Значение '.$lux.' ед. ниже аварийного порога.',
+                    'sensor');
+            }
+            return $error=false;
+        }
     }
 }

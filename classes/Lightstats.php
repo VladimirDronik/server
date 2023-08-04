@@ -58,7 +58,7 @@ class Lightstats extends Objects
         //Если светостат с реакцией на посветление
         if ($lightstat->mode == 1)
         {
-            if ($lightstat->current >= $lightstat->optimal)
+            if ($lightstat->current >= $lightstat->optimal+$lightstat->gisteresis/2)
             {
                 if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
                 $object->setStatus('ON',true,false);
@@ -77,7 +77,7 @@ class Lightstats extends Objects
                 return 1;
             }
 
-            if ($lightstat->current < $lightstat->optimal) 
+            if ($lightstat->current <= $lightstat->optimal-$lightstat->gisteresis/2) 
             {
                 if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
                 $object->setStatus('OFF',true,false);
@@ -98,7 +98,7 @@ class Lightstats extends Objects
         } 
         else //Если светостат с реакцией на потемнение
         {
-            if ($lightstat->current <= $lightstat->optimal)
+            if ($lightstat->current <= $lightstat->optimal-$lightstat->gisteresis/2)
             {
                 if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
                 $object->setStatus('ON',true,false);
@@ -117,7 +117,7 @@ class Lightstats extends Objects
                 return 1;
             }
 
-            if ($lightstat->current > $lightstat->optimal)
+            if ($lightstat->current >= $lightstat->optimal+$lightstat->gisteresis/2)
             {
                 if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
                 $object->setStatus('OFF',true,false);
@@ -251,5 +251,17 @@ class Lightstats extends Objects
             }
             return $error=false;
         }
+    }
+
+    /**
+     * Заносим в таблицу светостатов данные об установленном пользователем уровне освещенности
+     *
+     * @param int $idObject - id объекта светостата
+     * @param float $value - Значение выбраного уровня освещенности
+     */
+    function set_temperature($idObject, $value)
+    {
+        //Заносим значение термостата в БД
+        parent::$db->query("UPDATE lightstats SET `optimal` = $value WHERE id_object='$idObject'");
     }
 }

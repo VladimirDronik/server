@@ -63,7 +63,7 @@ class Hygrostats extends Objects
             //Если гигростат с функцией осушения
             if ($hygrostat->type == 0)
             {
-                if ($hygrostat->current >= $hygrostat->optimal)
+                if ($hygrostat->current >= $hygrostat->optimal+$hygrostat->gisteresis/2)
                 {
                     if ($object->status == 'OFF') $sendMessage = true;
                     $object->setStatus('ON',true,false);
@@ -82,7 +82,7 @@ class Hygrostats extends Objects
                     return 1;
                 }
             
-                if ($hygrostat->current < $hygrostat->optimal)
+                if ($hygrostat->current <= $hygrostat->optimal-$hygrostat->gisteresis/2)
                 {
                     if ($object->status == 'ON') $sendMessage = true;
                     $object->setStatus('OFF',true,false);
@@ -103,7 +103,7 @@ class Hygrostats extends Objects
             } 
             else //Если гигростат с функцией увлажнения
             {
-                if ($hygrostat->current >= $hygrostat->optimal)
+                if ($hygrostat->current >= $hygrostat->optimal+$hygrostat->gisteresis/2)
                 {
                     if ($object->status == 'ON') $sendMessage = true;
                     $object->setStatus('OFF',true,false);
@@ -122,7 +122,7 @@ class Hygrostats extends Objects
                     return 0;
                 }
 
-                if ($hygrostat->current < $hygrostat->optimal)
+                if ($hygrostat->current < $hygrostat->optimal-$hygrostat->gisteresis/2)
                 {
                     if ($object->status == 'OFF') $sendMessage = true;
                     $object->setStatus('ON',true,false);
@@ -164,13 +164,19 @@ class Hygrostats extends Objects
 
         if (!$error)
         {
+            //Заносим значение гигростата в БД в таблицу гигростатов
+            parent::$db->query("UPDATE hygrostats SET `current` = $humidity WHERE `id_object` = $hygrostat->idObject");
+            $hygrostat->current = $humidity;
+
+            $sql = parent::$db->query("SELECT `value` from graph_hygrostats 
+                                       WHERE `id_hygrostat` = $hygrostat->id_hygrostat 
+                                       ORDER BY id DESC LIMIT 1");
+            $hygrostat_prev_value = $sql->fetch(PDO::FETCH_OBJ);
             //Если значение влажности изменилось более чем на половину гистерезиса, то пишем в БД
-            if ((floatval($humidity) >= $hygrostat->current+1) || (floatval($humidity) <= $hygrostat->current-1)) 
+            if ((floatval($humidity) >= $hygrostat_prev_value->value+1) || (floatval($humidity) <= $hygrostat_prev_value->value-1)) 
             {
-                //Заносим значение гигростата в БД в таблицу гигростатов и в таблицу графиков
-                parent::$db->query("UPDATE hygrostats SET `current` = $humidity WHERE `id_object` = $hygrostat->idObject");
+                //Заносим значение гигростата в БД в таблицу графиков
                 Graphs::insertToHygrostats($hygrostat->id_hygrostat, $humidity);
-                $hygrostat->current = $humidity;
             }
         }
 
@@ -244,10 +250,10 @@ class Hygrostats extends Objects
     }
 
     /**
-     * Заносим в таблицу гигростатов данные об установленной пользователем температуре
+     * Заносим в таблицу гигростатов данные об установленной пользователем влажности
      *
-     * @param int $idObject - id термостата
-     * @param float $value - Значение выбраной темпертуры
+     * @param int $idObject - id гигростата
+     * @param float $value - Значение выбраной влажности
      */
     function set_humiduty($idObject, $value)
     {

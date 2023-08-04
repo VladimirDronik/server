@@ -153,8 +153,9 @@ class Hygrostats extends Objects
     {
         $hygrostat = self::$hygrostat;
 
-        if ($hygrostat->placetype == 'usensor') { //Термостат входит в состав унивесального датчика
-
+        //Термостат входит в состав унивесального датчика
+        if ($hygrostat->placetype == 'usensor')
+        {
             $result = Usensors::checkI2C($hygrostat->usensor_id);
             $humidity = $result['hum'];
         } 
@@ -164,7 +165,7 @@ class Hygrostats extends Objects
         if (!$error)
         {
             //Если значение влажности изменилось более чем на половину гистерезиса, то пишем в БД
-            if (($humidity > $hygrostat->current+$hygrostat->gisteresis/2) || ($humidity < $hygrostat->current-$hygrostat->gisteresis/2)) 
+            if ((floatval($humidity) >= $hygrostat->current+1) || (floatval($humidity) <= $hygrostat->current-1)) 
             {
                 //Заносим значение гигростата в БД в таблицу гигростатов и в таблицу графиков
                 parent::$db->query("UPDATE hygrostats SET `current` = $humidity WHERE `id_object` = $hygrostat->idObject");

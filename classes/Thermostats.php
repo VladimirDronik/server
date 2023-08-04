@@ -3,8 +3,6 @@
 /**
  * Класс работы с термостатами
  */
-
-
 class Thermostats extends Objects
 {
 
@@ -31,21 +29,31 @@ class Thermostats extends Objects
      */
     function __construct($idObjectTermost=null)
     {
-
-        if($idObjectTermost!=null) {
+        if($idObjectTermost!=null)
+        {
             $this->script = new Scripts();
 
-
-
             //Получаем все данные термостата
-            $scriptsql = parent::$db->query("SELECT  termostats.id AS id, current, optimal, gisteresis, thermostat, object, method_on, 
-                                            method_off, `min_threshold`, `max_threshold`, `min_alarm`, `max_alarm`, `objects`.`type` as `type_object`,
-                                            `placetype`, `usensor_id`, termostats.`name`, `subdev_id`
-                                            FROM termostats 
-                                            INNER JOIN objects ON  id_object=objects.id
-                                            WHERE id_object=$idObjectTermost");
-
-
+            $scriptsql = parent::$db->query("SELECT termostats.id AS id,
+                                                    current,
+                                                    optimal,
+                                                    gisteresis,
+                                                    thermostat,
+                                                    object,
+                                                    method_on,
+                                                    method_off,
+                                                    `min_threshold`,
+                                                    `max_threshold`,
+                                                    `min_alarm`,
+                                                    `max_alarm`,
+                                                    `objects`.`type` as `type_object`,
+                                                    `placetype`,
+                                                    `usensor_id`,
+                                                    termostats.`name`,
+                                                    `subdev_id`
+                                             FROM termostats 
+                                             INNER JOIN objects ON  id_object=objects.id
+                                             WHERE id_object=$idObjectTermost");
 
             $this->termostat = $termostat = $scriptsql->fetch(PDO::FETCH_OBJ);
 
@@ -61,10 +69,7 @@ class Thermostats extends Objects
             $this->name = $termostat->name;
             $this->hitepro_dev = $termostat->subdev_id;
             $this->optimal = $termostat->optimal;
-
-
         }
-
     }
 
     /**
@@ -73,9 +78,8 @@ class Thermostats extends Objects
      */
     public function getProperty($event)
     {
-
-
-        switch ($event->property) {
+        switch ($event->property)
+        {
 
             case 'current' :
                 $property = $this->termostat->current;
@@ -120,13 +124,9 @@ class Thermostats extends Objects
             case 'battery' :
                 //TODO: Здесь сделать запрос заряда батареи для беспроводного термостата
                 break;
-
         }
-
         return $property;
-
     }
-
 
     /**
      * Установка значения свойства для термостата
@@ -135,102 +135,114 @@ class Thermostats extends Objects
      */
     public function setProperty($property, $value)
     {
-
         //Для нагрева или охлаждения модифицируем значение
-        if($property == 'type') {
+        if($property == 'type') 
+        {
             $property = 'thermostat';
-
-            if($value == 'нагрев')
-                $value = 1;
+            if($value == 'нагрев') $value = 1;
             elseif($value == 'охлаждение') $value = 0;
         }
-
-        parent::$db->query("UPDATE termostats SET $property = '$value'
-                                         WHERE id=$this->id_termostat");
-
+        parent::$db->query("UPDATE termostats SET $property = '$value' WHERE id=$this->id_termostat");
     }
-
-
 
     /**
      * Проверяем параметры термостата с которым рабоатем
      *
      * @return int
-     *
      */
-
     function check()
     {
-
         $sendMessage = false;
-
         $object = new Objects();
         $object->select($this->idObject);
 
-        Events::exicute($this->idObject, 'onStatus');
+        // Events::exicute($this->idObject, 'onStatus');
 
-        if($this->termostat->current) {
+        if($this->termostat->current)
+        {
         //Если термостат с фйнкцией нагрева
             if ($this->termostat->thermostat == 1)
             {
-
-                if ($this->termostat->current >=($this->termostat->optimal))
+                if (floatval($this->termostat->current) >= $this->termostat->optimal+$this->termostat->gisteresis/2)
                 {
-                    if ($object->status == 'ON') $sendMessage = true;
-
+                    if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
                     $object->setStatus('OFF',true,false);
+                    Messages::sendByObject($this->idObject, $sendMessage);
+                    $sendMessage = false;
 
                     // Вызываем метод off
                     if($this->termostat->method_off)
-                    Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
+                    {
+                        $object = new Objects();
+                        $object->select($this->termostat->object);
+                        if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                        Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, false);
+                        Messages::sendByObject($this->termostat->object, $sendMessage);
+                    }
                     return 0;
-
                 }
 
-                if ($this->termostat->current < ($this->termostat->optimal-$this->termostat->gisteresis))
+                if (floatval($this->termostat->current) <= $this->termostat->optimal-$this->termostat->gisteresis/2)
                 {
-                    if ($object->status == 'OFF') $sendMessage = true;
-
+                    if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
                     $object->setStatus('ON',true,false);
+                    Messages::sendByObject($this->idObject, $sendMessage);
+                    $sendMessage = false;
 
                     // Вызываем метод on
                     if($this->termostat->method_on)
-                    Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
+                    {
+                        $object = new Objects();
+                        $object->select($this->termostat->object);
+                        if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                        Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, false);
+                        Messages::sendByObject($this->termostat->object, $sendMessage);
+                    }
                     return 1;
                 }
-
-
-            } else //Если термостат с функцией охлаждения
+            } 
+            else //Если термостат с функцией охлаждения
             {
-                if ($this->termostat->current <=($this->termostat->optimal-$this->termostat->gisteresis))
+                if (floatval($this->termostat->current) <= $this->termostat->optimal-$this->termostat->gisteresis/2)
                 {
-                    if ($object->status == 'ON') $sendMessage = true;
-
+                    if (mb_strtoupper($object->status)== 'ON') $sendMessage = true;
                     $object->setStatus('OFF',true,false);
+                    Messages::sendByObject($this->idObject, $sendMessage);
+                    $sendMessage = false;
 
                     // Вызываем метод off
                     if($this->termostat->method_off)
-                    Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, $sendMessage);
+                    {
+                        $object = new Objects();
+                        $object->select($this->termostat->object);
+                        if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
+                        Action::runAction($this->termostat->method_off, 'termostat', $this->idObject, null, false);
+                        Messages::sendByObject($this->termostat->object, $sendMessage);
+                    }
                     return 0;
                 }
 
-
-                if ($this->termostat->current > $this->termostat->optimal)
+                if (floatval($this->termostat->current) >= $this->termostat->optimal+$this->termostat->gisteresis/2)
                 {
-                    if ($object->status == 'OFF') $sendMessage = true;
-
+                    if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
                     $object->setStatus('ON',true,false);
+                    Messages::sendByObject($this->idObject, $sendMessage);
+                    $sendMessage = false;
 
                     // Вызываем метод on
                     if($this->termostat->method_on)
-                    Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, $sendMessage);
+                    {
+                        $object = new Objects();
+                        $object->select($this->termostat->object);
+                        if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
+                        Action::runAction($this->termostat->method_on, 'termostat', $this->idObject, null, false);
+                        Messages::sendByObject($this->termostat->object, $sendMessage);
+                    }
                     return 1;
                 }
-
             }
         }
     }
-
 
     /**
      * Получение температуры термостата
@@ -239,141 +251,86 @@ class Thermostats extends Objects
      */
     function get_temperature()
     {
-        $alarm_cnt = 0;
-        $alarm_cnt_avail = 0;
         $error = false;
 
         Events::exicute($this->idObject, 'onCheck');
 
-
-        if(($this->placetype == 'port') || ($this->placetype == '1wire')) {
+        if(($this->placetype == 'port') || ($this->placetype == '1wire'))
+        {
 
             //Ищем к какому порту и устройству принадлежит термостат, а также его id термометра
             $termostatsql = parent::$db->query("SELECT termostats.id_object AS id_object,
-                                                   ports.id_device AS device, 
-                                                   ports.num_port AS port, 
-                                                   id_termometr,
-                                                   `name`
-                                              FROM termostats
-                                              INNER JOIN ports     
-                                              ON ports.object = termostats.id_object      
-                                              WHERE termostats.id=$this->id_termostat");
+                                                       ports.id_device AS device, 
+                                                       ports.num_port AS port, 
+                                                       id_termometr,
+                                                       `name`
+                                                FROM termostats
+                                                INNER JOIN ports     
+                                                ON ports.object = termostats.id_object      
+                                                WHERE termostats.id=$this->id_termostat");
 
             $termostat = $termostatsql->fetch(PDO::FETCH_OBJ);
+            
+            //Если id термометра задан, то тогда это массив с термометрами
+            if ($this->placetype == '1wire')
+            {
+                //вызываем status(int $port, int $device=null)
+                $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
 
-            do {
+                /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
+                e2b5d7020000:23.62;1fa3d7020000:23.62*/
+                $termometrsarray = explode(';', $termometrs);
 
-                do {
-
-                    //Если id термометра задан, то тогда это массив с термометрами
-                    if ($this->placetype == '1wire') {
-
-                        //вызываем status(int $port, int $device=null)
-                        $termometrs = Megad::status($termostat->port, 'list', $termostat->device);
-
-
-                        /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
-                          e2b5d7020000:23.62;1fa3d7020000:23.62*/
-                        $termometrsarray = explode(';', $termometrs);
-
-
-                        foreach ($termometrsarray as $termometr) {
-                            $termarray = explode(':', $termometr);
-
-                            if ($termarray[0] == $termostat->id_termometr)
-                                $id_termometr = $termarray[0];
-
-                            $termometr_value = $termarray[1];
-                        }
-
-                    } else //термометр висит прямо на порту
-                    {
-                        $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
-                        $termometrsarray = explode(':', $termometrs);
-                        $id_termometr = $termostat->id_termometr;
-                        $termometr_value = $termometrsarray[1];
-                    }
-
-
-
-                    $alarm_cnt_avail++;
-
-                    //Если превышено число пороговых значений термометра, значит он не работает
-                    if ($alarm_cnt_avail >= 5) {
-                        //Здесь сделать вызов обработчика аварии и выходим из цикла
-                        System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
-
-                        Messages::send(1, 'Термостат '.$this->name.' недоступен');
-                        Events::exicute($this->idObject, 'onError');
-
-                        $error = true;
-                        break 2;
-                    }
-
-
-                    //Проверка на пороговые значения
-                } while (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold));
-
-                $alarm_cnt++;
-
-                //Если превышено число аварийных значений термометра
-                if ($alarm_cnt >= 3) {
-
-                    //Здесь сделать вызов обработчика аварии и выходим из цикла
-                    System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
-
-                    Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
-                    Events::exicute($this->idObject, 'onThreshold');
-
-                   // $error = true;
-                    break 1;
+                foreach ($termometrsarray as $termometr) 
+                {
+                    $termarray = explode(':', $termometr);
+                    if ($termarray[0] == $termostat->id_termometr) $id_termometr = $termarray[0];
+                    $termometr_value = $termarray[1];
                 }
-
-                    //Проверка на аварийные занчения
-            } while (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm));
-
-
-        } elseif ($this->placetype == 'usensor') { //Термостат входит в состав унивесального датчика
-
+            } 
+            //термометр висит прямо на порту
+            else
+            {
+                $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
+                $termometrsarray = explode(':', $termometrs);
+                $id_termometr = $termostat->id_termometr;
+                $termometr_value = $termometrsarray[1];
+            }
+        } 
+        //Термостат входит в состав унивесального датчика
+        elseif ($this->placetype == 'usensor') 
+        { 
             $result = Usensors::checkI2C($this->usensor);
             $termometr_value = $result['temp'];
-
-            $this->checkValue($termometr_value);
-
-        } else { //если датчик в составе сервера хитпро
-
-            $termometr_value =  HitePro::getHiteProCommand(null, null, null, $this->hitepro_dev);
-            $this->checkValue($termometr_value);
-
         }
 
+        $error = $this->checkValue($termometr_value);
 
-        if (!$error) {
+        if (!$error) 
+        {
+            //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
+            parent::$db->query("UPDATE termostats
+            SET `current` = $termometr_value
+            WHERE id=$this->id_termostat");
 
-            //проверка на слишком резкое изменение значения
-            $sql = parent::$db->query("SELECT `value` FROM graph_termostats 
-                                      WHERE id_termostat = $this->id_termostat
-                                      AND id=(SELECT MAX(id) FROM graph_termostats WHERE id_termostat = $this->id_termostat)
-                                      AND `datetime` > DATE_ADD(NOW(), INTERVAL -1 HOUR)");
+            //Заносим температуру в таблицу элементов
+            $temperature = '[{"status":"' . $termometr_value . '°С"}]';
+            parent::$db->exec("UPDATE elements
+                               SET `value` = '$temperature' 
+                               WHERE `id_object` = {$this->idObject}
+                               AND handle = 'temperature'");
+            
+            $this->termostat->current = $termometr_value;
+            
+            $sql = parent::$db->query("SELECT `value` from graph_termostats 
+                                       WHERE `id_termostat` = $this->id_termostat 
+                                       ORDER BY id DESC LIMIT 1");
+            $termometr_prev_value = $sql->fetch(PDO::FETCH_OBJ);
 
-            $termostat = $sql->fetch(PDO::FETCH_OBJ);
-
-            //Если разница меньше 10 град или если данные были слишком давно 
-            //и температура изменилась больше чем на 0.25 градуса, то заносим в графики значения
-            if (((abs($termostat->value - $termometr_value) < 10) || (!$termostat->value)) 
-                && ($termometr_value > $termostat->value+0.25) || ($termometr_value < $termostat->value-0.25)) {
-
-                //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
-                parent::$db->query("UPDATE termostats SET `current` = $termometr_value
-                                         WHERE id=$this->id_termostat");
-
-                //Заносим температуру в таблицу элементов
-                $temperature = '[{"status":"'.$termometr_value.'°С"}]';
-                parent::$db->exec("UPDATE elements SET `value` = '$temperature' 
-                                   WHERE `id_object` = {$this->idObject} AND handle = 'temperature'");
-
+            if ((floatval($termometr_value) >= $termometr_prev_value->value+0.5) ||
+                (floatval($termometr_value) <= $termometr_prev_value->value-0.5))
+            {
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
-
             }
         }
 
@@ -381,39 +338,64 @@ class Thermostats extends Objects
         $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $this->idObject");
         $viewItem = $sql->fetch(PDO::FETCH_OBJ);
 
-        if($viewItem->id) {
+        if(isset($viewItem->id))
+        {
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
-        
+       
         return $termometr_value;
-
     }
-
 
     /**
      * Проверка снятого с термостата значения на пороговое и формирование аварии
      *
      * @param float $termometr_value - снятое с термостата значение
      */
-    private function checkValue($termometr_value) {
+    private function checkValue($termometr_value)
+    {
+        //Проверяем является ли значение числом
+        if(!is_numeric($termometr_value))
+        {
+            System::addLog('error', 
+                'Термостат "' . $this->name . '" (ID ' . $this->idObject .
+                '). Некорректное значение ' . $termometr_value . '.',
+                'sensor');
+            // Messages::send(1,
+            //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
+            //     '). Некорректное значение: ' . $termometr_value . '°C.');
+            return $error = true;
+        }
+        //Проверяем входит ли значение в диапазон измерений
+        elseif (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold))
+        {
+            System::addLog('error', 
+                'Термостат "' . $this->name . '" (ID ' . $this->idObject .
+                '). Значение ' . $termometr_value . ' выходит за пределы измерения.',
+                'sensor');
+            return $error = true;
+        }
+        //Проверяем входит ли значение в диапазон аварийных значений
+        else 
+        {
+            if ($termometr_value > $this->max_alarm) 
+            {
+                System::addLog('warning',
+                    'Термостат "' . $this->name . '" (ID ' . $this->idObject .
+                    '). Значение ' . $humidity . ' ед. выше аварийного порога.',
+                    'sensor');
+            }
 
-        //Проверка на пороговое значение (доступность)
-        if(($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold)) {
-
-            System::addLog('error', 'Термостат "' . $this->name . '" недоступен', 'sensor');
-            Messages::send(1, 'Термостат '.$this->name.' недоступен');
-        }elseif (($termometr_value < $this->min_alarm) || ($termometr_value > $this->max_alarm)) {
-            //Проверка на аварийные значения
-
-            System::addLog('error', 'Аварийное значение термостата "' . $this->name . '" T='.$termometr_value, 'sensor');
-            Messages::send(1, 'Аварийное значение термостата '.$this->name.', T='.$termometr_value);
-
-            Events::exicute($this->idObject, 'onThreshold');
-
+            if ($termometr_value < $this->min_alarm)
+            {
+                System::addLog('warning',
+                    'Термостат "' . $this->name . '" (ID ' . $this->idObject .
+                    '). Значение ' . $termometr_value . ' ед. ниже аварийного порога.',
+                    'sensor');
+            }
+            return $error = false;
         }
     }
-
 
     /**
      * Заносим в таблицу термостатов данные об установленной пользователем температуре
@@ -421,14 +403,11 @@ class Thermostats extends Objects
      * @param int $idObject - id термостата
      * @param float $value - Значение выбраной темпертуры
      */
-    function set_temperature($idObject, $value){
-
+    function set_temperature($idObject, $value)
+    {
         //Заносим значение термостата в БД
-        parent::$db->query("UPDATE termostats SET `optimal` = $value
-                                         WHERE id_object='$idObject'");
-
+        parent::$db->query("UPDATE termostats SET `optimal` = $value WHERE id_object='$idObject'");
     }
-
 
     /**
      * Установка режима отопления для термостата и изменение связанного графического элемента
@@ -437,8 +416,8 @@ class Thermostats extends Objects
      * @param int $idObject - id объекта, к которому привязан термостат
      * @return void
      */
-    static function set_temperature_mode($mode, $idObject){
-
+    static function set_temperature_mode($mode, $idObject)
+    {
         //Берем температуру у выбранного режима
         $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature FROM `temperatures` 
                                        INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
@@ -448,25 +427,23 @@ class Thermostats extends Objects
 
         $result = $modesql->fetch(PDO::FETCH_OBJ);
 
-
         //Заносим значение в БД для выбранного термостата
         self::set_temperature($idObject, $result->temperature);
 
-        if($result->view) {
+        if(isset($result->view))
+        {
             $view = new Views();
             $view->updateItem($result->view, $result->temperature);
         }
     }
-
-
 
     /**
      * Удаление старых значений температуры в таблице графиков
      *
      * @return void
      */
-    static function deleteGraphOldValues(){
-
+    static function deleteGraphOldValues()
+    {
         Graphs::deleteOldValues('graph_termostats');
     }
 

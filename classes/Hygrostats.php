@@ -116,13 +116,13 @@ class Hygrostats extends Objects
                         $object = new Objects();
                         $object->select($hygrostat->object);
                         if (mb_strtoupper($object->status) == 'ON') $sendMessage = true;
-                        $object->setStatus('OFF',true,true);
+                        Action::runAction($hygrostat->method_off, 'hygrostat', $hygrostat->object, null, false);
                         Messages::sendByObject($hygrostat->object, $sendMessage);
                     }
                     return 0;
                 }
 
-                if ($hygrostat->current < $hygrostat->optimal-$hygrostat->gisteresis/2)
+                if ($hygrostat->current <= $hygrostat->optimal-$hygrostat->gisteresis/2)
                 {
                     if ($object->status == 'OFF') $sendMessage = true;
                     $object->setStatus('ON',true,false);
@@ -135,7 +135,7 @@ class Hygrostats extends Objects
                         $object = new Objects();
                         $object->select($hygrostat->object);
                         if (mb_strtoupper($object->status) == 'OFF') $sendMessage = true;
-                        $object->setStatus('ON',true,true);
+                        Action::runAction($hygrostat->method_on, 'hygrostat', $hygrostat->object, null, false);
                         Messages::sendByObject($hygrostat->object, $sendMessage);
                     }
                     return 1;

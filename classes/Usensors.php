@@ -75,6 +75,8 @@ class Usensors extends Objects
         if(preg_match("/[a-z]/i", $lux)) $lux='NULL';
         if (!isset($atm_pressure)) $atm_pressure='NULL';
         if(preg_match("/[a-z]/i", $atm_pressure)) $atm_pressure='NULL';
+        if (!isset($co2)) $co2='NULL';
+        if(preg_match("/[a-z]/i", $co2)) $co2='NULL';
         
         //Добавляем данные в таблицу унивесального датчика
         parent::$db->exec("UPDATE `usensors` 

@@ -8,11 +8,18 @@
  */
 class YandexStation extends Device
 {
-    private static function init()
+    private static $yandex_station = null;
+
+    public function __construct($idObject)
     {
-        $pathToCookieFile = ROOT_DIR.'/cookie.txt';
-        $tts = new YandexTTS($pathToCookieFile, true);
-        return $tts;
+        $this->initYandexStation($idObject);
+    }
+
+    private function initYandexStation($idObject)
+    {
+        $sql = parent::$db->query("SELECT speaker_id FROM yandexstations WHERE id_object = $idObject");
+
+        self::$yandex_station = $sql->fetch(PDO::FETCH_OBJ);
     }
 
     /**
@@ -21,34 +28,35 @@ class YandexStation extends Device
      *  Пример:
      *         [ id_колонки => громкость_колонки_в_процентах, ... ]
      */
-    public static function say($selectedStations, $message)
+    public function say($message)
     {
+        // foreach ($selectedStations as $idStation => $volumeStation) {
 
-        foreach ($selectedStations as $idStation => $volumeStation) {
+        //     $sql = parent::$db->query("SELECT * FROM `yandexstations` WHERE `id`=$idStation AND `active` = 1");
 
-            $sql = parent::$db->query("SELECT * FROM `yandexstations` WHERE `id`=$idStation AND `active` = 1");
+        //     if ($sql->rowCount() > 0) {
+        //         $stations = $sql->fetchAll(PDO::FETCH_OBJ);
 
-            if ($sql->rowCount() > 0) {
-                $stations = $sql->fetchAll(PDO::FETCH_OBJ);
+        //         foreach ($stations as $station) {
+        //             $yandexStation = self::init();
 
-                foreach ($stations as $station) {
-                    $yandexStation = self::init();
+        //             if ($volumeStation != '?')
+        //                 $volume = $volumeStation;
+        //             else
+        //                 $volume = $station->volume;
 
-                    if ($volumeStation != '?')
-                        $volume = $volumeStation;
-                    else
-                        $volume = $station->volume;
+        //             $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
+        //             $yandexStation->say($message, $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
+        //         }
 
-                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
-                    $yandexStation->say($message, $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
-                }
+        //     }
 
-            }
+        // }
+        exec ('php '.getenv('WORK_DIR').'/adm/artisan yandexstation:say '.self::$yandex_station->speaker_id.' "'.$message.'"');
 
-        }
     }
 
 
@@ -57,34 +65,34 @@ class YandexStation extends Device
      * @param $selectedStations - массив колонок, которым управляем
      * @param $command
      */
-    public static function cmd($selectedStations, $command)
+    public function cmd($command)
     {
+        // foreach ($selectedStations as $idStation => $volumeStation) {
 
-        foreach ($selectedStations as $idStation => $volumeStation) {
+        //     $sql = parent::$db->query("SELECT * FROM `yandexstations` WHERE `id`=$idStation AND `active` = 1");
 
-            $sql = parent::$db->query("SELECT * FROM `yandexstations` WHERE `id`=$idStation AND `active` = 1");
+        //     if ($sql->rowCount() > 0) {
+        //         $stations = $sql->fetchAll(PDO::FETCH_OBJ);
+        //         foreach ($stations as $station) {
+        //             $yandexStation = self::init();
 
-            if ($sql->rowCount() > 0) {
-                $stations = $sql->fetchAll(PDO::FETCH_OBJ);
-                foreach ($stations as $station) {
-                    $yandexStation = self::init();
-
-                    if ($volumeStation != '?')
-                        $volume = $volumeStation;
-                    else
-                        $volume = $station->volume;
+        //             if ($volumeStation != '?')
+        //                 $volume = $volumeStation;
+        //             else
+        //                 $volume = $station->volume;
 
 
-                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
-                    $yandexStation->cmd($command, $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
-                    $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
-                }
+        //             $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость ' . $volume . ' процентов', $station->speaker_id);
+        //             $yandexStation->cmd($command, $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость 0 процентов', $station->speaker_id);
+        //             $yandexStation->cmd('Установи громкость ' . $station->volume . ' процентов', $station->speaker_id);
+        //         }
 
-            }
+        //     }
 
-        }
+        // }
+        exec ('php '.getenv('WORK_DIR').'/adm/artisan yandexstation:cmd '.self::$yandex_station->speaker_id.' "'.$command.'"');
     }
 
 }

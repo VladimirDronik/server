@@ -85,7 +85,6 @@ class Scripts extends Megad
     function runscript($idScript, $param = null)
     {
 
-
         if($idScript) {
 
             $scriptsql = parent::$db->query("SELECT scripts.link AS link, system, enable FROM scripts 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- Класс работы с портами мегадевайса
+ * Класс работы с портами мегадевайса
  */
 class Megad extends System
 {
@@ -105,9 +105,11 @@ class Megad extends System
     {
         $ip_device = self::$ip_device;
 
-        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `method`, `status`, `dc_method`, `lc_method` FROM ports 
-                                  INNER JOIN devices ON ports.id_device = devices.id 
-                                  WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
+        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `status`,
+                                          `method`, `dc_method`, `lc_method`
+                                   FROM ports 
+                                   INNER JOIN devices ON ports.id_device = devices.id 
+                                   WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
 
         return $sth->fetch(PDO::FETCH_OBJ);
     }

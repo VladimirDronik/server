@@ -695,17 +695,24 @@ class Views extends System
             */
             $newObject->setStatus($itemStatus, false, false);
 
-            if ($itemStatus == 'on')
+            if ($itemStatus == 'on') {
                 $idMethod = $onMethod;
-            else
+                $methodParam = 'on';
+            }
+            else {
                 $idMethod = $offMethod;
-
-        } else $idMethod = $onMethod;
+                $methodParam = 'off';
+            } 
+        } 
+        else {
+            $idMethod = $onMethod;
+            $methodParam = 'on';
+        }
 
 
         if($idMethod) {
             //Выполняем действие для данного объекта
-            Action::runAction($idMethod, 'view', $newObject->id);
+            Action::runAction($idMethod, 'view', $newObject->id, null, $methodParam);
             return true;
         } else return false;
 

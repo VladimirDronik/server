@@ -34,7 +34,7 @@ class Action extends Megad
      * @param string $params - передаваемые параметры
      * @param bool $sendMessage - отправлять сообщение или нет
      */
-    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $sendMessage=true)
+    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $method_params=null, $sendMessage=true)
     {
 
         $causingObject = new Objects();
@@ -46,14 +46,14 @@ class Action extends Megad
         //Если дейстивие происходит по замыканию порта в любом режиме
         // или если действие происходит без удержания
         // или если действие происходит с удержанием кнопки и объект является кнопкой
-        if(
-            ($params == '') ||
-            (($params == 1) && ($causingObject->type != 'button')) ||
-            (($params == 2) && ($causingObject->type == 'button'))
-        ) {
+        // if(
+        //     ($params == '') ||
+        //     (($params == 1) && ($causingObject->type != 'button')) ||
+        //     (($params == 2) && ($causingObject->type == 'button'))
+        // ) {
 
-            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `id_object` 
-                                   FROM `methods` WHERE `methods`.`id`=$idMethod");
+            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
+                                       FROM `methods` WHERE `methods`.`id`=$idMethod");
             $method = $sql->fetch(PDO::FETCH_OBJ);
 
             self::$easy = $method->easy;
@@ -67,12 +67,12 @@ class Action extends Megad
                 elseif ((self::$idScript) && ($method->is_system == 0))
                     self::script($object);
                 else
-                    self::runSystem($method->id_object, self::params($whence, $idCausing, $params));
+                    self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 
             Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
             if ($idCausing != $method->id_object)
                 Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
-        }
+        // }
     }
 
     /**
@@ -178,21 +178,28 @@ class Action extends Megad
      * @param $whence
      * @param $params - дополнителные параметры
      */
-    static private function params($whence, $idCausing = null, $params = null)
+    static private function params($whence, $idCausing = null, $method_params = null)
     {
 
         if (($whence)&&($idCausing)) {
 
             switch ($whence) {
-
                 case 'view' :
-                    $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    if ($method_params == 'on')
+                        $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id_object`=$idCausing");
+                    else
+                        $sql = parent::$db->query("SELECT `off_method_params` AS param FROM `view_items` WHERE `id_object`=$idCausing");
                     $method = $sql->fetch(PDO::FETCH_OBJ);
                     break;
 
                 case 'device':
                     //TODO : Исправить запрос, что бы параметры двойного и длительного нажатия тоже передавались
-                    $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id`=$idCausing");
+                    if ($method_params == 'dc')
+                        $sql = parent::$db->query("SELECT `dc_method_params` AS param FROM `ports` WHERE `object`=$idCausing");
+                    elseif ($method_params == 'lc')
+                        $sql = parent::$db->query("SELECT `lc_method_params` AS param FROM `ports` WHERE `object`=$idCausing");
+                    else
+                        $sql = parent::$db->query("SELECT `method_params` AS param FROM `ports` WHERE `object`=$idCausing");
                     $method = $sql->fetch(PDO::FETCH_OBJ);
                     break;
 
@@ -204,7 +211,8 @@ class Action extends Megad
             }
 
             $paramsArray = explode(';', $method->param);
-            $resParams = implode(' ', $paramsArray).' '.$params;
+            $resParams = implode(' ', $paramsArray);
+            $resParams = "'".$resParams."'";
             return $resParams;
 
         } else return null;

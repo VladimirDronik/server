@@ -28,21 +28,25 @@ flush();
         if ($click == 2)
         {
             $method = $port->dc_method;
+            $method_params = 'dc';
         }
-        elseif (($long == 1)||($long == 2)) 
+        elseif ((isset($long) == 1)||(isset($long) == 2)) 
         {
             $method = $port->lc_method;
             $params = $long;
+            $method_params = 'lc';
         }
         else
         {
             $method = $port->method;
+            $params = null;
+            $method_params = 'c';
         }
         
         //Взяли объект и метод в таблице портов, выполняем действие для данного объекта
         if($method)
         {
-            Action::runAction($method, 'device', $port->object, $params);
+            Action::runAction($method, 'device', $port->object, $params, $method_params);
         }
         else //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
         {

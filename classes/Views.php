@@ -448,7 +448,7 @@ class Views extends System
                     if ($set_value == '') $set_value = 'NULL';
 
                     //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-                    parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus', `value` = $set_value  WHERE `view_items`.`id` = $itemID");
+                    parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
 
 
                     //Добавляем данные в таблицу термостатов и больше ничего не делаем

@@ -42,6 +42,7 @@ class Objects extends System
      * @var int
      */
     public $device;
+    public $extid;
 
 
 
@@ -99,15 +100,17 @@ class Objects extends System
         if ($object == null) {
 
             $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
-                                    `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
-                                    FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
-                                    WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
+                                              `ports`.`num_port` AS port, `ports`.`id_device` AS device, 
+                                              `ports`.`status` AS portstate, `ports`.`extension_module_id` AS extid
+                                       FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
+                                       WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
 
         }else
             $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, 
-                                    `ports`.`num_port` AS port, `ports`.`id_device` AS device, `ports`.`status` AS portstate 
-                                    FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
-                                    WHERE `objects`.`id`= $object");
+                                              `ports`.`num_port` AS port, `ports`.`id_device` AS device,
+                                              `ports`.`status` AS portstate,  `ports`.`extension_module_id` AS extid
+                                       FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
+                                       WHERE `objects`.`id`= $object");
 
         if ($sql->rowCount() != 0) {
             $obj = $sql->fetch(PDO::FETCH_OBJ);
@@ -117,6 +120,7 @@ class Objects extends System
             $this->status = $obj->status;
             $this->port = $obj->port;
             $this->portstate = $obj->portstate;
+            $this->extid = $obj->extid;
             $this->device = (int)$obj->device;
             return true;
         } else return false;

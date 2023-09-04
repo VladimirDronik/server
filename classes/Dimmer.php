@@ -39,8 +39,6 @@ class Dimmer extends Device
 
         $object = new Objects();
         $object->select(self::$idObject);
-        $object->device;
-        $object->port;
 
         $mega = new Megad();
 
@@ -50,10 +48,16 @@ class Dimmer extends Device
             //Отправляем данные на порт контроллера
             $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
         }
-            elseif ($object->portstate == "EXT")
+            elseif ($object->portstate == "0..10V")
         {
+            //Определяем к какому порту подключен модуль расширения
+            $sql = parent::$db->query("SELECT `sda_port` 
+                                       FROM `extension_modules` 
+                                       WHERE `device_id` = $object->device 
+                                       AND `id` = $object->extid");
+            $ext = $sql->fetch(PDO::FETCH_OBJ);
             //Отправляем данные на модуль 0-10В
-            $mega->setValueToDimmerExt($object->device, $object->port, $value);
+            $mega->setValueToDimmerExt($object->device, $ext->sda_port, $object->port, $value);
         }
 
         if($value != 0) $oldvalue = " ,`oldvalue` = $value";

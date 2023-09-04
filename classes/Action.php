@@ -204,10 +204,10 @@ class Action extends Megad
                     break;
 
                 case 'scheduler':
-                    $sql = parent::$db->query("SELECT `method_params` AS param FROM `scheduler_tasks` WHERE `id`=$idCausing");
+                    if ($method_params)
+                        $sql = parent::$db->query("SELECT `method_params` AS param FROM `scheduler_tasks` WHERE `object`=$idCausing");
                     $method = $sql->fetch(PDO::FETCH_OBJ);
                     break;
-
             }
 
             $paramsArray = explode(';', $method->param);

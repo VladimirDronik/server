@@ -11,7 +11,7 @@ class Tape extends Device
     function __construct($idObject)
     {
        //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT id, type, port, status FROM tape WHERE id_object = $idObject");
+       $sql = parent::$db->query("SELECT id, type, port, status FROM tapes WHERE id_object = $idObject");
 
         if($sql->rowCount() > 0) {
 

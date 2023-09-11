@@ -54,6 +54,7 @@ require_once __DIR__. '/classes/Lock.php';
 require_once __DIR__. '/classes/Events.php';
 require_once __DIR__. '/classes/Page.php';
 require_once __DIR__. '/classes/YandexStation.php';
+require_once __DIR__. '/classes/Tape.php';
 require_once __DIR__. '/libs/YandexTTS.php';
 
 

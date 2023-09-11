@@ -514,6 +514,22 @@ class Views extends System
                     }
 
 
+                } elseif ($itemType == 'tape') {
+
+                    $tape = new Tape($idObject);
+
+                     //Если значение ленты не установлено, то значит сработало одиночное нажатие на кнопку
+                     if ($itemValue === null)  {
+                        $status = $itemStatus;
+                     } else { //пришло конкретное значение для ленты
+                        if ($itemValue->type == 'RGB') { 
+                            $color = $itemValue->h;
+                            $bright = $itemValue->v;
+                            $tape->setValue($color, $bright);
+                        }
+                     }
+
+                     $tape->setStatus($status);
                 }
 
 
@@ -1090,6 +1106,32 @@ class Views extends System
 
     }
 
+
+    /**
+     * Функия отдает параметры RGB ленты
+     */
+    public function getTape($idTape) {
+        $sql = parent::$db->query("SELECT id, h, s, v, type, status FROM tape WHERE id = $idTape");
+
+        if($sql->rowCount() > 0) {
+
+            $tape = $sql->fetch(PDO::FETCH_OBJ);
+
+            $items = array(
+                'id' => $tape->id, 
+                'type' => $tape->type,
+                'status' => $tape->status,
+                'h' => $tape->h,
+                's' => $tape->s,
+                'v' => $tape->v
+            );
+
+            return  $json = json_encode(array('status' => 'tapeLoad', 'entity'=> $items));
+
+
+        }   else System::addlog('error','Данные для отображения"'.$idTape.'"" не найдены', 'tape');
+
+    }
 
 }
 

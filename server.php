@@ -323,6 +323,10 @@ file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\
                 case 'getConditioner':
                     $send->getConditioner();
                     break;
+
+                case 'getTape':
+                    $send->getTape();
+                    break;
             
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
@@ -341,6 +345,7 @@ $ws_worker->onClose = function($connection) use(&$users)
     // удаляем параметр при отключении пользователя
     $user = array_search($connection, $users);
     unset($users[$user]);
+
 };
 
 

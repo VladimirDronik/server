@@ -399,6 +399,14 @@ class SendSocket
          $this->send($this->views->getConditioner($this->param1));
     }
 
+    /**
+    * Отдает данные о запрашиваемой ленте
+    **/
+    public function getTape()
+    {
+         $this->send($this->views->getTape($this->param1));
+    }
+
 
 
 }

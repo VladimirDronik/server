@@ -67,13 +67,22 @@ class Tape extends Device
         if ($status == "on") {
             if ($this->type == 'RGB') {
                 //Цвет и яркость для цветной ленты
-                //$modbus->sendQuery($this->address, 6, "07DE", $color);
-                //$modbus->sendQuery($this->address, 6, "07E0", $bright);
+                $modbus->sendQuery($this->address, 6, "07DE", $color);
+                $modbus->sendQuery($this->address, 6, "07E0", $bright);
+                $modbus->sendQuery($this->address, 5, "0009", 1);
             } elseif ($this->type == 'w') {
-                //Здесь должна быть яркость для белой ленты. Сделаем режимы RGB, W, RGB+W, 
+                //яркость для белой ленты
+                $modbus->sendQuery($this->address, 6, "07D3", $bright);
+                $modbus->sendQuery($this->address, 5, "0003", 1);
             }
         } else {
             //обработка выключения ленты
+            if ($this->type == 'RGB') {
+            $modbus->sendQuery($this->address, 5, "0009", 0);
+            } elseif ($this->type == 'w') {
+            $modbus->sendQuery($this->address, 5, "0003", 0);
+            }
+
         }
             
         $modbus->deviceClose();

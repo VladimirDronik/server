@@ -521,7 +521,8 @@ class Views extends System
                     $bright = 0;
 
                     $status = $itemStatus;
-
+echo '_____________'.$itemValue;
+echo '_____________'.$itemValue[0]->h;
                      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
                      if ($itemValue != null)  {
                         //пришло конкретное значение для ленты

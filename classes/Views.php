@@ -521,14 +521,13 @@ class Views extends System
                     $bright = 0;
 
                     $status = $itemStatus;
-var_dump($itemValue);
-echo '_____________'.$itemValue[0]->h;
+
                      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
                      if ($itemValue != null)  {
                         //пришло конкретное значение для ленты
                         if ($itemValue->type == 'RGB') { 
-                            $color = $itemValue->h;
-                            $bright = $itemValue->v;
+                            $color = $itemValue[0]->h;
+                            $bright = $itemValue[0]->v;
                         }
                      }
 

@@ -36,16 +36,15 @@ class Tape extends Device
      */
     function setStatus(int $color, int $bright, string $status) {
                
-        if ($status=='on') {
-          // если значения цвета и яркости не пришли от приложения и лента при этом включена, значит берем предыдущие значения, которые были в БД
+        
+          // если значения цвета и яркости не пришли от приложения или лента этом выключена, значит берем предыдущие значения, которые были в БД
+          // иначе берем новые значения, которые пришли от приложения
         if ($color==0 && $bright==0) {
            $color = $this->h; 
            $bright = $this->v; 
-        } else { // если значения были переданы от приложения, то обновляем их в БД
-            parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject");
-            echo "UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject";
-            }
-        }
+        } 
+        
+        parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject");
 
         $this->setValue($color, $bright, $status);
 

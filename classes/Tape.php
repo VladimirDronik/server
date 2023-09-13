@@ -36,9 +36,6 @@ class Tape extends Device
      */
     function setStatus(int $color, int $bright, string $status) {
                
-      echo '____________'.$color;
-      echo '____________'.$bright;
-      echo '____________'.$status;  
         if ($status=='on') {
           // если значения цвета и яркости не пришли от приложения и лента при этом включена, значит берем предыдущие значения, которые были в БД
         if ($color==0 && $bright==0) {
@@ -70,7 +67,6 @@ class Tape extends Device
         //обработка включения ленты
         if ($status == "on") {
             if ($this->type == 'RGB') {
-echo "===================================!!!!!!!!!!!!!!!!!!!!=============================";
                 //Цвет и яркость для цветной ленты
                 //$modbus->sendQuery($this->address, 6, "07DE", $color);
                 //$modbus->sendQuery($this->address, 6, "07E0", $bright);

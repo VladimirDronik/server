@@ -44,6 +44,7 @@ class Tape extends Device
            $bright = $this->v; 
         } else { // если значения были переданы от приложения, то обновляем их в БД
             parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject");
+            echo "UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject";
             }
         }
 
@@ -67,6 +68,7 @@ class Tape extends Device
         //обработка включения ленты
         if ($status == "on") {
             if ($this->type == 'RGB') {
+echo "===================================!!!!!!!!!!!!!!!!!!!!=============================";
                 //Цвет и яркость для цветной ленты
                 //$modbus->sendQuery($this->address, 6, "07DE", $color);
                 //$modbus->sendQuery($this->address, 6, "07E0", $bright);

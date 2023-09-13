@@ -523,7 +523,7 @@ class Views extends System
                     $status = $itemStatus;
 
                      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                     if ($itemValue != null)  {
+                     if ($itemValue[0]->h != null)  {
                         //пришло конкретное значение для ленты
                         if ($itemValue->type == 'RGB') { 
                             $color = $itemValue[0]->h;

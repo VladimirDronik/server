@@ -517,19 +517,21 @@ class Views extends System
                 } elseif ($itemType == 'tape') {
 
                     $tape = new Tape($idObject);
+                    $color = 0;
+                    $bright = 0;
 
-                     //Если значение ленты не установлено, то значит сработало одиночное нажатие на кнопку
-                     if ($itemValue === null)  {
-                        $status = $itemStatus;
-                     } else { //пришло конкретное значение для ленты
+                    $status = $itemStatus;
+
+                     //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                     if ($itemValue != null)  {
+                        //пришло конкретное значение для ленты
                         if ($itemValue->type == 'RGB') { 
                             $color = $itemValue->h;
                             $bright = $itemValue->v;
-                            $tape->setValue($color, $bright);
                         }
                      }
 
-                     $tape->setStatus($status);
+                     $tape->setStatus($color, $bright, $status);
                 }
 
 

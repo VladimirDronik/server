@@ -3,38 +3,58 @@
 
 class Tape extends Device
 {
+    private $idObject;
     private $port;
     private $address;
     private $type;
     private $status;
+    private $h;
+    private $s;
+    private $v;
 
     function __construct($idObject)
     {
        //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT id, type, port, status FROM tapes WHERE id_object = $idObject");
+       $sql = parent::$db->query("SELECT id, type, port, status, h, s, v FROM tapes WHERE id_object = $idObject");
 
         if($sql->rowCount() > 0) {
 
             $tape = $sql->fetch(PDO::FETCH_OBJ);
 
+            $this->idObject = $idObject;
             $this->port = $tape->port;
             $this->address = $tape->address;
-            $this->type = $this->type;
-            $this->status = $this->status;
+            $this->type = $tape->type;
+            $this->status = $tape->status;
+            $this->h = $tape->h;
+            $this->v = $tape->v;
         }
     }
 
     /**
      * Установка статуса для ленты вкл/выкл
      */
-    function setStatus(string $status) {
+    function setStatus(int $color, int $bright, string $status) {
+               
+      
+        if ($status=='on') {
+          // если значения цвета и яркости не пришли от приложения и лента при этом включена, значит берем предыдущие значения, которые были в БД
+        if ($color==0 && $bright==0) {
+           $color = $this->h; 
+           $bright = $this->v; 
+        } else { // если значения были переданы от приложения, то обновляем их в БД
+            parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject");
+            }
+        }
+
+        $this->setValue($color, $bright, $status);
 
     }
 
     /**
      * Установка значения для ленты RGB
      */
-    function setValue(int $color, int $bright) {
+    function setValue(int $color, int $bright, string $status) {
         $modbus = new PhpSerialModbus;
 
         if ($this->port == 1 )  $pt = '/dev/ttyUSB0'; 
@@ -44,14 +64,20 @@ class Tape extends Device
         $modbus->deviceOpen();
         $modbus->debug = false;
 
-        if ($this->type == 'RGB') {
-            //Цвет и яркость для цветной ленты
-            $modbus->sendQuery($this->address, 6, "07DE", $color);
-            $modbus->sendQuery($this->address, 6, "07E0", $bright);
-        } elseif ($this->type == 'w') {
-            //Здесь должна быть яркость для белой ленты. Сделаем режимы RGB, W, RGB+W, 
+        //обработка включения ленты
+        if ($status == "on") {
+            if ($this->type == 'RGB') {
+                //Цвет и яркость для цветной ленты
+                //$modbus->sendQuery($this->address, 6, "07DE", $color);
+                //$modbus->sendQuery($this->address, 6, "07E0", $bright);
+            } elseif ($this->type == 'w') {
+                //Здесь должна быть яркость для белой ленты. Сделаем режимы RGB, W, RGB+W, 
+            }
+        } else {
+            //обработка выключения ленты
         }
-      
+            
         $modbus->deviceClose();
+
     }
 }

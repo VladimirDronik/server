@@ -15,7 +15,9 @@ class Tape extends Device
     function __construct($idObject)
     {
        //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT id, type, address, port, status, h, s, v FROM tapes WHERE id_object = $idObject");
+       $sql = parent::$db->query("SELECT tapes.id AS id, tapes.type AS type, ip_address AS address, port, tapes.status, h, s, v FROM tapes 
+                                    INNER JOIN devices ON devices.id = tapes.id_controller 
+                                    WHERE tapes.id_object = $idObject");
 
         if($sql->rowCount() > 0) {
 
@@ -56,7 +58,7 @@ class Tape extends Device
     function setValue(int $color, int $bright, string $status) {
         $modbus = new PhpSerialModbus;
 
-        if ($this->port == 1 ) $pt = '/dev/ttyUSB0';
+        if ($this->port == 0 ) $pt = '/dev/ttyUSB0';
         else $pt = '/dev/ttyUSB1'; 
 
         $modbus->deviceInit($pt, 9600, 'none', 8, 1, 'none');

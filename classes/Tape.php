@@ -15,7 +15,7 @@ class Tape extends Device
     function __construct($idObject)
     {
        //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT id, type, port, status, h, s, v FROM tapes WHERE id_object = $idObject");
+       $sql = parent::$db->query("SELECT id, type, address, port, status, h, s, v FROM tapes WHERE id_object = $idObject");
 
         if($sql->rowCount() > 0) {
 
@@ -56,31 +56,31 @@ class Tape extends Device
     function setValue(int $color, int $bright, string $status) {
         $modbus = new PhpSerialModbus;
 
-        if ($this->port == 1 )  $pt = '/dev/ttyUSB0'; 
-        else  $pt = '/dev/ttyUSB1'; 
+        if ($this->port == 1 ) $pt = '/dev/ttyUSB0';
+        else $pt = '/dev/ttyUSB1'; 
 
         $modbus->deviceInit($pt, 9600, 'none', 8, 1, 'none');
         $modbus->deviceOpen();
-        $modbus->debug = false;
+        $modbus->debug = true;
 
         //обработка включения ленты
         if ($status == "on") {
             if ($this->type == 'RGB') {
                 //Цвет и яркость для цветной ленты
-                $modbus->sendQuery($this->address, 6, "07DE", $color);
-                $modbus->sendQuery($this->address, 6, "07E0", $bright);
-                $modbus->sendQuery($this->address, 5, "0009", 1);
+                $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
+                $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
+                $modbus->sendQuery($this->address, 5, "0009", "FF00");
             } elseif ($this->type == 'w') {
                 //яркость для белой ленты
-                $modbus->sendQuery($this->address, 6, "07D3", $bright);
-                $modbus->sendQuery($this->address, 5, "0003", 1);
+                $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
+                $modbus->sendQuery($this->address, 5, "0003", "FF00");
             }
         } else {
             //обработка выключения ленты
             if ($this->type == 'RGB') {
-            $modbus->sendQuery($this->address, 5, "0009", 0);
+            $modbus->sendQuery($this->address, 5, "0009", "0000");
             } elseif ($this->type == 'w') {
-            $modbus->sendQuery($this->address, 5, "0003", 0);
+            $modbus->sendQuery($this->address, 5, "0003", "0000");
             }
 
         }

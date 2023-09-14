@@ -639,7 +639,8 @@ class Views extends System
             ($viewObject->type == 'label') ||
             ($viewObject->type == 'link') ||
             ($viewObject->type == 'conditioner') ||
-            ($viewObject->type == 'socket'))
+            ($viewObject->type == 'socket') ||
+            ($viewObject->type == 'tape'))
 
             return array('id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
@@ -660,6 +661,7 @@ class Views extends System
         if ($viewObject->type == 'hygrostat') {
             return self::getHygrostats($viewObject, 'array');
         }
+        
     }
 
     /** Функция отдает параметры выбранного димера

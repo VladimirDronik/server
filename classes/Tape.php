@@ -72,7 +72,7 @@ class Tape extends Device
                 $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
                 $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
                 $modbus->sendQuery($this->address, 5, "0009", "FF00");
-            } elseif ($this->type == 'w') {
+            } elseif ($this->type == 'W') {
                 //яркость для белой ленты
                 $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
                 $modbus->sendQuery($this->address, 5, "0003", "FF00");

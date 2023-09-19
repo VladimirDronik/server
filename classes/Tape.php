@@ -11,12 +11,14 @@ class Tape extends Device
     private $h;
     private $s;
     private $v;
+    private $w;
 
     function __construct($idObject)
     {
        //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT tapes.id AS id, tapes.type AS type, ip_address AS address, port, tapes.status, h, s, v FROM tapes 
-                                    INNER JOIN devices ON devices.id = tapes.id_controller 
+       $sql = parent::$db->query("SELECT tapes.id AS id, tapes.type AS type, ip_address AS address, port, tapes.status, h, s, v, w FROM tapes 
+                                    INNER JOIN ports ON ports.object=tapes.id_object
+                                    INNER JOIN devices ON devices.id = ports.id_device 
                                     WHERE tapes.id_object = $idObject");
 
         if($sql->rowCount() > 0) {
@@ -30,13 +32,14 @@ class Tape extends Device
             $this->status = $tape->status;
             $this->h = $tape->h;
             $this->v = $tape->v;
+            $this->w = $tape->w;
         }
     }
 
     /**
      * Установка статуса для ленты вкл/выкл
      */
-    function setStatus(int $color, int $bright, string $status) {
+    function setStatus(int $color, int $bright, int $wbright, string $status) {
                
         
           // если значения цвета и яркости не пришли от приложения, значит берем предыдущие значения, которые были в БД
@@ -45,10 +48,15 @@ class Tape extends Device
            $color = $this->h; 
            $bright = $this->v; 
         } 
-        
-        parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright WHERE id_object = $this->idObject");
 
-        $this->setValue($color, $bright, $status);
+        //Если значение яркости не пришло, значит берем предыдущее значение из БД
+        if ($wbright == 0) {
+            $wbright = $this->w;
+        }
+
+        parent::$db->query("UPDATE tapes SET status = '$status', h = $color, v = $bright, w = $wbright WHERE id_object = $this->idObject");
+
+        $this->setValue($color, $bright, $status, $wbright);
 
     }
 
@@ -65,13 +73,15 @@ class Tape extends Device
         $modbus->deviceOpen();
         $modbus->debug = true;
 
-        //обработка включения ленты
+        //обработка включения ленты с выбором цвета и яркости
         if ($status == "on") {
             if ($this->type == 'RGB') {
                 //Цвет и яркость для цветной ленты
                 $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
                 $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
                 $modbus->sendQuery($this->address, 5, "0009", "FF00");
+            } elseif ($this->type == 'RGBW') {
+
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
                 $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));

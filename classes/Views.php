@@ -519,6 +519,7 @@ class Views extends System
                     $tape = new Tape($idObject);
                     $color = 0;
                     $bright = 0;
+                    $wbright = 0;
 
                     $status = $itemStatus;
 
@@ -529,9 +530,12 @@ class Views extends System
                             $color = $itemValue[0]->h;
                             $bright = $itemValue[0]->v;
                         }
+                        if ($itemValue[0]->type == 'RGBW' || $itemValue[0]->type == 'W') {
+                            $wbright = $itemValue[0]->w;
+                        }
                      }
 
-                     $tape->setStatus($color, $bright, $status);
+                     $tape->setStatus($color, $bright, $wbright, $status);
                 }
 
 

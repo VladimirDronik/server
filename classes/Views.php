@@ -526,7 +526,7 @@ class Views extends System
                      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
                      if ($itemValue[0]->h != null)  {
                         //пришло конкретное значение для ленты
-                        if ($itemValue[0]->type == 'RGB') { 
+                        if ($itemValue[0]->type == 'RGB' || $itemValue[0]->type == 'RGBW') { 
                             $color = $itemValue[0]->h;
                             $bright = $itemValue[0]->v;
                         }
@@ -1119,7 +1119,7 @@ class Views extends System
      * Функия отдает параметры RGB ленты
      */
     public function getTape($idTape) {
-        $sql = parent::$db->query("SELECT tapes.id, h, s, v, tapes.type, tapes.status FROM tapes
+        $sql = parent::$db->query("SELECT tapes.id, h, s, v, w, tapes.type, tapes.status FROM tapes
          INNER JOIN objects ON objects.id = tapes.id_object 
          INNER JOIN view_items ON view_items.id_object = objects.id 
          WHERE view_items.id = $idTape");
@@ -1134,7 +1134,8 @@ class Views extends System
                 'status' => $tape->status,
                 'h' => $tape->h,
                 's' => $tape->s,
-                'v' => $tape->v
+                'v' => $tape->v,
+                'w' => $tape->w,
             );
 
             return  $json = json_encode(array('status' => 'tapeLoad', 'entity'=> $items));

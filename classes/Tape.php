@@ -31,8 +31,10 @@ class Tape extends Device
             $this->type = $tape->type;
             $this->status = $tape->status;
             $this->h = $tape->h;
+            $this->s = $tape->s;
             $this->v = $tape->v;
             $this->w = $tape->w;
+
         }
     }
 
@@ -41,14 +43,15 @@ class Tape extends Device
      */
     function setStatus(int $color, int $bright, int $wbright, string $status) {
                
-        
+    
           // если значения цвета и яркости не пришли от приложения, значит берем предыдущие значения, которые были в БД
           // иначе берем новые значения, которые пришли от приложения
         if ($color==0 && $bright==0) {
            $color = $this->h; 
            $bright = $this->v; 
+     
         } 
-
+        
         //Если значение яркости не пришло, значит берем предыдущее значение из БД
         if ($wbright == 0) {
             $wbright = $this->w;
@@ -77,22 +80,22 @@ class Tape extends Device
         if ($status == "on") {
             if ($this->type == 'RGB') {
                 //Цвет и яркость для цветной ленты
-                $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
-                $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
-                $modbus->sendQuery($this->address, 5, "0009", "FF00");
+                // $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
+                // $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
+                // $modbus->sendQuery($this->address, 5, "0009", "FF00");
             } elseif ($this->type == 'RGBW') {
 
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
-                $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
-                $modbus->sendQuery($this->address, 5, "0003", "FF00");
+                // $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
+                // $modbus->sendQuery($this->address, 5, "0003", "FF00");
             }
         } else {
             //обработка выключения ленты
             if ($this->type == 'RGB') {
-            $modbus->sendQuery($this->address, 5, "0009", "0000");
-            } elseif ($this->type == 'w') {
-            $modbus->sendQuery($this->address, 5, "0003", "0000");
+            // $modbus->sendQuery($this->address, 5, "0009", "0000");
+            // } elseif ($this->type == 'w') {
+            // $modbus->sendQuery($this->address, 5, "0003", "0000");
             }
 
         }

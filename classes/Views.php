@@ -536,6 +536,7 @@ class Views extends System
                      }
 
                      $tape->setStatus($color, $bright, $wbright, $status);
+                     $newObject->setStatus($status, true, false);
                 }
 
 
@@ -1123,10 +1124,17 @@ class Views extends System
          INNER JOIN objects ON objects.id = tapes.id_object 
          INNER JOIN view_items ON view_items.id_object = objects.id 
          WHERE view_items.id = $idTape");
-
+         
         if($sql->rowCount() > 0) {
 
             $tape = $sql->fetch(PDO::FETCH_OBJ);
+
+            $sqlcolors =  parent::$db->query("SELECT value FROM colors WHERE type = 'hsv'");
+            while ($color = $sqlcolors->fetch(PDO::FETCH_OBJ)) {
+                if($color)
+                $colors_array[] = $color->value;
+            }
+
 
             $items = array(
                 'id' => $tape->id, 
@@ -1136,6 +1144,7 @@ class Views extends System
                 's' => $tape->s,
                 'v' => $tape->v,
                 'w' => $tape->w,
+                'colors' => $colors_array,
             );
 
             return  $json = json_encode(array('status' => 'tapeLoad', 'entity'=> $items));

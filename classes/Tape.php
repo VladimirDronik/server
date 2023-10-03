@@ -80,22 +80,22 @@ class Tape extends Device
         if ($status == "on") {
             if ($this->type == 'RGB') {
                 //Цвет и яркость для цветной ленты
-                // $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
-                // $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
-                // $modbus->sendQuery($this->address, 5, "0009", "FF00");
+                 $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
+                 $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
+                 $modbus->sendQuery($this->address, 5, "0009", "FF00");
             } elseif ($this->type == 'RGBW') {
 
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
-                // $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
-                // $modbus->sendQuery($this->address, 5, "0003", "FF00");
+                 $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
+                 $modbus->sendQuery($this->address, 5, "0003", "FF00");
             }
         } else {
             //обработка выключения ленты
             if ($this->type == 'RGB') {
-            // $modbus->sendQuery($this->address, 5, "0009", "0000");
-            // } elseif ($this->type == 'w') {
-            // $modbus->sendQuery($this->address, 5, "0003", "0000");
+             $modbus->sendQuery($this->address, 5, "0009", "0000");
+             } elseif ($this->type == 'w') {
+             $modbus->sendQuery($this->address, 5, "0003", "0000");
             }
 
         }

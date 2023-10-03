@@ -518,6 +518,7 @@ class Views extends System
 
                     $tape = new Tape($idObject);
                     $color = 0;
+                    $shade = 0;
                     $bright = 0;
                     $wbright = 0;
 
@@ -528,6 +529,7 @@ class Views extends System
                         //пришло конкретное значение для ленты
                         if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
                             $color = $itemValue->h;
+                            $shade = $itemValue->s;
                             $bright = $itemValue->v;
                         }
                         if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
@@ -535,7 +537,7 @@ class Views extends System
                         }
                      }
 
-                     $tape->setStatus($color, $bright, $wbright, $status);
+                     $tape->setStatus($color, $shade, $bright, $wbright, $status);
                      $newObject->setStatus($status, true, false);
                 }
 

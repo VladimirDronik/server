@@ -102,5 +102,7 @@ class Tape extends Device
             
         $modbus->deviceClose();
 
+        }
+    }
     }
 }

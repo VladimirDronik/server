@@ -90,19 +90,20 @@ class Tape extends Device
                 //яркость для белой ленты
                  $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
                  $modbus->sendQuery($this->address, 5, "0003", "FF00");
-            } else {
+            } 
+
+        }
+
+        }  else {
             //обработка выключения ленты
             if ($this->type == 'RGB' || $this->type == 'RGBW') {
              $modbus->sendQuery($this->address, 5, "0009", "0000");
              } elseif ($this->type == 'w') {
              $modbus->sendQuery($this->address, 5, "0003", "0000");
-            }
-
-        }
-            
-        $modbus->deviceClose();
-
-        }
+            }  
     }
+
+    $modbus->deviceClose();
+    
     }
 }

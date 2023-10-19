@@ -227,7 +227,7 @@ class Boiler extends System
             $modbus->sendQuery(9, 1, "03EC", 1);
              //Запись температуры котла
             $modbus->sendQuery($this->boiler->address, 6, "0x03FA", $this->boiler->target_heat_temp);
-
+            $modbus->deviceClose();
         }else {
             file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat=$temperature}");
     }
@@ -254,6 +254,7 @@ class Boiler extends System
             $modbus->sendQuery(9, 1, "03EC", 1);
              //Запись температуры ГВС
              $modbus->sendQuery($this->boiler->address, 6, "0x0400", $this->boiler->target_water_temp);
+             $modbus->deviceClose();
         } else {
             
                 file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&water=$temperature}");    
@@ -378,6 +379,8 @@ class Boiler extends System
         $modbus->sendQuery($this->boiler->address, 6, "0x03FA", $this->boiler->target_heat_temp);
         //Запись температуры ГВС
         $modbus->sendQuery($this->boiler->address, 6, "0x0400", $this->boiler->target_water_temp);
+
+        $modbus->deviceClose();
     }
 
     // Опрос котла Невотон
@@ -398,7 +401,7 @@ class Boiler extends System
         //Внешняя температура
         $this->boiler->outdoor_temp = $modbus->sendQuery($this->boiler->address, 3, "03F4", 1);
         
-        //считываение признака ошибки
+        //считывание признака ошибки
         $err = $modbus->sendQuery($this->boiler->address, 1, "03F9", 1);
         if ($err != null) {
             //Если признак ошибки есть, то записываем код ошибки
@@ -420,13 +423,14 @@ class Boiler extends System
                 $this->boiler->ext_error = "Ошибка низкого давления воды";
 
                 if ($modbus->sendQuery($this->boiler->address, 1, "3FF", 1) == 1)
-                $this->boiler->ext_error = " Необходимо внешнее обслуживание";
+                $this->boiler->ext_error = "Необходимо внешнее обслуживание";
 
                 if ($modbus->sendQuery($this->boiler->address, 1, "400", 1) == 1)
                 $this->boiler->ext_error = "Ошибка превышения максимальной температуры воды";
 
             }
         }
+        $modbus->deviceClose();
 
     }
 

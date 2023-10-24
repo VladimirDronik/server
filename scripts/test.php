@@ -6,7 +6,7 @@ require_once '../include.php';
 $boiler = new Boiler(342);
 
 $boiler->lockChanges(false);
-$boiler->setBoiler('off');
+//$boiler->setBoiler('off');
 $boiler->setHeat(33);
 $boiler->setWater(33);
 $boiler->setThermostat('on');

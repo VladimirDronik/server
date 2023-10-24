@@ -59,14 +59,14 @@ class Tape extends Device
 
         parent::$db->query("UPDATE tapes SET status = '$status', h = $color, s = $shade, v = $bright, w = $wbright WHERE id_object = $this->idObject");
 
-        $this->setValue($color, $shade, $bright, $status, $wbright);
+        $this->setValue($color, $shade, $bright, $wbright, $status);
 
     }
 
     /**
      * Установка значения для ленты RGB
      */
-    function setValue(int $color, int $shade, int $bright, string $status) {
+    function setValue(int $color, int $shade, int $bright, int $wbright, string $status) {
         $modbus = new PhpSerialModbus;
 
         if ($this->port == 0 ) $pt = '/dev/ttyUSB0';
@@ -84,15 +84,16 @@ class Tape extends Device
                  $modbus->sendQuery($this->address, 6, "07DF", dechex($shade));
                  $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
                  $modbus->sendQuery($this->address, 5, "0009", "FF00");
+            }
             if ($this->type == 'RGBW') {
-                 $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
+                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
-                 $modbus->sendQuery($this->address, 6, "07D3", dechex($bright));
+                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
                  $modbus->sendQuery($this->address, 5, "0003", "FF00");
             } 
 
-        }
+        
 
         }  else {
             //обработка выключения ленты

@@ -9,3 +9,4 @@ cookies.txt
 /vendor
 server.code-workspace
 /ROOT_DIR
+composer.*

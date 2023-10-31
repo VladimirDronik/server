@@ -87,6 +87,7 @@ class Tape extends Device
             }
             if ($this->type == 'RGBW') {
                  $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
+                 $modbus->sendQuery($this->address, 5, "0003", "FF00");
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
                  $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));

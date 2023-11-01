@@ -9,7 +9,7 @@ class Megad extends System
     static public $ip_device;
 
     /** определение ip адреса устройства */
-    function getDeviceParams($id_device)
+    static function getDeviceParams($id_device)
     {
         if ($id_device == null) $ip_addr = self::$ip_device;
         else

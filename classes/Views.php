@@ -262,19 +262,19 @@ class Views extends System
             while ($hygrostat = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
-                $curTemp = round($hygrostat->current);
-                $newTemp = (float)$hygrostat->optimal;
+                $curValue = round($hygrostat->current);
+                $newValue = (float)$hygrostat->optimal;
 
 
                 if($typeOutput == 'array')
                     $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
-                        'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $hygrostat->title,
+                        'cur_value' => $curValue,  'set_value' => $newValue, 'title' => $hygrostat->title,
                         'left' => $view->position_left, 'top' => $view->position_top,  'params' => $hygrostat->params);
                 else
 
                     $item = '{"id":'.$view->id.',
-            "type":"'.$view->type.'","cur_value":"'.$curTemp.'",
-            "set_value":"'.$newTemp.'",
+            "type":"'.$view->type.'","cur_value":"'.$curValue.'",
+            "set_value":"'.$newValue.'",
             "title":"'.$view->title.'",
             "left":"'.$view->position_left.'",
             "top":"'.$view->position_top.'",
@@ -299,26 +299,28 @@ class Views extends System
                                     ON lightstats.id_object = view_items.id_object
                                     WHERE `view_items`.`id` = $view->id");
         if($sql->rowCount() > 0)
-            while ($hygrostat = $sql->fetch(PDO::FETCH_OBJ)) {
+            while ($lightstat = $sql->fetch(PDO::FETCH_OBJ)) {
 
 
-                $curTemp = round($hygrostat->current);
-                $newTemp = (float)$hygrostat->optimal;
+                $curValue = round($lightstat->current);
+                if ($curValue > 100) $curValue = 100; 
+
+                $newValue = (float)$lightstat->optimal;
 
 
                 if($typeOutput == 'array')
                     $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
-                        'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $hygrostat->title,
-                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $hygrostat->params);
+                        'cur_value' => $curValue,  'set_value' => $newValue, 'title' => $lightstat->title,
+                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $lightstat->params);
                 else
 
                     $item = '{"id":'.$view->id.',
-            "type":"'.$view->type.'","cur_value":"'.$curTemp.'",
-            "set_value":"'.$newTemp.'",
+            "type":"'.$view->type.'","cur_value":"'.$curValue.'",
+            "set_value":"'.$newValue.'",
             "title":"'.$view->title.'",
             "left":"'.$view->position_left.'",
             "top":"'.$view->position_top.'",
-            "params":"'.$hygrostat->params.'"
+            "params":"'.$lightstat->params.'"
             }';
 
                 return $item;

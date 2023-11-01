@@ -16,19 +16,19 @@ class Views extends System
      */
     function getGroupItems($viewType = null)
     {
-
+       
         if($viewType)
             $whereString = " `type` =  '$viewType' AND";
             else
                 $whereString = '';
-
+               
         //Находим итемы, кроме главной нулевой комнаты
-        $sql_rooms = parent::$db->query("SELECT `rooms`.* FROM `rooms` INNER JOIN `view_items` 
-                                         ON `view_items`.`room_group` = `rooms`.`id` 
-                                         WHERE  `view_items`.`active` = 1 
-                                         AND `view_items`.`room_group` IS NOT NULL
-                                         GROUP BY `rooms`.`id` 
-                                         ORDER BY `rooms`.`sort`");
+        $sql_rooms = parent::$db->query(
+            "SELECT DISTINCT `rooms`.name, `rooms`.id, `rooms`.sort  FROM `rooms` INNER JOIN `view_items` 
+        ON `view_items`.`room_group` = `rooms`.`id` 
+        WHERE  `view_items`.`active` = 1 
+        AND `view_items`.`room_group` IS NOT NULL
+        ORDER BY `rooms`.`sort`;");
 
 
         while ($rooms_obj = $sql_rooms->fetch(PDO::FETCH_OBJ)) {
@@ -247,8 +247,8 @@ class Views extends System
 
 
     /**
-     * Отдаем значение температуры визуальному отображению термостата
-     * @param object $view -  итем с термостатом
+     * Отдаем значение влажность визуальному отображению гигростата
+     * @param object $view -  итем с гигростатом
      */
     static private function getHygrostats($view, $typeOutput = 'array')
     {
@@ -285,6 +285,47 @@ class Views extends System
             } else return false;
 
     }
+
+     /**
+     * Отдаем значение влажность визуальному отображению гигростата
+     * @param object $view -  итем с гигростатом
+     */
+    static private function getLightstats($view, $typeOutput = 'array')
+    {
+        $sql = parent::$db->query("SELECT  `lightstats`.`current`, `lightstats`.`optimal`, 
+                                            `lightstats`.`gisteresis`, `view_items`.`title` AS `title`, 
+                                            `view_items`.`params` 
+                                    FROM `lightstats` INNER JOIN view_items 
+                                    ON lightstats.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $view->id");
+        if($sql->rowCount() > 0)
+            while ($hygrostat = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+                $curTemp = round($hygrostat->current);
+                $newTemp = (float)$hygrostat->optimal;
+
+
+                if($typeOutput == 'array')
+                    $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
+                        'cur_value' => $curTemp,  'set_value' => $newTemp, 'title' => $hygrostat->title,
+                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $hygrostat->params);
+                else
+
+                    $item = '{"id":'.$view->id.',
+            "type":"'.$view->type.'","cur_value":"'.$curTemp.'",
+            "set_value":"'.$newTemp.'",
+            "title":"'.$view->title.'",
+            "left":"'.$view->position_left.'",
+            "top":"'.$view->position_top.'",
+            "params":"'.$hygrostat->params.'"
+            }';
+
+                return $item;
+            } else return false;
+
+    }
+
 
     
     /** 
@@ -581,14 +622,20 @@ class Views extends System
 
         while ($viewItem = $sql->fetch(PDO::FETCH_OBJ)) {
 
-           //Если тип итема - это термометр, то отдаем структуру термометра, иначе отдаем структуру обычного итема
+           //Если тип итема - это термостат, гигростат или светостат, то отдаем нужную структуру 
             if($viewItem->type == 'termostat'){
 
-                $itemTermostat = $this->getTermostats($viewItem, 'string');
+                $itemTermostat = self::getTermostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
 
-            }  else
-
+            } elseif ($viewItem->type == 'hygrostat') {
+                $itemHygrostat = self::getHygrostats($viewItem, 'string');
+                $message = '{ "status": "itemChange", "items": ['.$itemHygrostat.']}';
+            } elseif ($viewItem->type == 'lightstat') {
+                $itemLightstat = self::getLightstats($viewItem, 'string');
+                $message = '{ "status": "itemChange", "items": ['.$itemLightstat.']}';
+            } else
+            //иначе отдаем структуру обычного итема
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
@@ -667,6 +714,11 @@ class Views extends System
         // Если тип объекта гигрометр
         if ($viewObject->type == 'hygrostat') {
             return self::getHygrostats($viewObject, 'array');
+        }
+
+         // Если тип объекта светостат
+         if ($viewObject->type == 'lightstat') {
+            return self::getLightstats($viewObject, 'array');
         }
         
     }

@@ -201,7 +201,7 @@ class Lightstats extends Objects
      */
     public static function getValueFromDB($idLightstat)
     {
-        $sql = parent::$db->query("SELECT `current` FROM lightstats WHERE id_object = $idLightstat");
+        $lightstatsql = parent::$db->query("SELECT `current` FROM lightstats WHERE id_object = $idLightstat");
         if($lightstat = $lightstatsql->fetch(PDO::FETCH_OBJ));
         return $lightstat->current;
     }
@@ -259,7 +259,7 @@ class Lightstats extends Objects
      * @param int $idObject - id объекта светостата
      * @param float $value - Значение выбраного уровня освещенности
      */
-    function set_temperature($idObject, $value)
+    function set_light($idObject, $value)
     {
         //Заносим значение термостата в БД
         parent::$db->query("UPDATE lightstats SET `optimal` = $value WHERE id_object='$idObject'");

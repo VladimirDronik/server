@@ -51,27 +51,31 @@ class Action extends Megad
         //     (($params == 1) && ($causingObject->type != 'button')) ||
         //     (($params == 2) && ($causingObject->type == 'button'))
         // ) {
+        if ($idMethod != null) {
 
             $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
-                                       FROM `methods` WHERE `methods`.`id`=$idMethod");
-            $method = $sql->fetch(PDO::FETCH_OBJ);
+            FROM `methods` WHERE `methods`.`id`=$idMethod");
+        $method = $sql->fetch(PDO::FETCH_OBJ);
 
-            self::$easy = $method->easy;
-            self::$idScript = $method->script;
+        self::$easy = $method->easy;
+        self::$idScript = $method->script;
 
-            $object = new Objects();
-            $object->select($method->id_object);
+        $object = new Objects();
+        $object->select($method->id_object);
 
-                if (self::$easy)
-                    self::easy($causingObject, $object, $whence, $params);
-                elseif ((self::$idScript) && ($method->is_system == 0))
-                    self::script($object);
-                else
-                    self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
+        if (self::$easy)
+        self::easy($causingObject, $object, $whence, $params);
+        elseif ((self::$idScript) && ($method->is_system == 0))
+        self::script($object);
+        else
+        self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 
-            Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
-            if ($idCausing != $method->id_object)
-                Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+        Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
+        if ($idCausing != $method->id_object)
+        Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+
+        }
+          
         // }
     }
 

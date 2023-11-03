@@ -435,7 +435,7 @@ class Views extends System
      */
     public function resData($data)
     {
-
+   
         $data_array = json_decode($data);
 
         //Если клиент отправил запрос на изменение состояния термометра на странице термометров
@@ -484,105 +484,154 @@ class Views extends System
                 $newObject->select($idObject);
 
 
-                //Если объект является термостатом или гигрометром
-                if (($itemType == 'termostat') || ($itemType == 'temp') ||  ($itemType == 'humidity')) {
+                switch ($itemType) {
+                    case 'termostat':
+                        
+                        if ($set_value == '') $set_value = 'NULL';
 
+                        //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
+    
+    
+                        //Добавляем данные в таблицу термостатов и больше ничего не делаем
+                        $termostat = new Thermostats();
+                        $termostat->set_temperature($idObject, $set_value);
+    
+                        //Запускаем метод 
+                        Action::runAction($onMethod, 'view', $idObject);
+    
+                        //Добавляем запись в лог
+                        system::addLog('user', "Оптимальная температура для термостата ID $idObject изменена на " . $set_value . "°C.", 'socket_server');
+    
+                        //Отпарвляем данные о температуре остальным клиентам
+                        self::updateItem($itemID);
 
-                    if ($set_value == '') $set_value = 'NULL';
+                        break;
 
-                    //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
-                    parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
+                    case 'hygrostat':
+                        if ($set_value == '') $set_value = 'NULL';
 
+                        //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
 
-                    //Добавляем данные в таблицу термостатов и больше ничего не делаем
-                    $termostat = new Thermostats();
-                    $termostat->set_temperature($idObject, $set_value);
+                         //Добавляем данные в таблицу гигростатов и больше ничего не делаем
+                         $hygrostat = new Hygrostats();
+                         $hygrostat->set_humiduty($idObject, $set_value);
 
-                    //Запускаем метод 
-                    Action::runAction($onMethod, 'view', $idObject);
+                         //Запускаем метод 
+                         Action::runAction($onMethod, 'view', $idObject);
 
-                    //Добавляем запись в лог
-                    system::addLog('user', "Оптимальная температура для термостата ID $idObject изменена на " . $set_value . "°C.", 'socket_server');
+                         //Добавляем запись в лог
+                         system::addLog('user', "Оптимальная влажность для гигростата ID $idObject изменена на " . $set_value . "% ", 'socket_server');
+   
+                         //Отправляем данные о влажности остальным клиентам
+                         self::updateItem($itemID);
 
-                    //Отпарвляем данные о температуре остальным клиентам
-                    self::updateItem($itemID);
+                        break;
+                        
+                    case 'lightstat':
+                        if ($set_value == '') $set_value = 'NULL';
 
+                        //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
 
-                } elseif (($itemType == 'switch') || ($itemType == 'button')) { //Если объект является переключателем или кнопкой
+                         //Добавляем данные в таблицу гигростатов и больше ничего не делаем
+                         $hygrostat = new Lightstats();
+                         $hygrostat->set_light($idObject, $set_value);
 
+                         //Запускаем метод 
+                         Action::runAction($onMethod, 'view', $idObject);
 
-                    self::updateItem($itemID, $itemStatus);
+                         //Добавляем запись в лог
+                         system::addLog('user', "Оптимальная освещенность для светостата ID $idObject изменена на " . $set_value . "% ", 'socket_server');
+    
+                         //Отправляем данные об освещенности остальным клиентам
+                         self::updateItem($itemID);
 
-                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
+                        break;    
 
-                } elseif ($itemType == 'label') {
-
-                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
-
-                 } elseif ($itemType == 'conditioner') {
-             
-                    $temperature = $data_array->items[0]->temp;
-                    $mode = $data_array->items[0]->mode;
-                    $fan = $data_array->items[0]->fan;
-
-                    $conditioner = new Conditioner($idObject);
-                    $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
-
-
-                } elseif ($itemType == 'dimmer') {
-
-                    $dimmer = new Dimmer($idObject);
-
-                    //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                    if ($itemValue === null) {
+                    case 'switch':
+                    case 'button':
+                        self::updateItem($itemID, $itemStatus);
 
                         if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                            System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
+                            System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
+                        
+                        break;
 
-                    } else { //пришло конкретное значение диммера
+                    case 'label':
+                        
+                        if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                        System::addlog('error', 'Метод для кнопки "' . $itemDescription . '"" не определен', 'button');
 
-                        //Устанавливаем яркость диммера
-                        $dimmer->setValue($itemValue);
-                        $status = 'ON';
+                        break;
 
-                        if ($itemValue == 0) {
-                            //Выключаем диммер
-                            $status = 'OFF';
+                    case  'conditioner':
+
+                        $temperature = $data_array->items[0]->temp;
+                        $mode = $data_array->items[0]->mode;
+                        $fan = $data_array->items[0]->fan;
+    
+                        $conditioner = new Conditioner($idObject);
+                        $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
+
+                        break;
+
+                    case  'dimmer':
+
+                        $dimmer = new Dimmer($idObject);
+
+                        //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                        if ($itemValue === null) {
+    
+                            if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                                System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
+    
+                        } else { //пришло конкретное значение диммера
+    
+                            //Устанавливаем яркость диммера
+                            $dimmer->setValue($itemValue);
+                            $status = 'ON';
+    
+                            if ($itemValue == 0) {
+                                //Выключаем диммер
+                                $status = 'OFF';
+                            }
+    
+                            $newObject->setStatus($status, true, false);
+    
                         }
 
-                        $newObject->setStatus($status, true, false);
+                        break;
 
+                    case 'tape':
+                        
+                        $tape = new Tape($idObject);
+                        $color = 0;
+                        $shade = 0;
+                        $bright = 0;
+                        $wbright = 0;
+    
+                        $status = $itemStatus;
+    
+                         //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                         if ($itemValue->h != null)  {
+                            //пришло конкретное значение для ленты
+                            if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
+                                $color = $itemValue->h;
+                                $shade = $itemValue->s;
+                                $bright = $itemValue->v;
+                            }
+                            if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
+                                $wbright = $itemValue->w;
+                            }
+                         }
+    
+                         $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                         $newObject->setStatus($status, true, false);
+
+                         break;
                     }
-
-
-                } elseif ($itemType == 'tape') {
-
-                    $tape = new Tape($idObject);
-                    $color = 0;
-                    $shade = 0;
-                    $bright = 0;
-                    $wbright = 0;
-
-                    $status = $itemStatus;
-
-                     //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                     if ($itemValue->h != null)  {
-                        //пришло конкретное значение для ленты
-                        if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
-                            $color = $itemValue->h;
-                            $shade = $itemValue->s;
-                            $bright = $itemValue->v;
-                        }
-                        if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
-                            $wbright = $itemValue->w;
-                        }
-                     }
-
-                     $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                     $newObject->setStatus($status, true, false);
-                }
 
 
                 //TODO: проверить является ли объект виртуальным
@@ -594,6 +643,7 @@ class Views extends System
 
     }
 
+  
 
 
     /**
@@ -631,6 +681,7 @@ class Views extends System
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
 
             } elseif ($viewItem->type == 'hygrostat') {
+echo "hhhhhhhhhhhhhhhhhhhhhhhhh";
                 $itemHygrostat = self::getHygrostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemHygrostat.']}';
             } elseif ($viewItem->type == 'lightstat') {

@@ -26,7 +26,7 @@ try {
             $modbus = new ModbusRtu ();
             $modbus->deviceInit('/dev/ttyUSB0', 9600, 'none', 8, 1, 'none');
             $modbus->deviceOpen();
-            // $modbus->debug = true;
+            $modbus->debug = true;
         
 
             if ($body->function_code == 1)
@@ -111,6 +111,9 @@ try {
         }
     
         $beanstalk->delete($job['id']);
+
+// Запись в базу
+// if ($result) пишем в базу $result
 
     }
 }

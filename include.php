@@ -72,20 +72,6 @@ require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 // ModbusTCP library
 require_once __DIR__.'/libs/modbus/ModbusTcp.php';
-require_once '../vendor/autoload.php';
-use Beanstalk\Client;
-use ModbusTcpClient\Packet\RtuConverter;
-use ModbusTcpClient\Packet\ModbusFunction\ReadCoilsRequest;
-use ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse;
-use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilRequest;
-use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilResponse;
-use ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersRequest;
-use ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersResponse;
-use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterRequest;
-use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterResponse;
-use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersRequest;
-use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse;
-use ModbusTcpClient\Utils\Endian;
 
 // ModbusSerial library
 require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';

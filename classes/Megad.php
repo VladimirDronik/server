@@ -9,7 +9,7 @@ class Megad extends System
     static public $ip_device;
 
     /** определение ip адреса устройства */
-    function getDeviceParams($id_device)
+    static function getDeviceParams($id_device)
     {
         if ($id_device == null) $ip_addr = self::$ip_device;
         else
@@ -76,7 +76,6 @@ class Megad extends System
      **/
       static function status($port, $command = 'get', $idDevice = null, $param = 0)
     {
-
         $state = file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[$param];

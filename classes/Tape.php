@@ -1,6 +1,5 @@
 <?php
 
-
 class Tape extends Device
 {
     private $idObject;
@@ -34,7 +33,6 @@ class Tape extends Device
             $this->s = $tape->s;
             $this->v = $tape->v;
             $this->w = $tape->w;
-
         }
     }
 
@@ -46,7 +44,7 @@ class Tape extends Device
     
           // если значения цвета и яркости не пришли от приложения, значит берем предыдущие значения, которые были в БД
           // иначе берем новые значения, которые пришли от приложения
-        if ($color==0 && $bright==0 && $bright==0) {
+        if ($color == 0 && $bright == 0 && $shade == 0) {
            $color = $this->h; 
            $bright = $this->v; 
            $shade = $this->s;
@@ -57,7 +55,9 @@ class Tape extends Device
             $wbright = $this->w;
         }
 
-        parent::$db->query("UPDATE tapes SET status = '$status', h = $color, s = $shade, v = $bright, w = $wbright WHERE id_object = $this->idObject");
+        parent::$db->query("UPDATE tapes 
+                            SET status = '$status', h = $color, s = $shade, v = $bright, w = $wbright 
+                            WHERE id_object = $this->idObject");
 
         $this->setValue($color, $shade, $bright, $wbright, $status);
 
@@ -80,17 +80,18 @@ class Tape extends Device
         if ($status == "on") {
             if ($this->type == 'RGB' || $this->type == 'RGBW') {
                 //Цвет и яркость для цветной ленты
-                 $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
-                 $modbus->sendQuery($this->address, 6, "07DF", dechex($shade));
-                 $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
-                 $modbus->sendQuery($this->address, 5, "0009", "FF00");
+                $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
+                $modbus->sendQuery($this->address, 6, "07DF", dechex($shade));
+                $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
+                $modbus->sendQuery($this->address, 5, "0009", "FF00");
             }
             if ($this->type == 'RGBW') {
-                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
+                $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
+                $modbus->sendQuery($this->address, 5, "0003", "FF00");
             } elseif ($this->type == 'W') {
                 //яркость для белой ленты
-                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
-                 $modbus->sendQuery($this->address, 5, "0003", "FF00");
+                $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
+                $modbus->sendQuery($this->address, 5, "0003", "FF00");
             } 
 
         
@@ -98,9 +99,9 @@ class Tape extends Device
         }  else {
             //обработка выключения ленты
             if ($this->type == 'RGB' || $this->type == 'RGBW') {
-             $modbus->sendQuery($this->address, 5, "0009", "0000");
-             } elseif ($this->type == 'w') {
-             $modbus->sendQuery($this->address, 5, "0003", "0000");
+                $modbus->sendQuery($this->address, 5, "0009", "0000");
+            } elseif ($this->type == 'w') {
+                $modbus->sendQuery($this->address, 5, "0003", "0000");
             }  
     }
 

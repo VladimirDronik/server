@@ -353,10 +353,14 @@ class SendSocket
            $conditioner->setValue($value, $status, $oper, $fan);
 
         } elseif ($object->type == 'curtain') {
-            if ($status == 'on')
-                Curtain::open($idObject);
-            else
-                Curtain::close($idObject);
+            if ($status == 'on') {
+                $curtain = new Curtain($idObject);
+                $curtain->open();
+            }
+            else {
+                $curtain = new Curtain($idObject);
+                $curtain->close();
+            }
         }
 
         elseif ($object->type == 'virtual') {

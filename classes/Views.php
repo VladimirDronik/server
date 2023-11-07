@@ -24,7 +24,7 @@ class Views extends System
                
         //Находим итемы, кроме главной нулевой комнаты
         $sql_rooms = parent::$db->query(
-            "SELECT DISTINCT `rooms`.name, `rooms`.id, `rooms`.sort  FROM `rooms` INNER JOIN `view_items` 
+            "SELECT DISTINCT `rooms`.name, `rooms`.id, `rooms`.sort, `rooms`.`image` AS image, `rooms`.`style` AS style  FROM `rooms` INNER JOIN `view_items` 
         ON `view_items`.`room_group` = `rooms`.`id` 
         WHERE  `view_items`.`active` = 1 
         AND `view_items`.`room_group` IS NOT NULL

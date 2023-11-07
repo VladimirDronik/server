@@ -1226,7 +1226,7 @@ class Views extends System
     /**
      * Функия отдает параметры RGB ленты
      */
-    public function getTape($idTape) {
+    public function getTape(int $idTape) {
         $sql = parent::$db->query("SELECT tapes.id, h, s, v, w, tapes.type, tapes.status FROM tapes
          INNER JOIN objects ON objects.id = tapes.id_object 
          INNER JOIN view_items ON view_items.id_object = objects.id 

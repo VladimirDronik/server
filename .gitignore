@@ -10,5 +10,5 @@ cookies.txt
 /vendor
 server.code-workspace
 /ROOT_DIR
-/vendor/workerman/workerman.log
+vendor/workerman/workerman.log
 composer.*

@@ -681,7 +681,7 @@ class Views extends System
                 $message = '{ "status": "itemChange", "items": ['.$itemTermostat.']}';
 
             } elseif ($viewItem->type == 'hygrostat') {
-echo "hhhhhhhhhhhhhhhhhhhhhhhhh";
+
                 $itemHygrostat = self::getHygrostats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemHygrostat.']}';
             } elseif ($viewItem->type == 'lightstat') {
@@ -1244,7 +1244,7 @@ echo "hhhhhhhhhhhhhhhhhhhhhhhhh";
 
 
             $items = array(
-                'id' => $tape->id, 
+                'id' => $idTape, 
                 'type' => $tape->type,
                 'status' => $tape->status,
                 'h' => $tape->h,

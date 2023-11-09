@@ -6,5 +6,8 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Workerman\\Mqtt\\' => array($vendorDir . '/workerman/mqtt/src'),
     'Workerman\\' => array($vendorDir . '/workerman/workerman'),
+    'ModbusTcpClient\\' => array($vendorDir . '/aldas/modbus-tcp-client/src'),
+    'Beanstalk\\' => array($vendorDir . '/davidpersson/beanstalk/src'),
 );

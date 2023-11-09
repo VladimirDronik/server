@@ -100,6 +100,7 @@ class Tape extends Device
             //обработка выключения ленты
             if ($this->type == 'RGB' || $this->type == 'RGBW') {
                 $modbus->sendQuery($this->address, 5, "0009", "0000");
+                $modbus->sendQuery($this->address, 5, "0003", "0000");
             } elseif ($this->type == 'w') {
                 $modbus->sendQuery($this->address, 5, "0003", "0000");
             }  

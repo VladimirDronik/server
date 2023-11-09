@@ -7,4 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Workerman\\' => array($vendorDir . '/workerman/workerman'),
+    'ModbusTcpClient\\' => array($vendorDir . '/aldas/modbus-tcp-client/src'),
+    'Beanstalk\\' => array($vendorDir . '/davidpersson/beanstalk/src'),
 );

@@ -16,6 +16,7 @@ namespace Workerman\Connection;
 /**
  * ConnectionInterface.
  */
+#[\AllowDynamicProperties]
 abstract class  ConnectionInterface
 {
     /**
@@ -33,28 +34,28 @@ abstract class  ConnectionInterface
     /**
      * Emitted when data is received.
      *
-     * @var callback
+     * @var callable
      */
     public $onMessage = null;
 
     /**
      * Emitted when the other end of the socket sends a FIN packet.
      *
-     * @var callback
+     * @var callable
      */
     public $onClose = null;
 
     /**
      * Emitted when an error occurs with connection.
      *
-     * @var callback
+     * @var callable
      */
     public $onError = null;
 
     /**
      * Sends data on the connection.
      *
-     * @param string $send_buffer
+     * @param mixed $send_buffer
      * @return void|boolean
      */
     abstract public function send($send_buffer);
@@ -118,7 +119,7 @@ abstract class  ConnectionInterface
     /**
      * Close connection.
      *
-     * @param $data
+     * @param string|null $data
      * @return void
      */
     abstract public function close($data = null);

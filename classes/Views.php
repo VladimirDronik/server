@@ -42,6 +42,7 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`,
+					      `view_items`.`title`,
                                               `view_items`.`params`,  
                                               `view_items`.`color`, 
                                               `rooms`.`id` AS room_id,

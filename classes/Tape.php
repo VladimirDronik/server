@@ -76,6 +76,12 @@ class Tape extends Device
         $modbus->deviceOpen();
         $modbus->debug = true;
 
+        if ($bright <= 1) $cmd = "0000";
+        else $cmd = "FF00";
+
+        if ($wbright <= 1) $wcmd = "0000";
+        else $wcmd = "FF00";
+
         //обработка включения ленты с выбором цвета и яркости
         if ($status == "on") {
             if ($this->type == 'RGB' || $this->type == 'RGBW') {
@@ -83,15 +89,16 @@ class Tape extends Device
                 $modbus->sendQuery($this->address, 6, "07DE", dechex($color));
                 $modbus->sendQuery($this->address, 6, "07DF", dechex($shade));
                 $modbus->sendQuery($this->address, 6, "07E0", dechex($bright));
-                $modbus->sendQuery($this->address, 5, "0009", "FF00");
+                $modbus->sendQuery($this->address, 5, "0009", $cmd);
             }
             if ($this->type == 'RGBW') {
                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
-                $modbus->sendQuery($this->address, 5, "0003", "FF00");
-            } elseif ($this->type == 'W') {
+                $modbus->sendQuery($this->address, 5, "0003", $wcmd);
+            } 
+            elseif ($this->type == 'W') {
                 //яркость для белой ленты
                 $modbus->sendQuery($this->address, 6, "07D3", dechex($wbright));
-                $modbus->sendQuery($this->address, 5, "0003", "FF00");
+                $modbus->sendQuery($this->address, 5, "0003", $wcmd);
             } 
 
         

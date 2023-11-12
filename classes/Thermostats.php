@@ -160,7 +160,7 @@ class Thermostats extends Objects
         // Events::exicute($this->idObject, 'onStatus');
         
         //Отправка значения для labels
-        Labels::setValue($this->termostat->current.'°C', "текущая температура", $this->idObject);
+        Labels::setValue(round($this->termostat->current,1).'°C', "текущая температура", $this->idObject);
 
         if($this->termostat->current)
         {

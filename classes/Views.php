@@ -695,7 +695,7 @@ class Views extends System
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
             "title":"'.$viewItem->title.'",
-            "vakue":"'.$viewItem->value.'",
+            "value":"'.$viewItem->value.'",
             "params":"'.$viewItem->params.'"}]}';
 
 

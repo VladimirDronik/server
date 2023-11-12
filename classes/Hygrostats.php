@@ -57,6 +57,9 @@ class Hygrostats extends Objects
         $object->select($hygrostat->idObject);
 
         // Events::exicute($this->idObject, 'onStatus');
+        
+        //Отправка значения для labels
+        Labels::setValue(round($hygrostat->current,1).'%', "текущая влажность", $hygrostat->idObject);
 
         if($hygrostat->current) 
         {

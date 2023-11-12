@@ -17,6 +17,7 @@ class Boiler extends System
         $sql = parent::$db->query("SELECT devtypes.nam AS type_controller, devices.ip_address AS address, devices.port AS port FROM devtypes 
                                    INNER JOIN devices ON devtypes.id = devices.type WHERE devices.id = {$this->boiler->id_controller}");
         $boiler_controller = $sql->fetch(PDO::FETCH_OBJ);
+        $this->boiler->idObject = $idObject;
         $this->boiler->type_controller = $boiler_controller->type_controller;
         $this->boiler->address_controller = $boiler_controller->address;
         $this->boiler->port = $boiler_controller->port;
@@ -33,18 +34,21 @@ class Boiler extends System
         $cooliantSupply = '[{"status":"'.$this->boiler->feed_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$cooliantSupply' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'csupply'");
-
+        Labels::setValue($this->boiler->feed_heat_temp.'°С', "температура подачи", $this->boiler->idObject);
 
 
         //Обновление значения обратки для всех элементов с таким типом
         $cooliantReturn = '[{"status":"'.$this->boiler->back_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$cooliantReturn' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
+        Labels::setValue($this->boiler->back_heat_temp.'°С', "температура обратки", $this->boiler->idObject);
+
 
         //Обновление состояния давления теплоносителя
         $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
+        Labels::setValue($this->boiler->pressure.'b', "давление", $this->boiler->idObject);        
 
 
         //Обновление целевой температуры котла
@@ -66,12 +70,13 @@ class Boiler extends System
         $error_code = '[{"status":"'.$this->boiler->error_code.'"]';
             parent::$db->exec("UPDATE elements SET `value` = '$error_code' 
                                        WHERE `id_object` = {$this->boiler->id_object} AND handle = 'error_code'");
+        Labels::setValue($this->boiler->error_code, "код ошибки", $this->boiler->idObject); 
 
         //Описание расширенной ошибки, если есть
         $ext_error = '[{"status":"'.$this->boiler->ext_error.'"]';
             parent::$db->exec("UPDATE elements SET `value` = '$ext_error' 
                                        WHERE `id_object` = {$this->boiler->id_object} AND handle = 'ext_error'");
-
+        //TODO:: сделать вставку в Label текста о расшифрованной ошибке
 
         //Обновление значения статуса котла для всех элементов с таким типом
         if($this->boiler->boiler == 1)

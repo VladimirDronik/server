@@ -55,6 +55,9 @@ class Lightstats extends Objects
         $object = new Objects();
         $object->select($lightstat->idObject);
 
+        //Отправка значения для labels
+        Labels::setValue(round($lightstat->current,1).'lx', "текущая освещенность", $lightstat->idObject);
+
         //Если светостат с реакцией на посветление
         if ($lightstat->mode == 1)
         {

@@ -8,7 +8,7 @@ class Labels extends System
     public static function setValue($value, $typeValue, $idObject) {
 
          //Выбираем отображение, которому нужно отправить значение
-         $sql = parent::$db->query("SELECT id_view AS id FROM labels WHERE type_value = '$typeValue' AND id_object = $idObject");
+         $sql = parent::$db->query("SELECT id_item AS id FROM labels WHERE type_value = '$typeValue' AND id_object = $idObject");
          if($sql->rowCount() > 0) {
             $viewItems = $sql->fetchAll(PDO::FETCH_OBJ);
 

@@ -20,6 +20,7 @@ class Thermostats extends Objects
     private $usensor;
     private $hitepro_dev;
     private $name;
+    private $optimal;
 
 
     /**
@@ -157,6 +158,9 @@ class Thermostats extends Objects
         $object->select($this->idObject);
 
         // Events::exicute($this->idObject, 'onStatus');
+        
+        //Отправка значения для labels
+        Labels::setValue($this->termostat->current, "текущая температура", $this->idObject);
 
         if($this->termostat->current)
         {

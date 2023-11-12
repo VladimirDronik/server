@@ -42,7 +42,8 @@ class Views extends System
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`,
-					      `view_items`.`title`,
+					                          `view_items`.`title`,
+                                              `view_items`.`value`,
                                               `view_items`.`params`,  
                                               `view_items`.`color`, 
                                               `rooms`.`id` AS room_id,
@@ -694,6 +695,7 @@ class Views extends System
             "type":"'.$viewItem->type.'","status":"'.$viewItem->status.'",
             "icon":"'.$viewItem->icon.'",
             "title":"'.$viewItem->title.'",
+            "vakue":"'.$viewItem->value.'",
             "params":"'.$viewItem->params.'"}]}';
 
 
@@ -754,6 +756,7 @@ class Views extends System
                 'type' => $viewObject->type,
                 'icon' => $viewObject->icon,
                 'title' => $viewObject->title,
+                'value' => $viewObject->value,
                 'status' => $viewObject->status,
                 'left' => $viewObject->position_left,
                 'params' => $viewObject->params,

@@ -7,4 +7,5 @@
 
 require_once '../include.php';
 
-Cameras::getRtspSnapshots();
+$recorder_id = (isset($argv[1]) ? $argv[1] : null);
+Cameras::getRtspSnapshots($recorder_id);

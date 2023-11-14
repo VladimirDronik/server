@@ -1,11 +1,12 @@
 .idea
 server.log
 cookies.txt
+watchdog.txt
 /workerman
 /userscripts
 /sounds
 /speakers
 /logs
-/vendor
+vendor/
 server.code-workspace
 /ROOT_DIR

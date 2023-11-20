@@ -21,11 +21,19 @@ use Workerman\Worker;
  * При этом в режиме отладки эти функции будут осуществлять вывод своих данных непосредственно на экран.
  */
 
-if ($argv[2] == 'debug')
+foreach ($argv as &$value) {
+    if ($value == '-debug') 
     $debugmode = true;
-else
+    else
     $system_message = false;
 
+    if ($value == '-free')
+    $freeEntrance = true;
+    else 
+    $freeEntrance = false;
+}
+
+unset($value);
 
 
 if ($debugmode) print_r("\n\n\n
@@ -60,6 +68,7 @@ $ws_worker->onWorkerStart = function() use (&$users)
     $inner_tcp_worker->onMessage = function($connection, $data) use (&$users) {
 
         global $debugmode;
+        global $freeEntrance;
         $data = json_decode($data);
 
 
@@ -154,6 +163,7 @@ $ws_worker->onConnect = function($connection) use (&$users)
 $ws_worker->onMessage = function($connection, $data) use (&$users)
 {
     global $debugmode;
+    global $freeEntrance;
 
 
    if ($debugmode) print_r("=====================================\n");
@@ -230,7 +240,7 @@ file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\
                     break;
 
                 case 'ready?dashboard':
-                    $send->readyDashboard();
+                    $send->readyDashboard($freeEntrance);
                     break;
 
                 case 'ready?scenes':

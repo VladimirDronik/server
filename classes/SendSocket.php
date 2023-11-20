@@ -196,7 +196,7 @@ class SendSocket
     /**
      * Отправка  всех данных для главной страницы
      */
-    public function readyDashboard()
+    public function readyDashboard($freeEntrance)
     {
         try {
             //Получаем данные из БД
@@ -211,7 +211,7 @@ class SendSocket
 
             //Сравниваем ID юзера с имеющимися в БД и принимаем решение о допуске
             //Добавляем ID-push, если он не был добавлен до этого
-            if (Users::checkuser($this->currentUser, $this->param1)) {
+            if (Users::checkuser($this->currentUser, $this->param1) || $freeEntrance==true) {
 
                 // Получаем id клиента, который делает запрос и отправляем ему json с первоначальными настройками
                 $this->send($data1);

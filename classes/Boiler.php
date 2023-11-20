@@ -29,6 +29,7 @@ class Boiler extends System
      */
     private function fillElements()
     {
+        //TODO:: добавить контур ГВС
 
         //Обновление значения подачи для всех элементов с таким типом
         $cooliantSupply = '[{"status":"'.$this->boiler->feed_heat_temp.'°С"}]';

@@ -13,14 +13,16 @@ class Boiler extends System
         $sql = parent::$db->query("SELECT * FROM boiler WHERE `id_object` = $idObject");
         $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
 
+        //TODO:: Нужно в запросе получить ИД устройства, через которое будем работать с котлом
         //Определяем параметры контроллера бойлера
         $sql = parent::$db->query("SELECT devtypes.nam AS type_controller, devices.ip_address AS address, devices.port AS port FROM devtypes 
                                    INNER JOIN devices ON devtypes.id = devices.type WHERE devices.id = {$this->boiler->id_controller}");
         $boiler_controller = $sql->fetch(PDO::FETCH_OBJ);
         $this->boiler->idObject = $idObject;
         $this->boiler->type_controller = $boiler_controller->type_controller;
-        $this->boiler->address_controller = $boiler_controller->address;
-        $this->boiler->port = $boiler_controller->port;
+        $this->boiler->address_controller = $boiler_controller->address; //TODO:: убрать
+        $this->boiler->port = $boiler_controller->port; //TODO:: убрать
+       
 
     }
 

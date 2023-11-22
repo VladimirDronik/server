@@ -12,3 +12,4 @@ server.code-workspace
 /ROOT_DIR
 vendor/workerman/workerman.log
 composer.*
+*.log

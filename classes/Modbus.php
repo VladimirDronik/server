@@ -10,7 +10,7 @@ class Modbus extends System {
 
         $sql = parent::$db->query("SELECT `modbus_slavers`.`id` AS id, `modbus_slavers`.`name` AS name, `modbus_slavers_types`.`type` AS type, 
         `modbus_slavers`.`address` AS address, `modbus_buses`.`name` AS busname, `modbus_buses`.`type` AS bustype,
-        `modbus_buses`.`baudrate` AS budrate, `modbus_buses`.`parity` AS parity, `modbus_buses`.`stopbits` AS stopbits,
+        `modbus_buses`.`baudrate` AS baudrate, `modbus_buses`.`parity` AS parity, `modbus_buses`.`stopbits` AS stopbits,
         `modbus_buses`.`ip` AS ip, `modbus_buses`.`port` AS port 
           FROM `modbus_slavers`  
           INNER JOIN `modbus_slavers_types` ON modbus_slavers.type = modbus_slavers_types.id 
@@ -18,6 +18,25 @@ class Modbus extends System {
         
         $device = $sql->fetch(PDO::FETCH_OBJ);
         return $device;
+    }
+
+    /**
+     * Получение настроек шины из БД
+     */
+    public static function getBus($idBus) {
+
+        $sql = parent::$db->query("SELECT `modbus_buses`.`name` AS busname,
+                                          `modbus_buses`.`type` AS bustype,
+                                          `modbus_buses`.`baudrate` AS baudrate,
+                                          `modbus_buses`.`parity` AS parity,
+                                          `modbus_buses`.`stopbits` AS stopbits,
+                                          `modbus_buses`.`ip` AS ip,
+                                          `modbus_buses`.`port` AS port
+                                   FROM `modbus_buses`
+                                   WHERE `modbus_buses`.`id`= $idBus");
+        
+        $bus = $sql->fetch(PDO::FETCH_OBJ);
+        return $bus;
     }
 
     /**

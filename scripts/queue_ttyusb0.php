@@ -15,20 +15,20 @@ try {
     $beanstalk = new Client();
     $beanstalk->connect();
     $beanstalk->watch('/dev/ttyUSB0');
-    
-    while (true) {
-        
-        $job = $beanstalk->reserve(); // Block until job is available.
-        $body = json_decode($job['body']);
-        $result = '';
-    
-        try {
-            $modbus = new ModbusRtu ();
-            $modbus->deviceInit('/dev/ttyUSB0', 9600, 'none', 8, 1, 'none');
-            $modbus->deviceOpen();
-            $modbus->debug = true;
-        
 
+    try {
+        $modbus = new ModbusRtu ();
+        $modbus->deviceInit('/dev/ttyUSB0', 9600, 'none', 8, 1, 'none');
+        $modbus->deviceOpen();
+        $modbus->debug = true;
+    
+        while (true) 
+        {
+        
+            $job = $beanstalk->reserve(); // Block until job is available.
+            $body = json_decode($job['body']);
+            $result = '';
+    
             if ($body->function_code == 1)
                 $tcpPacket = new ReadCoilsRequest($body->starting_address, $body->quantity, $body->slave_address);
             // if ($body->function_code == 2)
@@ -102,20 +102,20 @@ try {
             }
 
         }
-        catch (Throwable $ex) {
-            echo "Произошла ошибка:" . PHP_EOL;
-            echo $ex . PHP_EOL;
-        }
-        finally {
-            $modbus->deviceClose();
-        }
+    }    
+    catch (Throwable $ex) {
+        echo "Произошла ошибка:" . PHP_EOL;
+        echo $ex . PHP_EOL;
+    }
+    finally {
+        $modbus->deviceClose();
+    }
     
-        $beanstalk->delete($job['id']);
+    $beanstalk->delete($job['id']);
 
 // Запись в базу
 // if ($result) пишем в базу $result
 
-    }
 }
 catch (Throwable $ex) {
     echo "Произошла ошибка:" . PHP_EOL;

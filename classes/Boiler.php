@@ -12,18 +12,6 @@ class Boiler extends System
     {
         $sql = parent::$db->query("SELECT * FROM boiler WHERE `id_object` = $idObject");
         $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
-
-        //TODO:: Нужно в запросе получить ИД устройства, через которое будем работать с котлом
-        //Определяем параметры контроллера бойлера
-        $sql = parent::$db->query("SELECT devtypes.nam AS type_controller, devices.ip_address AS address, devices.port AS port FROM devtypes 
-                                   INNER JOIN devices ON devtypes.id = devices.type WHERE devices.id = {$this->boiler->id_controller}");
-        $boiler_controller = $sql->fetch(PDO::FETCH_OBJ);
-        $this->boiler->idObject = $idObject;
-        $this->boiler->type_controller = $boiler_controller->type_controller;
-        $this->boiler->address_controller = $boiler_controller->address; //TODO:: убрать
-        $this->boiler->port = $boiler_controller->port; //TODO:: убрать
-       
-
     }
 
     /**
@@ -31,27 +19,28 @@ class Boiler extends System
      */
     private function fillElements()
     {
-        //TODO:: добавить контур ГВС
 
         //Обновление значения подачи для всех элементов с таким типом
         $cooliantSupply = '[{"status":"'.$this->boiler->feed_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$cooliantSupply' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'csupply'");
-        Labels::setValue($this->boiler->feed_heat_temp.'°С', "температура подачи", $this->boiler->idObject);
+        Labels::setValue($this->boiler->feed_heat_temp.'°С', "csupply", $this->boiler->idObject);
 
 
         //Обновление значения обратки для всех элементов с таким типом
         $cooliantReturn = '[{"status":"'.$this->boiler->back_heat_temp.'°С"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$cooliantReturn' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
-        Labels::setValue($this->boiler->back_heat_temp.'°С', "температура обратки", $this->boiler->idObject);
+        Labels::setValue($this->boiler->back_heat_temp.'°С', "creturn", $this->boiler->idObject);
 
+        //TODO:: добавить температуру контура ГВС по аналогии с cooliantSupply
+        //TODO:: сделать Labels::setValue для контура ГВС, название для опции gvssupply
 
         //Обновление состояния давления теплоносителя
         $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
         parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
-        Labels::setValue($this->boiler->pressure.'b', "давление", $this->boiler->idObject);        
+        Labels::setValue($this->boiler->pressure.'b', "pressure", $this->boiler->idObject);        
 
 
         //Обновление целевой температуры котла
@@ -79,7 +68,9 @@ class Boiler extends System
         $ext_error = '[{"status":"'.$this->boiler->ext_error.'"]';
             parent::$db->exec("UPDATE elements SET `value` = '$ext_error' 
                                        WHERE `id_object` = {$this->boiler->id_object} AND handle = 'ext_error'");
-        //TODO:: сделать вставку в Label текста о расшифрованной ошибке
+        //TODO:: сделать вставку в Label текста о расшифрованной ошибке (данные должны вставляться в поле message ячейки params в таблице view_item)
+        // Это нужно для того, чтобы при длительном нажатии на кнопку с кодом ошибки еще можно было показать её расшифровку, если котел это выдает
+        // Функцию вставки в params нужно сделать в классе Labels
 
         //Обновление значения статуса котла для всех элементов с таким типом
         if($this->boiler->boiler == 1)
@@ -160,7 +151,7 @@ class Boiler extends System
 
 
     /**
-     * Получение всех параметров котла
+     * Получение всех параметров котла и выставление температуры на термостате котла в зависимости от тех параметров, которые ранее записали в БД
      */
     public function check() {
 
@@ -188,10 +179,11 @@ class Boiler extends System
             $this->boiler->target_heat_temp = $boiler_manualparams->set_value;
         }
 
-        
-        if ($this->boiler->type_controller == "nevoton") {
-            $this->sendDataToNevoton(); 
-            $this->reqDataFromNevoton();
+        //TODO:: переделать блок ниже, по $this->boiler->type_gateway нужно определить, что устройство относится к modbus и вызывать метод для модбаса (тут указан)
+        // как sendDataToNevoton
+        if ($this->boiler->type_gateway == "modbus") {
+            $this->sendDataToModbus(); 
+            $this->reqDataFromModbus();
         } else {
             $this->sendDataToTouchonEbus();
             $this->reqDataFromTouchonEbus();
@@ -218,24 +210,17 @@ class Boiler extends System
         $this->fillElements();
     }
 
-    //Установить температуру отопления для котла
+    /**
+     * Установить температуру отопления для котла
+     */
     public function setHeat(int $temperature) {
         if (!$this->boiler->lock) {
         $this->boiler->target_heat_temp = $temperature;
         parent::$db->exec("UPDATE boiler SET `target_heat_temp` = {$temperature}
                               WHERE `id_object` = {$this->boiler->id_object}");
 
-        if ($this->boiler->type_controller == "nevoton") {
-            
-            $modbus = $this->modbusSetup();
-
-            //включение систем котла
-            $result = $modbus->sendQuery(9, 1, "03E7", 1);
-            //Включение ручного режима (отключение термостата)
-            $modbus->sendQuery(9, 1, "03EC", 1);
-             //Запись температуры котла
-            $modbus->sendQuery($this->boiler->address, 6, "0x03FA", $this->boiler->target_heat_temp);
-            $modbus->deviceClose();
+        if ($this->boiler->type_gateway == 'modbus') {
+           $this->setHeatTempOnBoiler($temperature);
         }else {
             file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat=$temperature}");
     }
@@ -252,21 +237,10 @@ class Boiler extends System
         parent::$db->exec("UPDATE boiler SET `target_water_temp` = {$temperature}
                               WHERE `id_object` = {$this->boiler->id_object}");
 
-        if ($this->boiler->type_controller == "nevoton") {
-          
-            $modbus = $this->modbusSetup();
-
-            //включение систем котла
-            $result = $modbus->sendQuery(9, 1, "03E7", 1);
-            //Включение ручного режима (отключение термостата)
-            $modbus->sendQuery(9, 1, "03EC", 1);
-             //Запись температуры ГВС
-             $modbus->sendQuery($this->boiler->address, 6, "0x0400", $this->boiler->target_water_temp);
-             $modbus->deviceClose();
+        if ($this->boiler->type_gateway == 'modbus') {   
+        $this->setWaterTempOnBoiler($temperature);
         } else {
-            
                 file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&water=$temperature}");    
-            
         }
     }
        
@@ -376,84 +350,128 @@ class Boiler extends System
     }
 
 
-    // Отправка данных на котел Невотон
-    private function sendDataToNevoton() {
-
-        $modbus = $this->modbusSetup();
-
-        //Включение ручного режима (отключение термостата)
-        $modbus->sendQuery(9, 1, "03EC", 1);
-        //Запись температуры котла
-        $modbus->sendQuery($this->boiler->address, 6, "0x03FA", $this->boiler->target_heat_temp);
-        //Запись температуры ГВС
-        $modbus->sendQuery($this->boiler->address, 6, "0x0400", $this->boiler->target_water_temp);
-
-        $modbus->deviceClose();
+    // Отправка данных на котел с модбасом
+    private function sendDataToModbus() {
+       
+        // - включение ручного режима котла
+        $this->setManualModeOnBoiler("enable");
+        // - установка температуры котла
+        $this->setHeatTempOnBoiler($this->boiler->target_heat_temp);
+        // - установка температуры ГВС
+        $this->setWaterTempOnBoiler($this->boiler->target_heat_temp);
     }
 
-    // Опрос котла Невотон
-    private function reqDataFromNevoton() {
-
-      $modbus = $this->modbusSetup();
+    /**
+     *  Извлечение данных для котла из таблицы регистров
+     * */ 
+    private function reqDataFromModbus() {
 
         //модуляция горелки
-        $this->boiler->flame = $modbus->sendQuery($this->boiler->address, 3, "03EF", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'flame');
+        $this->boiler->flame = Action::runAction($method->id);
         //давление
-        $this->boiler->pressure = $modbus->sendQuery($this->boiler->address, 3, "03F0", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'pressure');
+        $this->boiler->pressure = Action::runAction($method->id);
         //скорость потока ГВС
-        $this->boiler->GVS_flow_rate = $modbus->sendQuery($this->boiler->address, 3, "03F1", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'flow_rate');
+        $this->boiler->GVS_flow_rate = Action::runAction($method->id);
         //температура котла
-        $this->boiler->feed_heat_temp = $modbus->sendQuery($this->boiler->address, 3, "03F2", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'feed_heat_temp');
+        $this->boiler->feed_heat_temp = Action::runAction($method->id);
         //температура ГВС
-        $this->boiler->water_temp = $modbus->sendQuery($this->boiler->address, 3, "03F3", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'water_temp');
+        $this->boiler->water_temp = Action::runAction($method->id);
         //Внешняя температура
-        $this->boiler->outdoor_temp = $modbus->sendQuery($this->boiler->address, 3, "03F4", 1);
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'outdoor_temp');
+        $this->boiler->outdoor_temp = Action::runAction($method->id);
+        //Температура в помещении
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'indoor_temp');
+        $this->boiler->indoor_temp = Action::runAction($method->id);
         
-        //считывание признака ошибки
-        $err = $modbus->sendQuery($this->boiler->address, 1, "03F9", 1);
-        if ($err != null) {
+        //считывание признака наличия ошибки
+        $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_flag');
+        $this->boiler->error_flag = Action::runAction($method->id);
+
+        if ($this->boiler->error_flag != null) {
             //Если признак ошибки есть, то записываем код ошибки
-            $this->boiler->error_code =  $modbus->sendQuery($this->boiler->address, 3, "03F6", 1);
+            $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_code');
+            $this->boiler->error_code = Action::runAction($method->id);
             //Если у котла есть функция получения расширенной ошибки
-            $ext_err_flag = $modbus->sendQuery($this->boiler->address, 1, "03FA", 1);
-            if ( $ext_err_flag != null) {
+            $method = Objects::getMethodByAlias($this->boiler->id_object, 'ext_err_flag');
+            $this->boiler->ext_err_flag = Action::runAction($method->id);
+            if ($this->boiler->ext_err_flag != null) {
                 
-                if ($modbus->sendQuery($this->boiler->address, 1, "03FB", 1) == 1)
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_flow_press');
+                $errorFlowPress = Action::runAction($method->id);
+                if ($errorFlowPress == 1)
                 $this->boiler->ext_error = "Ошибка воздушного давления";
 
-                if ($modbus->sendQuery($this->boiler->address, 1, "3FC", 1) == 1)
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_flame');
+                $errorFlame = Action::runAction($method->id);
+                if ($errorFlame == 1)
                 $this->boiler->ext_error = "Ошибка по газу/пламени";
 
-                if ($modbus->sendQuery($this->boiler->address, 1, "3FD", 1) == 1)
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_lock_control');
+                $errorLockControl = Action::runAction($method->id);
+                if ($errorLockControl == 1)
                 $this->boiler->ext_error = "Блокировка внешнего управления";
 
-                if ($modbus->sendQuery($this->boiler->address, 1, "3FE", 1) == 1)
-                $this->boiler->ext_error = "Ошибка низкого давления воды";
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_low_water');
+                $errorLowWater = Action::runAction($method->id);
+                if ($errorLowWater == 1)
+                $this->boiler->ext_error = "Низкое давления теплоносителя";
 
-                if ($modbus->sendQuery($this->boiler->address, 1, "3FF", 1) == 1)
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_need_service');
+                $errorNeedService = Action::runAction($method->id);
+                if ($errorNeedService == 1)
                 $this->boiler->ext_error = "Необходимо внешнее обслуживание";
 
-                if ($modbus->sendQuery($this->boiler->address, 1, "400", 1) == 1)
-                $this->boiler->ext_error = "Ошибка превышения максимальной температуры воды";
-
+                $method = Objects::getMethodByAlias($this->boiler->id_object, 'error_max_temp');
+                $errorMaxTemp = Action::runAction($method->id);
+                if ($errorMaxTemp == 1)
+                $this->boiler->ext_error = "Превышение максимальной температуры теплоносителя";
             }
         }
-        $modbus->deviceClose();
-
     }
 
     //Установка параметров работы модбас
-    private function modbusSetup() {
-        $modbus = new PhpSerialModbus;
+    // private function modbusSetup() {
+    //     $modbus = new PhpSerialModbus;
 
-        if ($this->boiler->port == 0 ) $pt = '/dev/ttyUSB0';
-        else $pt = '/dev/ttyUSB1'; 
+    //     if ($this->boiler->port == 0 ) $pt = '/dev/ttyUSB0';
+    //     else $pt = '/dev/ttyUSB1'; 
 
-        $modbus->deviceInit($pt, 9600, 'none', 8, 1, 'none');
-        $modbus->deviceOpen();
-        $modbus->debug = true;
+    //     $modbus->deviceInit($pt, 9600, 'none', 8, 1, 'none');
+    //     $modbus->deviceOpen();
+    //     $modbus->debug = true;
 
-        return $modbus;
+    //     return $modbus;
+    // }
+
+
+    /**
+     * Установка режима котла для работы от внешнего термостата (контроллера) mode=enable или от внутренней логики котла mode=disable 
+     */
+    public function setManualModeOnBoiler($mode) {
+        //Найти метод из таблицы методов, который соответствует объекту котла
+        $method = Objects::getMethodByAlias($this->boiler->id_object, "manual_mode");
+        Action::runAction($method->id, null, null, $mode);
+    }
+
+    /**
+     * Установка температуры котла на устройстве
+     */
+    public function setHeatTempOnBoiler($temp) {
+        $method = Objects::getMethodByAlias($this->boiler->id_object, "set_heat_temp");
+        Action::runAction($method->id, null, null, $temp);
+    }
+
+      /**
+     * Установка температуры ГВС на устройстве
+     */
+    public function setWaterTempOnBoiler($temp) {
+        $method = Objects::getMethodByAlias($this->boiler->id_object, "set_water_temp");
+        Action::runAction($method->id, null, null, $temp);
     }
 
 }

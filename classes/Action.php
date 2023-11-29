@@ -61,18 +61,17 @@ class Action extends Megad
         self::$idScript = $method->script;
         $object = new Objects();
         $object->select($method->id_object);
-        if (self::$easy)
-        {
-            self::easy($causingObject, $object, $whence, $params);
-        }
-        elseif ((self::$idScript) && ($method->is_system == 0))
-        self::script($object);
-        else
-        self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 
         Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
         if ($idCausing != $method->id_object)
         Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+
+        if (self::$easy)
+        return self::easy($causingObject, $object, $whence, $params);
+        elseif ((self::$idScript) && ($method->is_system == 0))
+        self::script($object);
+        else
+        self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 
         }
           
@@ -87,10 +86,15 @@ class Action extends Megad
     {
         
         $porteasy = explode(';',self::$easy);
-
-        $device = parent::getDeviceParams($porteasy[0]);
-        $ip_device = $device->ip_address;
-        $password = $device->password;
+           
+        if ($porteasy[0] == 'm') { //Если в easy указано устройство модбас
+            //Запускаем команду на устройстве модбас по его id
+            return Modbus::runCommand($porteasy[1], $params);
+        } else { //Если в easy указано другое устройство, нарпимер контроллер мегадевайс
+            $device = parent::getDeviceParams($porteasy[0]);
+            $ip_device = $device->ip_address;
+            $password = $device->password;
+        
 
         $portAndCmd = explode(':', $porteasy[1]);
         $port = $portAndCmd[0];
@@ -143,6 +147,7 @@ class Action extends Megad
             $object->setStatus($state);
             return $state;
         }
+    }
     }
 
 

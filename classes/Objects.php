@@ -275,4 +275,16 @@ class Objects extends System
         Action::runAction($idMethod, 'script', $object->id);
 
     }
+
+    /**
+     * Полчение метода объекта по его алиасу и ид объекта
+     */
+    public static function getMethodByAlias($idObject, $alias) {
+
+        $sql = parent::$db->query("SELECT id, name, alias, easy, script, params FROM methods  
+        WHERE id_object =  $idObject AND alias = $alias");
+
+        $method = $sql->fetch(PDO::FETCH_OBJ);
+        return $method;
+    }
 }

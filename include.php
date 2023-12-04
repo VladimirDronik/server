@@ -74,6 +74,7 @@ require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 // ModbusTCP library
 require_once __DIR__.'/libs/modbus/ModbusTcp.php';
+require_once __DIR__. '/libs/modbus/ModbusFunctions.php';
 
 // ModbusSerial library
 require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';

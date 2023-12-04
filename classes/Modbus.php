@@ -1,5 +1,7 @@
 <?php
 
+// require_once '../vendor/autoload.php';
+use Beanstalk\Client;
 
 class Modbus extends System {
     
@@ -21,9 +23,35 @@ class Modbus extends System {
     }
 
     /**
+     * Получение параметров регистров устройств ModBus по их id
+     */
+    public static function getModbusRegister($modbusRegisterId) {
+
+        $sql = parent::$db->query("SELECT `modbus_registers`.`register_type` AS register_type,
+                                          `modbus_registers`.`starting_register` AS starting_register,
+                                          `modbus_registers`.`name` AS register_name,
+                                          `modbus_registers`.`registers_quantity` AS registers_quantity,
+                                          `modbus_registers`.`data_format` AS data_format,
+                                          `modbus_registers`.`units` AS units,
+                                          `modbus_registers`.`scale_unit` AS scale_unit,
+                                          `modbus_registers`.`access` AS access,
+                                          `modbus_slavers`.`id` AS slaver_id,
+                                          `modbus_slavers`.`address` AS address,
+                                          `modbus_buses`.`id` AS bus_id,
+                                          `modbus_buses`.`name` AS bus_name
+                                   FROM `modbus_registers`  
+                                   INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                   INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
+                                   WHERE `modbus_registers`.`id`= $modbusRegisterId");
+        
+        $modbusRegister = $sql->fetch(PDO::FETCH_OBJ);
+        return $modbusRegister;
+    }
+
+    /**
      * Получение настроек шины из БД
      */
-    public static function getBus($idBus) {
+    public static function getModbusBus($idBus) {
 
         $sql = parent::$db->query("SELECT `modbus_buses`.`name` AS busname,
                                           `modbus_buses`.`type` AS bustype,
@@ -40,18 +68,80 @@ class Modbus extends System {
     }
 
     /**
+     * Постановка задания на чтение/запись регистра(ов) в очередь
+     */
+    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, $value = null)
+    {
+        $modbusRegister = self::getModbusRegister($modbusRegisterId);
+        
+        if ($action == 'read')
+        {
+            if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
+            if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
+            if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
+            if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
+        }
+
+        if ($action == 'write')
+        {
+            $priority = 0;
+            if ($modbusRegister->register_type == 'coil') $modbusFunction = 5;
+            else $modbusFunction = 6;
+        }
+        
+        $beanstalk = new Client();
+        $beanstalk->connect();
+        $beanstalk->useTube($modbusRegister->bus_id);
+
+        $task = array
+        (
+            'register_id' => $modbusRegisterId,                         // ID регистра
+            'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
+            'function_code' => $modbusFunction,                         // Функция Modbus
+            'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
+            'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
+            'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
+            'value' => $value,                                          // Данные для операций записи
+            'format' => $modbusRegister->data_format,                   // Формат считываемых данных
+            'title' => $modbusRegister->register_name,                  // Название регистра
+            'units' => $modbusRegister->units,                          // Единицы имерения
+            'scale' => $modbusRegister->scale_unit                      // Множитель значения
+        );
+
+        $beanstalk->put($priority, 0, 5, json_encode($task));
+    }
+
+    /**
+     * Получение последнего значения регистра из БД
+     */
+    public static function getRegisterValue(int $modbusRegisterId)
+    {
+        $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
+                                          `modbus_registers`.`units` AS units,
+                                          `modbus_slavers`.`active` AS slaver_active
+                                   FROM `modbus_registers`
+                                   INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                   WHERE `modbus_registers`.`id` = $modbusRegisterId");
+        $register = $sql->fetch(PDO::FETCH_OBJ);
+        if ((bool)$register->slaver_active) $lastValue = $register->last_value;
+        else $lastValue = null;
+        return $lastValue;
+    }
+
+
+    /**
      * Получение всех модбас устройств, которые есть на шине по её номеру
      * Возвращает массив модбас устройств, в котором содержится адрес устройства на шине
      */
-    public static function getAllDevicesOnBus($busNumber) {
+    public static function getAllDevicesOnBus($busId) {
       
-         $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= busNumber");
+         $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= $busId");
          if($sql->rowCount() > 0) {
             $devices = $sql->fetchAll(PDO::FETCH_OBJ);
 
             foreach ($devices AS $device) {
 
-                $modbusArray[$devices->id] = $devices->address;
+                $modbusArray[$device->id] = $device->address;
             }
 
             return $modbusArray;
@@ -88,10 +178,43 @@ class Modbus extends System {
     /**
      * Запись значения регистра в БД с регистрами при опросе шины
      */
-    public static function setValue($id, $value) {
-        $sql = parent::$db->exec("UPDATE `modbus_registers` SET last_value = $value WHERE `id`=$id");
+    public static function setValue(int $id, string $value) {
+        $sql = parent::$db->exec("UPDATE `modbus_registers` 
+                                  SET `timestamp` = CURRENT_TIMESTAMP(3),
+                                      `last_value` = '" . $value . "' 
+                                  WHERE `id` = $id");
+        
+        // $sql = parent::$db->exec("UPDATE `modbus_registers` 
+        //                           SET `last_value` = '" . $value . "' 
+        //                           WHERE `id` = $id");
     }
 
+    /**
+     * Установка флага активности для устройства на шине ModBus
+     */
+    public static function setSlaverActivity(int $slaver_id, bool $activity) {
+        $sql = parent::$db->exec("UPDATE `modbus_slavers` SET `active` = $activity WHERE `id` = $slaver_id");
+    }
 
+    public static function listOfRegistersToPoll (int $polling_cycle)
+    {
+        $sql = parent::$db->query("SELECT `modbus_registers`.`id` AS register_id,
+                                          `modbus_registers`.`timestamp` AS timestamp,
+                                          `modbus_registers`.`polling` AS polling,
+                                          `modbus_registers`.`polling_cycle` AS polling_cycle
+                                   FROM `modbus_registers`");
+        
+        while ($registers = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            if ($registers->polling == 1 && $registers->polling_cycle == $polling_cycle)
+            {
+                $pieces = explode ('.', $registers->timestamp);
+                $timestamp = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
+                $registers_array[(int)$registers->register_id] = $timestamp;
+            }
+		}
+
+        return $registers_array;
+    }
 
 }

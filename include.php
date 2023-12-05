@@ -80,5 +80,6 @@ require_once __DIR__. '/libs/modbus/ModbusFunctions.php';
 require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';
 require_once __DIR__.'/libs/modbus/ModbusRtu.php';
 
+require_once  __DIR__.'/vendor/autoload.php';
 
 System::dbConnect($host, $dbname, $dbuser, $dbpass);

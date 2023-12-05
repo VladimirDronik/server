@@ -14,7 +14,7 @@ class ModbusQueue extends System {
      */
     public function __construct($idBus)
     {
-        self::$bus = Modbus::getModbusBus($idBus);
+        self::$bus = Modbus::getModbusBusSettings($idBus);
         self::$idBus = $idBus;
     }
 

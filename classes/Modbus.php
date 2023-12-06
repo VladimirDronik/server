@@ -217,21 +217,25 @@ class Modbus extends System {
     {
         $sql = parent::$db->query("SELECT `modbus_registers`.`id` AS register_id,
                                           `modbus_registers`.`timestamp` AS timestamp,
-                                          `modbus_registers`.`polling` AS polling,
-                                          `modbus_registers`.`polling_cycle` AS polling_cycle,
                                           `modbus_buses`.`id` AS bus_id
                                      FROM `modbus_registers`
                                INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
                                INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
-                                    WHERE `modbus_buses`.`id`= $busId");
+                                    WHERE `modbus_buses`.`id`= $busId 
+                                      AND `modbus_registers`.`polling` = 1
+                                      AND `modbus_registers`.`polling_cycle` = $polling_cycle");
     
         while ($registers = $sql->fetch(PDO::FETCH_OBJ))
         {
-            if ($registers->polling == 1 && $registers->polling_cycle == $polling_cycle)
+            if ($polling_cycle == 0)
             {
                 $pieces = explode ('.', $registers->timestamp);
                 $timestamp = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
                 $registers_array[(int)$registers->register_id] = $timestamp;
+            }
+            else
+            {
+                $registers_array[] = (int)$registers->register_id;
             }
 		}
 

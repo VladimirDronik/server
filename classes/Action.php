@@ -36,13 +36,14 @@ class Action extends Megad
      */
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $method_params=null, $sendMessage=true)
     {
-
-        $causingObject = new Objects();
-
-        //Меняем состояние объекта и итема, которые вызвали действие
-        $causingObject->select($idCausing);
-
-
+        if ($idCausing)
+        {
+            //Меняем состояние объекта и итема, которые вызвали действие
+            $causingObject = new Objects();
+            $causingObject->select($idCausing);
+        }
+        
+        
         //Если дейстивие происходит по замыканию порта в любом режиме
         // или если действие происходит без удержания
         // или если действие происходит с удержанием кнопки и объект является кнопкой
@@ -55,23 +56,20 @@ class Action extends Megad
 
             $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
             FROM `methods` WHERE `methods`.`id`=$idMethod");
-        $method = $sql->fetch(PDO::FETCH_OBJ);
+            $method = $sql->fetch(PDO::FETCH_OBJ);
 
         self::$easy = $method->easy;
         self::$idScript = $method->script;
         $object = new Objects();
         $object->select($method->id_object);
 
-        Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
-        if ($idCausing != $method->id_object)
-        Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+            if ($idCausing) Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
+            if ($idCausing != $method->id_object)
+            Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
 
-        if (self::$easy)
-        return self::easy($causingObject, $object, $whence, $params);
-        elseif ((self::$idScript) && ($method->is_system == 0))
-        self::script($object);
-        else
-        self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
+            if (self::$easy) return self::easy($object, $whence, $params);
+            elseif ((self::$idScript) && ($method->is_system == 0)) self::script($object);
+            else self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 
         }
           
@@ -82,14 +80,13 @@ class Action extends Megad
      * Выполнение простого действия в таблице портов
      * @param int $object объект, который вызвал действие
      */
-    static private function easy($idCausing, $object, $whence, $params = null)
+    static private function easy($object, $whence, $params = null)
     {
         
         $porteasy = explode(';',self::$easy);
-           
         if ($porteasy[0] == 'm') { //Если в easy указано устройство модбас
             //Запускаем команду на устройстве модбас по его id
-            return Modbus::runCommand($porteasy[1], $params);
+            return Modbus::putTaskIntoQueue($porteasy[1], 'write', 5, $params);
         } else { //Если в easy указано другое устройство, нарпимер контроллер мегадевайс
             $device = parent::getDeviceParams($porteasy[0]);
             $ip_device = $device->ip_address;

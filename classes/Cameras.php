@@ -142,17 +142,40 @@ class Cameras extends Device
 
     static private function addPath($camera_id)
     {
-        $data = array("source" => self::getValidRtspLink($camera_id));
+        if (!self::ifPathExists($camera_id))
+            {
+                $data = array("source" => self::getValidRtspLink($camera_id));
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, 'http://localhost:9997/v3/config/paths/add/camera'.$camera_id);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data, JSON_UNESCAPED_UNICODE));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_HEADER, false);
+                $res = curl_exec($ch);
+                if (curl_errno($ch)) echo 'Error:' . curl_error($ch);
+                curl_close($ch);
+            }
+    }
+
+    static private function ifPathExists($camera_id)
+    {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://localhost:9997/v3/config/paths/add/camera'.$camera_id);
+        curl_setopt($ch, CURLOPT_URL, 'http://localhost:9997/v3/config/paths/get/camera'.$camera_id);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data, JSON_UNESCAPED_UNICODE));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_HEADER, false);
         $res = curl_exec($ch);
         if (curl_errno($ch)) echo 'Error:' . curl_error($ch);
+        else 
+        {
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($http_code != 200) $result = false;
+            else $result = true;
+        }
         curl_close($ch);
+        return $result;
     }
 }

@@ -162,7 +162,7 @@ class Cameras extends Device
     static private function ifPathExists($camera_id)
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://localhost:9997/v3/config/paths/get/camera'.$camera_id);
+        curl_setopt($ch, CURLOPT_URL, 'http://localhost:9997/v3/paths/get/camera'.$camera_id);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);

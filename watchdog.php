@@ -81,9 +81,8 @@ if ($restart)
     // if($output[2] == 'Workerman[server.php] stop fail') exec('/sbin/reboot'); //Перезапускаем весь сервер
 
     if ($options = getenv('SERVER_OPTIONS')) $options .= " ";
-    passthru("(php -f server.php restart " . isset($options) . "& ) >> /dev/null 2>&1");
+    else $options = "";
+    passthru("(php -f server.php restart " . $options . "& ) >> /dev/null 2>&1");
 }
 
 return true;
-
-

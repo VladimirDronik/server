@@ -15,12 +15,13 @@ class Megad extends System
         else
         {
             $ip_sql = parent::$db->query("SELECT `ip_address`, `type`, `active`, `password`
-                                              FROM devices WHERE id=$id_device");
+                                            FROM `devices`
+                                           WHERE `id` = $id_device");
             $device = $ip_sql->fetch(PDO::FETCH_OBJ);
+            if (empty($device->password)) $device->password = "";
+            else $device->password = $device->password . "/";
         }
-
         return $device;
-
     }
 
 
@@ -31,22 +32,19 @@ class Megad extends System
      */
     function set($numPort, $val, $id_device=null)
     {
-        $device = $this->getDeviceParams($id_device);
-        if (empty($device->password)) $devicePassword = "";
-        else $devicePassword = $device->password . "/";
+        $device = self::getDeviceParams($id_device);
 
         //Если устройство не активно, то не выполняем действие
         if($device->active)
-            file_get_contents("http://$device->ip_address/$devicePassword?cmd=$numPort:$val");
+            file_get_contents("http://$device->ip_address/$device->password?cmd=$numPort:$val");
         else
             system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
 
         //Получаем состояние порта, на который воздействуем
-        $state = file_get_contents("http://$device->ip_address/$devicePassword?pt=$numPort&cmd=get");
+        $state = file_get_contents("http://$device->ip_address/$device->password?pt=$numPort&cmd=get");
         $state = mb_strtolower(explode('/', $state)[0]);
 
         return $state;
-
     }
 
     /**
@@ -57,14 +55,14 @@ class Megad extends System
      */
     function setPWM($numPort, $val, $id_device, $speed=0)
     {
-        $device = $this->getDeviceParams($id_device);
+        $device = self::getDeviceParams($id_device);
 
         if ($speed != 0)
             $speedParam = '&cnt='.$speed;
 
         //Если устройство не активно, то не выполняем действие
         if($device->active)
-            file_get_contents("http://$device->ip_address/sec/?pt=$numPort&pwm={$val}{$speedParam}");
+            file_get_contents("http://$device->ip_address/$device->password?pt=$numPort&pwm={$val}{$speedParam}");
         else
             system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }
@@ -78,7 +76,8 @@ class Megad extends System
      **/
       static function status($port, $command = 'get', $idDevice = null, $param = 0)
     {
-        $state = file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cmd=$command");
+        $device = self::getDeviceParams($idDevice);
+        $state = file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/$device->password?pt=$port&cmd=$command");
         $state = explode('/',$state);
         return $state[$param];
     }
@@ -91,7 +90,8 @@ class Megad extends System
      */
     static function resetCount($idDevice, $port)
     {
-        file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/sec/?pt=$port&cnt=0");
+        $device = self::getDeviceParams($idDevice);
+        file_get_contents("http://".self::getDeviceParams($idDevice)->ip_address."/$device->password?pt=$port&cnt=0");
     }
 
 
@@ -105,13 +105,10 @@ class Megad extends System
     function get($port)
     {
         $ip_device = self::$ip_device;
-
-        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `status`,
-                                          `method`, `dc_method`, `lc_method`
-                                   FROM ports 
-                                   INNER JOIN devices ON ports.id_device = devices.id 
-                                   WHERE devices.ip_address = '$ip_device' AND ports.num_port = $port");
-
+        $sth = parent::$db->query("SELECT `ports`.`id`, `object`, `status`, `method`, `dc_method`, `lc_method`
+                                     FROM `ports` 
+                               INNER JOIN `devices` ON `ports`.`id_device` = `devices`.`id` 
+                                    WHERE `devices`.`ip_address` = '$ip_device' AND `ports`.`num_port` = $port");
         return $sth->fetch(PDO::FETCH_OBJ);
     }
 
@@ -132,7 +129,7 @@ class Megad extends System
         
         if($device->active)
         {
-            $get_str = "http://$device->ip_address/sec/?pt=$SDA&scl=$SCL&i2c_dev=$sensorType";
+            $get_str = "http://$device->ip_address/$device->password?pt=$SDA&scl=$SCL&i2c_dev=$sensorType";
             if ($i2cParametr) $get_str .= "&i2c_par=$i2cParametr";
             $value = file_get_contents($get_str);
             return $value;
@@ -148,8 +145,7 @@ class Megad extends System
         $value = round(4095*$value/100);
 
         if($device->active)
-            file_get_contents("http://$device->ip_address/sec/?cmd=".$sdaPort."e".$numPort.":".$value);
-
+            file_get_contents("http://$device->ip_address/$device->password?cmd=".$sdaPort."e".$numPort.":".$value);
 
     }
 

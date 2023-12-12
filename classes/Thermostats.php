@@ -160,7 +160,7 @@ class Thermostats extends Objects
         // Events::exicute($this->idObject, 'onStatus');
         
         //Отправка значения для labels
-        Labels::setValue(round($this->termostat->current,1).'°C', "текущая температура", $this->idObject);
+        Labels::setValue(round($this->termostat->current,1).'°C', "current", $this->idObject);
 
         if($this->termostat->current)
         {
@@ -284,7 +284,6 @@ class Thermostats extends Objects
                 /*Перебираем вернувшийсяя массив - находим в нем нужный термостат, берем значение его температуры
                 e2b5d7020000:23.62;1fa3d7020000:23.62*/
                 $termometrsarray = explode(';', $termometrs);
-
                 foreach ($termometrsarray as $termometr) 
                 {
                     $termarray = explode(':', $termometr);
@@ -295,7 +294,9 @@ class Thermostats extends Objects
             //термометр висит прямо на порту
             else
             {
+                
                 $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
+                var_dump($termometrs);
                 $termometrsarray = explode(':', $termometrs);
                 $id_termometr = $termostat->id_termometr;
                 $termometr_value = $termometrsarray[1];

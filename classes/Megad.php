@@ -32,15 +32,17 @@ class Megad extends System
     function set($numPort, $val, $id_device=null)
     {
         $device = $this->getDeviceParams($id_device);
+        if (empty($device->password)) $devicePassword = "";
+        else $devicePassword = $device->password . "/";
 
         //Если устройство не активно, то не выполняем действие
         if($device->active)
-        file_get_contents("http://$device->ip_address/$device->password/?cmd=$numPort:$val");
+            file_get_contents("http://$device->ip_address/$devicePassword?cmd=$numPort:$val");
         else
             system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
 
         //Получаем состояние порта, на который воздействуем
-        $state = file_get_contents("http://$device->ip_address/$device->password/?pt=$numPort&cmd=get");
+        $state = file_get_contents("http://$device->ip_address/$devicePassword?pt=$numPort&cmd=get");
         $state = mb_strtolower(explode('/', $state)[0]);
 
         return $state;

@@ -14,13 +14,16 @@ class Labels extends System
 
             foreach ($viewItems AS $item) {
                 //Записываем значение отображения
-               $query = system::$db->prepare("UPDATE view_items SET value = '$value' WHERE id = $item->id");
-               $query->execute();   
+                $query = system::$db->prepare("UPDATE view_items SET value = '$value' WHERE id = $item->id");
+                $query->execute();
+                
+                $view = new Views();
+                $view->updateItem($item->id);
             }
         }
 
-        $view = new Views();
-        $view->updateItem($item->id);
+        // $view = new Views();
+        // $view->updateItem($item->id);
     }
 
 }

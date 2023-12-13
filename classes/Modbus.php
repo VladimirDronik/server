@@ -11,7 +11,7 @@ class Modbus extends System {
     public static function getModbusDevice($idModbusDevice) {
 
         $sql = parent::$db->query("SELECT `modbus_slavers`.`id` AS id, `modbus_slavers`.`name` AS name, `modbus_slavers_types`.`type` AS type, 
-        `modbus_slavers`.`address` AS address, `modbus_buses`.`name` AS busname, `modbus_buses`.`type` AS bustype,
+        `modbus_slavers`.`address` AS address, `modbus_buses`.`device` AS busdevice, `modbus_buses`.`type` AS bustype,
         `modbus_buses`.`baudrate` AS baudrate, `modbus_buses`.`parity` AS parity, `modbus_buses`.`stopbits` AS stopbits,
         `modbus_buses`.`ip` AS ip, `modbus_buses`.`port` AS port 
           FROM `modbus_slavers`  
@@ -38,7 +38,7 @@ class Modbus extends System {
                                           `modbus_slavers`.`id` AS slaver_id,
                                           `modbus_slavers`.`address` AS address,
                                           `modbus_buses`.`id` AS bus_id,
-                                          `modbus_buses`.`name` AS bus_name
+                                          `modbus_buses`.`device` AS bus_device
                                      FROM `modbus_registers`  
                                INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
                                INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
@@ -73,7 +73,7 @@ class Modbus extends System {
      */
     public static function getModbusBusSettings($idBus)
     {
-        $sql = parent::$db->query("SELECT `modbus_buses`.`name` AS busname,
+        $sql = parent::$db->query("SELECT `modbus_buses`.`device` AS busdevice,
                                           `modbus_buses`.`type` AS bustype,
                                           `modbus_buses`.`baudrate` AS baudrate,
                                           `modbus_buses`.`parity` AS parity,
@@ -263,14 +263,14 @@ class Modbus extends System {
                         foreach ($diff as $value)
                         {
                             $registerId = array_search($value, $diff);
-                            echo "Register " . $registerId . " is sent to the queue" . PHP_EOL;
+                            echo date("Y-m-d H:i:s.u") . "   Register " . $registerId . " is sent to the queue" . PHP_EOL;
                             self::putTaskIntoQueue($registerId, 'read', 100);
                         }
                     }
                     //Обновляем исходный массив
                     $registersArray = array_replace($registersArray, $diff);
                 }
-                else echo "Registers are not found on " . $busId . " bus" . PHP_EOL;
+                else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
             }
     }
 

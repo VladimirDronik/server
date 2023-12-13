@@ -72,17 +72,17 @@ if (!$instance) {
 
 
 //Если есть флаг рестарта сервера сокетов
-if ($restart) {
+if ($restart)
+{
     System::addLog('error', 'Server is restarted from the watchdog', 'socket_server');
 
-    //Если остановка сервера вызывает ошибку
-    exec("php server.php stop", $output);
-   if($output[2] == 'Workerman[server.php] stop fail')
-        exec('/sbin/reboot'); //Перезапускаем весь сервер
+    // Если остановка сервера вызывает ошибку
+    // exec("php server.php stop", $output);
+    // if($output[2] == 'Workerman[server.php] stop fail') exec('/sbin/reboot'); //Перезапускаем весь сервер
 
-    passthru("(php -f server.php restart & ) >> /dev/null 2>&1");
+    if ($options = getenv('SERVER_OPTIONS')) $options .= " ";
+    else $options = "";
+    passthru("(php -f server.php restart " . $options . "& ) >> /dev/null 2>&1");
 }
 
 return true;
-
-

@@ -198,7 +198,11 @@ class Views extends System
 
         while ($temp = $sql->fetch(PDO::FETCH_OBJ)) {
 
-            $temp_array = array('id'=>(int)$temp->id, 'name'=>$temp->name, 'normal'=>$temp->normal, 'night'=>$temp->night, 'eco'=>$temp->eco);
+            $temp_array = array('id'=>(string)$temp->id,
+                                'name'=>(string)$temp->name,
+                                'normal'=>(string)$temp->normal,
+                                'night'=>(string)$temp->night, 
+                                'eco'=>(string)$temp->eco);
             $temperatures[] = $temp_array;
         }
 
@@ -1016,15 +1020,15 @@ class Views extends System
                     }
                     $element->value = json_encode($value);
 
-                    $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $element->position, 'handle' => $element->handle, 'elements'=>json_decode($element->value));
+                    $elements[] = array('id' => (string)$element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
+                        'position' => (string)$element->position, 'handle' => $element->handle, 'elements'=>json_decode($element->value));
                 }else
-                    $elements[] = array('id' => $element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => $element->position, 'handle' => $element->handle, 'value'=>json_decode($element->value));
+                    $elements[] = array('id' => (string)$element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
+                        'position' => (string)$element->position, 'handle' => $element->handle, 'value'=>json_decode($element->value));
 
             }
 
-            $pages[] = array('id' => $page->id, 'name' => $page->name, 'elements' => $elements);
+            $pages[] = array('id' => (string)$page->id, 'name' => $page->name, 'elements' => $elements);
             }
         }
 
@@ -1056,7 +1060,7 @@ class Views extends System
             $queryElements = parent::$db->query($elementsSQL);
             while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
 
-                $elements[] = array('id' => $element->id, 'title'=>$element->name, 'type'=>$element->type,
+                $elements[] = array('id' => (string)$element->id, 'title'=>$element->name, 'type'=>$element->type,
                     'position' => "1", 'value'=>json_decode($element->value));
             }
 
@@ -1070,13 +1074,13 @@ class Views extends System
 
                 while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
 
-                    $values[] = array('id' => $element->id, 't_out' => $element->t_out, 't_water' => $element->t_water);
+                    $values[] = array('id' => (string)$element->id, 't_out' => (string)$element->t_out, 't_water' => (string)$element->t_water);
                 }
                     $items[] = array('elements' => $elements, 'values' => $values);
 
                       $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                          'idPage' => $page->intpage, 'pages' => $items));
-
+                          'idPage' => (string)$page->intpage, 'pages' => $items));
+                echo $json;
                 return $json;
 
             } elseif($page->handle == 'manualmode') {
@@ -1092,14 +1096,14 @@ class Views extends System
                     $cur_value = round($manualValue->feed_heat_temp);
                     $set_value = round($manualValue->set_value);
 
-                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
-                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+                    $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
+                        'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
 
 
                     $items[] = array('elements' => $elements, 'valuesManual' => $values);
 
                     $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
-                        'idPage' => $page->intpage, 'pages' => $items));
+                        'idPage' => (string)$page->intpage, 'pages' => $items));
 
                     echo $json;
                     return $json;
@@ -1117,14 +1121,14 @@ class Views extends System
                     $cur_value = round($manualValue->water_temp);
                     $set_value = round($manualValue->target_water_temp);
 
-                    $values[] = array('cur_value' => "$cur_value", 'set_value' => "$set_value",
-                        'min' => $manualValue->min_value, 'max' => $manualValue->max_value);
+                    $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
+                        'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
 
 
-                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
+                    $items[] = array('elements' => (string)$elements, 'valuesManual' => (string)$values);
 
                     $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
-                        'idPage' => $page->intpage, 'pages' => $items));
+                        'idPage' => (string)$page->intpage, 'pages' => (string)$items));
 
                     echo $json;
                     return $json;

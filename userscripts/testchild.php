@@ -4,4 +4,7 @@
 
 require_once '../include.php';
 
-CurtainRS485::open(1);
+$path = Cameras::ifPathExists(21);
+
+var_dump ($path);
+

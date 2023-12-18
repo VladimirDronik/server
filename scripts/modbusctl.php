@@ -8,14 +8,19 @@ function startQueue($bus_id)
 {
         $output=null;
         exec("ps aux | grep '[m]odbus_queue.php $bus_id'", $output);
-        if (!$output) exec("(php modbus_queue.php $bus_id &) >> /dev/null 2>&1");
+        if (!$output)
+        {
+            exec("(php modbus_queue.php $bus_id &) >> /dev/null 2>&1");
+            return true;
+        }
+        else return false;
 }
 
 function startPoll($bus_id)
 {
         $output=null;
         exec("ps aux | grep '[m]odbus_polling_loop.php $bus_id'", $output);
-        if (!$output) passthru("(php modbus_polling_loop.php $bus_id &) >> /dev/null 2>&1");
+        if (!$output) exec("(php modbus_polling_loop.php $bus_id &) >> /dev/null 2>&1");
 }
 
 function stopQueue($bus_id)
@@ -34,15 +39,14 @@ if ($argv[1] == "start")
 {
     foreach ($modbusRtuBuses AS $bus_id)
     {
-        startQueue($bus_id);
-        startPoll($bus_id);
+        if (startQueue($bus_id)) startPoll($bus_id);
     }
 }
 elseif ($argv[1] == "stop")
 {
     foreach ($modbusRtuBuses AS $bus_id)
     {
-        stopQueue($bus_id);
         stopPoll($bus_id);
+        stopQueue($bus_id);
     }
 }

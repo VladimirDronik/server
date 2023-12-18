@@ -76,9 +76,10 @@ class Modbus extends System {
         $sql = parent::$db->query("SELECT `modbus_buses`.`device` AS busdevice,
                                           `modbus_buses`.`type` AS bustype,
                                           `modbus_buses`.`baudrate` AS baudrate,
+                                          `modbus_buses`.`length` AS length,
                                           `modbus_buses`.`parity` AS parity,
                                           `modbus_buses`.`stopbits` AS stopbits,
-                                          `modbus_buses`.`ip` AS ip,
+                                          `modbus_buses`.`ip_address` AS ip,
                                           `modbus_buses`.`port` AS port
                                      FROM `modbus_buses`
                                     WHERE `modbus_buses`.`id`= $idBus");

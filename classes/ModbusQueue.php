@@ -27,7 +27,7 @@ class ModbusQueue extends System {
         $beanstalk->connect();
 
         // Проверяем не создан ли уже tube
-        $tubesArary = $beanstalk->listTubes();
+        // $tubesArary = $beanstalk->listTubes();
 
         // $tubeExists = in_array(self::$bus->busname, $tubesArary);
 
@@ -56,7 +56,8 @@ class ModbusQueue extends System {
     {
         try {
             self::$modbus = $modbus = new ModbusRtu ();
-            $modbus->deviceInit('/dev/ttyUSB0', self::$bus->baudrate, self::$bus->parity, 8, self::$bus->stopbits, 'none');
+            $modbus->deviceInit(self::$bus->busdevice, self::$bus->baudrate, self::$bus->parity,
+                                self::$bus->length, self::$bus->stopbits, 'none');
             $modbus->deviceOpen();
             $modbus->debug = true;
             

@@ -59,12 +59,12 @@ class Action extends Megad
 
         self::$easy = $method->easy;
         self::$idScript = $method->script;
-
         $object = new Objects();
         $object->select($method->id_object);
-
         if (self::$easy)
-        self::easy($causingObject, $object, $whence, $params);
+        {
+            self::easy($causingObject, $object, $whence, $params);
+        }
         elseif ((self::$idScript) && ($method->is_system == 0))
         self::script($object);
         else
@@ -85,7 +85,7 @@ class Action extends Megad
      */
     static private function easy($idCausing, $object, $whence, $params = null)
     {
-
+        
         $porteasy = explode(';',self::$easy);
 
         $device = parent::getDeviceParams($porteasy[0]);
@@ -117,16 +117,16 @@ class Action extends Megad
                     if($params == 'OFF')
                         $command = 0;
 
-                    file_get_contents("http://$ip_device/$password/?cmd=$port:$command");
+                    file_get_contents("http://$ip_device/$password?cmd=$port:$command");
 
                 } else {
                         //Меняем статус порта на физическом устройстве так как есть без параметров
-                        file_get_contents("http://$ip_device/$password/?cmd=$porteasy[1]");
+                        file_get_contents("http://$ip_device/$password?cmd=$porteasy[1]");
                 }
 
 
                 //Получаем состояние порта, на который воздействуем
-                $state = file_get_contents("http://$ip_device/$password/?pt=$porteasy[1]&cmd=get");
+                $state = file_get_contents("http://$ip_device/$password?pt=$porteasy[1]&cmd=get");
                 $state = mb_strtolower(explode('/', $state)[0]);
             }
 
@@ -234,7 +234,7 @@ class Action extends Megad
             
             //Получаем состояние порта, на котором висит данный элемент
             $status = $object->getPortState();
-            
+
             //Присваиваем объекту это состояние
             $object->setStatus($status, true, false);
 

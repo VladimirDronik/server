@@ -106,7 +106,9 @@ class Modbus extends System {
         if ($action == 'write')
         {
             $priority = 0;
-            if ($modbusRegister->register_type == 'coil') $modbusFunction = 5;
+            if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
+            elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
+            elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
             else $modbusFunction = 6;
         }
         
@@ -264,8 +266,12 @@ class Modbus extends System {
                         foreach ($diff as $value)
                         {
                             $registerId = array_search($value, $diff);
-                            echo date("Y-m-d H:i:s.u") . "   Register " . $registerId . " is sent to the queue" . PHP_EOL;
-                            self::putTaskIntoQueue($registerId, 'read', 100);
+                            exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
+                            if ($output)
+                            {
+                                echo (new datetime())->format('Y-m-d H:i:s.v') . "   Polling register id " . $registerId . " is sent to the queue" . PHP_EOL;
+                                self::putTaskIntoQueue($registerId, 'read', 100);
+                            }
                         }
                     }
                     //Обновляем исходный массив

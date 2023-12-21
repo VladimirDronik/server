@@ -72,7 +72,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $result = (bool)$response[0];
         if ($result) $result = 'true';
         else $result = 'false';
-        echo date("Y-m-d H:i:s.u") . "   " . $task->title . ': ' . $result . PHP_EOL;
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
         echo PHP_EOL;
         return $result;
     }
@@ -120,7 +120,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
 
         if ($task->scale) $result = $result * $task->scale;
 
-        echo date("Y-m-d H:i:s.u") . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
         echo PHP_EOL;
         return $result;
     }
@@ -160,7 +160,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
 
         if ($task->scale) $result = $result * $task->scale;
 
-        echo date("Y-m-d H:i:s.u") . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
         echo PHP_EOL;
         return $result;
     }
@@ -183,7 +183,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $response = RtuConverter::fromRtu($binaryData);
         if ($task->value) $result = 'true';
         else $result = 'false';
-        echo date("Y-m-d H:i:s.u") . "   " . $task->title . ' изменено на: ' . $result . PHP_EOL;
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ' изменено на: ' . $result . PHP_EOL;
         echo PHP_EOL;
         return $response;
     }
@@ -204,7 +204,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     function writeSingleRegisterResponse($task, $binaryData)
     {
         $response = RtuConverter::fromRtu($binaryData);
-        echo date("Y-m-d H:i:s.u") . "   " . $task->title . ': ' . $task->value . PHP_EOL;
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
         return $response;
     }

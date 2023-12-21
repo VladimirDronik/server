@@ -179,9 +179,7 @@ class Boiler extends System
             $this->boiler->target_heat_temp = $boiler_manualparams->set_value;
         }
 
-        //TODO:: переделать блок ниже, по $this->boiler->type_gateway нужно определить, что устройство относится к modbus и вызывать метод для модбаса (тут указан)
-        // как sendDataToNevoton
-        if ($this->boiler->type_gateway == "modbus") {
+        if ($this->boiler->gateway_type == "modbus") {
             $this->sendDataToModbus(); 
             $this->reqDataFromModbus();
         } else {
@@ -219,7 +217,7 @@ class Boiler extends System
         parent::$db->exec("UPDATE boiler SET `target_heat_temp` = {$temperature}
                               WHERE `id_object` = {$this->boiler->id_object}");
 
-        if ($this->boiler->type_gateway == 'modbus') {
+        if ($this->boiler->gateway_type == 'modbus') {
            $this->setHeatTempOnBoiler($temperature);
         }else {
             file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&heat=$temperature}");
@@ -237,7 +235,7 @@ class Boiler extends System
         parent::$db->exec("UPDATE boiler SET `target_water_temp` = {$temperature}
                               WHERE `id_object` = {$this->boiler->id_object}");
 
-        if ($this->boiler->type_gateway == 'modbus') {   
+        if ($this->boiler->gateway_type == 'modbus') {   
         $this->setWaterTempOnBoiler($temperature);
         } else {
                 file_get_contents("http://{$this->boiler->ip_address}/thermostat?cmd=set&water=$temperature}");    

@@ -14,13 +14,17 @@ $script->cron($argv[1]); //Ищем в БД скрипт, который под�
 $modbusRtuBuses = Modbus::getModbusRtuBuses();
 foreach ($modbusRtuBuses AS $bus_id) 
 {
-    $modbusRegisters = Modbus::getRegistersToPoll ($argv[1], $bus_id);
-    foreach ((array)$modbusRegisters AS $registerId) 
+    $output=null;
+    exec("ps aux | grep '[m]odbus_queue.php $bus_id'", $output);
+    if ($output)
     {
-        if ($registerId) 
+        $modbusRegisters = Modbus::getRegistersToPoll ($argv[1], $bus_id);
+        foreach ((array)$modbusRegisters AS $registerId) 
         {
-            Modbus::putTaskIntoQueue($registerId, 'read', 99);
+            if ($registerId) 
+            {
+                Modbus::putTaskIntoQueue($registerId, 'read', 99);
+            }
         }
     }
-    
 }

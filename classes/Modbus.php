@@ -91,7 +91,7 @@ class Modbus extends System {
     /**
      * Постановка задания на чтение/запись регистра(ов) в очередь
      */
-    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, $value = null)
+    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, mixed $value = null)
     {
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         
@@ -112,12 +112,12 @@ class Modbus extends System {
             else $modbusFunction = 6;
         }
         
+        // var_dump ($modbusFunction);
         $beanstalk = new Client();
         $beanstalk->connect();
         $beanstalk->useTube($modbusRegister->bus_id);
 
-        $task = array
-        (
+        $task = array (
             'register_id' => $modbusRegisterId,                         // ID регистра
             'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
             'function_code' => $modbusFunction,                         // Функция Modbus

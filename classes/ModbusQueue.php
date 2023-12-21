@@ -84,6 +84,7 @@ class ModbusQueue extends System {
         {
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
+            // var_dump($task);
             $binaryData = self::$modbus->send(modbusFunction($task));
             if ($binaryData) 
             {

@@ -7,8 +7,9 @@ use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersRequest;
 use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteMultipleRegistersRequest;
+use ModbusTcpClient\Utils\Types;
 use ModbusTcpClient\Utils\Endian;
-
 
 /**
  * Вызываем необходимый метод в зависимости от отправленного кода
@@ -50,6 +51,12 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     {
         if ($response) return writeSingleRegisterResponse($task, $binaryData);
         else return writeSingleRegisterRequest($task);
+    }
+
+    if ($task->function_code == 16)
+    {
+        if ($response) return writeMultipleRegistersResponse($task, $binaryData);
+        else return writeMultipleRegistersRequest($task);
     }
 }
 
@@ -202,6 +209,37 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      * Обработка ответа записи одного регистра
      */
     function writeSingleRegisterResponse($task, $binaryData)
+    {
+        $response = RtuConverter::fromRtu($binaryData);
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
+        echo PHP_EOL;
+        return $response;
+    }
+
+    /**
+     * Функция записи нескольких регистров - 16
+     */
+    function writeMultipleRegistersRequest($task)
+    {
+        Endian::$defaultEndian = Endian::BIG_ENDIAN;
+        foreach ($task->value as &$value) 
+        {
+            if ($task->format == 's8' || $task->format == 'u8') $value = Types::toByte($value);
+            if ($task->format == 's16') $value = Types::toInt16($value);
+            if ($task->format == 'u16') $value = Types::toUint16($value);
+            if ($task->format == 's32') $value = Types::toInt32($value);
+            if ($task->format == 'u32') $value = Types::toUint32($value);
+        }
+       
+        $tcpPacket = new WriteMultipleRegistersRequest($task->starting_address, $task->value, $task->slave_address);
+        $rtuPacket = RtuConverter::toRtu($tcpPacket);
+        return $rtuPacket;
+    }
+
+    /**
+     * Обработка ответа записи одного регистра
+     */
+    function writeMultipleRegistersResponse($task, $binaryData)
     {
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;

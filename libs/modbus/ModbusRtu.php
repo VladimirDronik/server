@@ -174,16 +174,20 @@ class ModbusRtu
             $binaryData = fread($this->fd, 255);
         } while ($binaryData === '' && (microtime(true) - $start) < 3);
 
-        if ($this->debug) {
+        // if ($this->debug) {
             if ($binaryData) {
                 $end = (microtime(true) - $start) * 1000;
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                return $binaryData;
             }
-            else echo "No response from device" . PHP_EOL;
-        }
-        
-        return $binaryData;
+            else
+            {
+                echo "No response from device" . PHP_EOL;
+                return false;
+            }
+            
+        // }
     }
 
 }

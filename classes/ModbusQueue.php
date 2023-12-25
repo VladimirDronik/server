@@ -95,17 +95,17 @@ class ModbusQueue extends System {
                         if ($task->value) $response = 'true';
                         else $response = 'false';
                     }
-                    else 
-                    {
-                        if ($task->value == 0) $response = "0";
-                        else $response = "$task->value";
-                    }
-                    Modbus::setValue($task->register_id, $response);
-                    $activity = 1;
+                    else if ($response == 0) $response = "0";
                 }
-                else $activity = 0;
-                Modbus::setSlaverActivity($task->slaver_id, $activity);
+                $activity = 1;
             }
+            else
+            {
+                $response = NULL;
+                $activity = 0;
+            }
+            Modbus::setValue($task->register_id, $response);
+            Modbus::setSlaverActivity($task->slaver_id, $activity);
             $beanstalk->delete($job['id']);
         }
     }

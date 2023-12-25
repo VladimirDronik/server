@@ -197,11 +197,12 @@ class Modbus extends System {
     /**
      * Запись значения регистра в БД с регистрами при опросе шины
      */
-    public static function setValue(int $id, string $value)
+    public static function setValue(int $id, mixed $value)
     {
+        if (is_null ($value)) $value = 'NULL';
         $sql = parent::$db->exec("UPDATE `modbus_registers`
                                      SET `timestamp` = CURRENT_TIMESTAMP(3),
-                                         `last_value` = '" . $value . "'
+                                         `last_value` = $value
                                    WHERE `id` = $id");
     }
 

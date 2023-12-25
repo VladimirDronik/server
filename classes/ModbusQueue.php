@@ -84,23 +84,26 @@ class ModbusQueue extends System {
         {
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
-            // var_dump($task);
             $binaryData = self::$modbus->send(modbusFunction($task));
             if ($binaryData) 
             {
                 $response = modbusFunction($task, true, $binaryData);
-                if ($response)
+                if (isset($response))
                 {
                     if ($task->function_code == 5) 
                     {
                         if ($task->value) $response = 'true';
                         else $response = 'false';
                     }
-                    if ($task->function_code == 6) $response = $task->value;
+                    else 
+                    {
+                        if ($task->value == 0) $response = "0";
+                        else $response = "$task->value";
+                    }
                     Modbus::setValue($task->register_id, $response);
-                    $activity = true;
+                    $activity = 1;
                 }
-                else $activity = false;
+                else $activity = 0;
                 Modbus::setSlaverActivity($task->slaver_id, $activity);
             }
             $beanstalk->delete($job['id']);

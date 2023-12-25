@@ -117,15 +117,19 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readHoldingRegistersResponse($task, $binaryData)
     {
+        Endian::$defaultEndian = Endian::BIG_ENDIAN;
+
         $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
-        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
-        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
+        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
+        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
+        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
+        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat();
+        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32();
+        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32();
         if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
         if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
-
-        if ($task->scale) $result = $result * $task->scale;
+        // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
 
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
         echo PHP_EOL;
@@ -158,12 +162,16 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
                 $i++;
             }
         }
+        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
+        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
+        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
         if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
         if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
         if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
         if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
         if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+        // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
 
         if ($task->scale) $result = $result * $task->scale;
 

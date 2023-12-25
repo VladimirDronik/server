@@ -208,7 +208,7 @@ class Modbus extends System {
     /**
      * Установка флага активности для устройства на шине ModBus
      */
-    public static function setSlaverActivity(int $slaver_id, bool $activity)
+    public static function setSlaverActivity(int $slaver_id, int $activity)
     {
         $sql = parent::$db->exec("UPDATE `modbus_slavers` SET `active` = $activity WHERE `id` = $slaver_id");
     }
@@ -277,7 +277,7 @@ class Modbus extends System {
                     //Обновляем исходный массив
                     $registersArray = array_replace($registersArray, $diff);
                 }
-                else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
+                // else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
             }
     }
 

@@ -170,7 +170,7 @@ class ModbusRtu
             // Give a modbus device time to respond. 
             // This is crucial for some serial devices and delay needs to be even longer (100ms) 
             //or you will experience read errors or invalid CRCs
-            usleep(100000);
+            usleep(150000);
             $binaryData = fread($this->fd, 255);
         } while ($binaryData === '' && (microtime(true) - $start) < 3);
 

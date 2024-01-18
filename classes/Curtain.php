@@ -67,7 +67,7 @@
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private function packetAssembling ($address, $group, $cmd, $percent=null, $direction=null)
+    private static function packetAssembling ($address, $group, $cmd, $percent=null, $direction=null)
     {
         $packet = array_merge([0x55, $address, $group], $cmd);
         $packet = pack ('c*', ...$packet);
@@ -76,7 +76,7 @@
         return $packet;
     }
 
-    private function sendCmd ($packet)
+    private static function sendCmd ($packet)
 	{
         $curtain = self::$_curtain;
 
@@ -102,11 +102,17 @@
             $modbus = new PhpSerialModbus;
             $modbus->deviceInit($dev, 9600, 'none', 8, 1, 'none');
             $modbus->deviceOpen();
-            $modbus->debug = false;
-            $modbus->sendRawQuery($packet.$modbus->crc16($packet),false);
+            $modbus->debug = true;
+            $pkg = $packet.$modbus->crc16($packet);
+            // var_dump (unpack('H*',$pkg)[1]);
+            $modbus->sendRawQuery($pkg,false);
             $result = $modbus->getResponse(true);
-            $result = unpack('C*', $result);
-            $result = $result[count($result)-2];
+            // var_dump (is_null($result));
+            if (!empty($result))
+            {
+                $result = unpack('C*', $result);
+                $result = $result[count($result)-2];
+            }
             $modbus->deviceClose();
         }
         return $result;
@@ -141,7 +147,7 @@
             {
                 $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x01]); // 0301 - команда открытия
                 self::sendCmd($packet);
-                self::percent_db(100);
+                // self::percent_db(100);
             }
         }
         elseif ($curtain->place == 'port')
@@ -276,8 +282,9 @@
     /**
      * Запись процента открытия в БД
      */
-    private function percent_db($value)
+    private static function percent_db(int $value)
     {
+        var_dump ($value);
         $curtain = self::$_curtain;
         //Заносим процент открытия в БД
         parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object='$curtain->idObject'");
@@ -315,6 +322,26 @@
         $packet = self::packetAssembling($curtain->address, $curtain->group, [0x02, 0x03, 0x01], $direction); 
             // 020301 - команда сброса выставленных пределов
             // $direction = 0 - левый мотор или $direction = 1 - правый мотор
+        self::sendCmd($packet);
+    }
+
+    /**
+     * Отправка адреса (для штор с RS485)
+     */
+    public static function changeAddress($a, $g)
+    {
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling(0xfe, 0xfe, [0x02, 0x00, 0x02], $a, $g);
+        self::sendCmd($packet);
+    }
+
+    /**
+     * Сброс (для штор с RS485)
+     */
+    public static function reset()
+    {
+        $curtain = self::$_curtain;
+        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x08]);
         self::sendCmd($packet);
     }
 }

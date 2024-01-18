@@ -130,7 +130,7 @@ class Modbus extends System {
             'units' => $modbusRegister->units,                          // Единицы имерения
             'scale' => $modbusRegister->scale_unit                      // Множитель значения
         );
-
+        echo "Priority = $priority" . PHP_EOL;
         $beanstalk->put($priority, 0, 5, json_encode($task));
     }
 
@@ -200,6 +200,7 @@ class Modbus extends System {
     public static function setValue(int $id, mixed $value)
     {
         if (is_null ($value)) $value = 'NULL';
+        else $value = "'$value'";
         $sql = parent::$db->exec("UPDATE `modbus_registers`
                                      SET `timestamp` = CURRENT_TIMESTAMP(3),
                                          `last_value` = $value
@@ -280,6 +281,24 @@ class Modbus extends System {
                 }
                 // else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
             }
+    }
+
+    /**
+     *  Управление опросом регистра
+     */
+    public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
+    {
+        if ($polling) $polling = 1;
+        else 
+        {
+            $polling = 0;
+            $pollingCycle = 'NULL';
+        }
+
+        $sql = parent::$db->exec("UPDATE `modbus_registers`
+                                     SET `polling` = $polling,
+                                         `polling_cycle` = $pollingCycle
+                                   WHERE `id` = $registerId");
     }
 
 }

@@ -84,7 +84,9 @@ class ModbusQueue extends System {
         {
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
-            $binaryData = self::$modbus->send(modbusFunction($task));
+            // TODO: Добавить обработку задачи для приводов штор с RS-485
+            $packet = modbusFunction($task);
+            $binaryData = self::$modbus->send($packet);
             if ($binaryData) 
             {
                 $response = modbusFunction($task, true, $binaryData);
@@ -92,9 +94,17 @@ class ModbusQueue extends System {
                 {
                     if ($task->function_code == 5) 
                     {
-                        if ($task->value) $response = 'true';
-                        else $response = 'false';
+                       $response = $task->value;
                     }
+                    elseif ($task->function_code == 6) 
+                    {
+                        $response = $task->value;
+                    }
+                    // elseif ($task->function_code == 1) 
+                    // {
+                    //     if ($response) $response = 'true';
+                    //     else $response = 'false';
+                    // }
                     else if ($response == 0) $response = "0";
                 }
                 $activity = 1;
@@ -104,6 +114,7 @@ class ModbusQueue extends System {
                 $response = NULL;
                 $activity = 0;
             }
+
             Modbus::setValue($task->register_id, $response);
             Modbus::setSlaverActivity($task->slaver_id, $activity);
             $beanstalk->delete($job['id']);

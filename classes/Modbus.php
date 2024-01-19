@@ -130,26 +130,26 @@ class Modbus extends System {
             'units' => $modbusRegister->units,                          // Единицы имерения
             'scale' => $modbusRegister->scale_unit                      // Множитель значения
         );
-        echo "Priority = $priority" . PHP_EOL;
+        // echo "Priority = $priority" . PHP_EOL;
         $beanstalk->put($priority, 0, 5, json_encode($task));
     }
 
     /**
      * Получение последнего значения регистра из БД
      */
-    public static function getRegisterValue(int $modbusRegisterId)
-    {
-        $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
-                                          `modbus_registers`.`units` AS units,
-                                          `modbus_slavers`.`active` AS slaver_active
-                                     FROM `modbus_registers`
-                               INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-                                    WHERE `modbus_registers`.`id` = $modbusRegisterId");
-        $register = $sql->fetch(PDO::FETCH_OBJ);
-        if ((bool)$register->slaver_active) $lastValue = $register->last_value;
-        else $lastValue = null;
-        return $lastValue;
-    }
+    // public static function getRegisterValue(int $modbusRegisterId)
+    // {
+    //     $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
+    //                                       `modbus_registers`.`units` AS units,
+    //                                       `modbus_slavers`.`active` AS slaver_active
+    //                                  FROM `modbus_registers`
+    //                            INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+    //                                 WHERE `modbus_registers`.`id` = $modbusRegisterId");
+    //     $register = $sql->fetch(PDO::FETCH_OBJ);
+    //     if ((bool)$register->slaver_active) $lastValue = $register->last_value;
+    //     else $lastValue = null;
+    //     return $lastValue;
+    // }
 
     /**
      * Получение всех модбас устройств, которые есть на шине по её номеру
@@ -213,6 +213,18 @@ class Modbus extends System {
     public static function setSlaverActivity(int $slaver_id, int $activity)
     {
         $sql = parent::$db->exec("UPDATE `modbus_slavers` SET `active` = $activity WHERE `id` = $slaver_id");
+    }
+
+    /**
+     * Получение текущей временной метки регистра
+     */
+    public static function getTimemark(int $registerId)
+    {
+        $sql = parent::$db->query("SELECT `timestamp` FROM `modbus_registers` WHERE `id` = $registerId");
+        $timestamp = $sql->fetch(PDO::FETCH_OBJ)->timestamp;
+        $pieces = explode ('.', $timestamp);
+        $timemark = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
+        return $timemark;
     }
 
     /**
@@ -301,4 +313,32 @@ class Modbus extends System {
                                    WHERE `id` = $registerId");
     }
 
+    /**
+     *  Считывание значения из регистра(ов) и возврат результата
+     */
+    public static function getRegisterValue (int $registerId)
+    {
+        $referenceTimemark = self::getTimemark($registerId);
+        if (!isset($priority)) $priority = 5;
+        self::putTaskIntoQueue($registerId, 'read', $priority);
+        $start = time()*1000;
+        do
+        {
+            usleep(500000);
+            $currentTimemark = self::getTimemark($registerId);
+        }
+        while ($currentTimemark === $referenceTimemark && (time()*1000-$start) < 5000);
+
+        if ($currentTimemark === $referenceTimemark) 
+        {
+            echo "Значение в БД не обновилось. Скорее всего нет ответа от modbus устройства" . PHP_EOL;
+            return false;
+        }
+        else
+        {
+            $sql = parent::$db->query("SELECT `last_value` FROM `modbus_registers` WHERE `id` = $registerId");
+            $value = $sql->fetch(PDO::FETCH_OBJ)->last_value;
+            return $value;
+        }
+    }
 }

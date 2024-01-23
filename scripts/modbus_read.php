@@ -2,4 +2,6 @@
 
 require_once '../include.php';
 
-Modbus::putTaskIntoQueue($argv[1], 'read', $argv[2]);
+$value = Modbus::getRegisterValue($argv[1]);
+echo $value . PHP_EOL;
+return $value;

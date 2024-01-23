@@ -27,7 +27,6 @@ do
     sleep(1);
     $query->execute();
     $registerValue = $query->fetch(PDO::FETCH_OBJ)->last_value;
-    // var_dump ($registerValue);
     echo ".";
 } 
 while ((int)$registerValue === 17 && (time() - $start) < 60);

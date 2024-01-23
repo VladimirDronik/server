@@ -54,7 +54,7 @@ class Action extends Megad
         // ) {
         if ($idMethod != null) {
 
-            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
+            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`, `params`
             FROM `methods` WHERE `methods`.`id`=$idMethod");
             $method = $sql->fetch(PDO::FETCH_OBJ);
 
@@ -67,7 +67,7 @@ class Action extends Megad
             if ($idCausing != $method->id_object)
             Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
 
-            if (self::$easy) return self::easy($object, $whence, $params);
+            if (self::$easy) return self::easy($object, $whence, $method->params);
             elseif ((self::$idScript) && ($method->is_system == 0)) self::script($object);
             else self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
 

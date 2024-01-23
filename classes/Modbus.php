@@ -93,6 +93,7 @@ class Modbus extends System {
      */
     public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, mixed $value = null)
     {
+        // var_dump ($value);
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         
         if ($action == 'read')
@@ -124,12 +125,13 @@ class Modbus extends System {
             'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
             'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
             'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
-            'value' => $value,                                          // Данные для операций записи
+            'value' => (int)$value,                                          // Данные для операций записи
             'format' => $modbusRegister->data_format,                   // Формат считываемых данных
             'title' => $modbusRegister->register_name,                  // Название регистра
             'units' => $modbusRegister->units,                          // Единицы имерения
             'scale' => $modbusRegister->scale_unit                      // Множитель значения
         );
+        
         // echo "Priority = $priority" . PHP_EOL;
         $beanstalk->put($priority, 0, 5, json_encode($task));
     }
@@ -137,19 +139,19 @@ class Modbus extends System {
     /**
      * Получение последнего значения регистра из БД
      */
-    // public static function getRegisterValue(int $modbusRegisterId)
-    // {
-    //     $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
-    //                                       `modbus_registers`.`units` AS units,
-    //                                       `modbus_slavers`.`active` AS slaver_active
-    //                                  FROM `modbus_registers`
-    //                            INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-    //                                 WHERE `modbus_registers`.`id` = $modbusRegisterId");
-    //     $register = $sql->fetch(PDO::FETCH_OBJ);
-    //     if ((bool)$register->slaver_active) $lastValue = $register->last_value;
-    //     else $lastValue = null;
-    //     return $lastValue;
-    // }
+    public static function getRegisterValueFromDB(int $modbusRegisterId)
+    {
+        $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
+                                          `modbus_registers`.`units` AS units,
+                                          `modbus_slavers`.`active` AS slaver_active
+                                     FROM `modbus_registers`
+                               INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                    WHERE `modbus_registers`.`id` = $modbusRegisterId");
+        $register = $sql->fetch(PDO::FETCH_OBJ);
+        if ((bool)$register->slaver_active) $lastValue = $register->last_value;
+        else $lastValue = null;
+        return $lastValue;
+    }
 
     /**
      * Получение всех модбас устройств, которые есть на шине по её номеру
@@ -316,7 +318,7 @@ class Modbus extends System {
     /**
      *  Считывание значения из регистра(ов) и возврат результата
      */
-    public static function getRegisterValue (int $registerId)
+    public static function getRegisterValue (int $registerId, int $priority = null)
     {
         $referenceTimemark = self::getTimemark($registerId);
         if (!isset($priority)) $priority = 5;

@@ -62,8 +62,8 @@ if ((int)$registerValue == 0)
                    `failure` = null,
                    `status` = null,
                    `brightness` = null, 
-                   `cct_control` = null, 
-                   `cct_value` = null
+                   `is_cct` = null, 
+                   `cct` = null
              WHERE `dali_gateway` = $argv[1]";
     $stmt= System::$db->prepare($sql);
     $stmt->execute();
@@ -128,7 +128,7 @@ if ((int)$registerValue == 0)
             if (!$isRowExists)
             {
                 // Если записи не существует, добавляем.
-                $placeholders = ":name,:type,:dali_gateway,:address,:failure,:status,:brightness,:cct_control,:cct_value";
+                $placeholders = ":name,:type,:dali_gateway,:address,:failure,:status,:brightness,:is_cct,:cct";
                 $values = [
                     "name"          => "Устройство А$address", 
                     "type"          => $daliDeviceType,
@@ -137,10 +137,10 @@ if ((int)$registerValue == 0)
                     "failure"       => $failure,
                     "status"        => $status,
                     "brightness"    => $daliBrightness,
-                    "cct_control"   => $cctControl,
-                    "cct_value"     => $daliCctValue,
+                    "is_cct"   => $cctControl,
+                    "cct"     => $daliCctValue,
                 ];
-                $columns = "name,type,dali_gateway,address,failure,status,brightness,cct_control,cct_value";
+                $columns = "name,type,dali_gateway,address,failure,status,brightness,is_cct,cct";
                 $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
                 $stmt->execute($values);            
             }
@@ -153,8 +153,8 @@ if ((int)$registerValue == 0)
                     "failure"       => $failure,
                     "status"        => $status,
                     "brightness"    => $daliBrightness,
-                    "cct_control"   => $cctControl,
-                    "cct_value"     => $daliCctValue,
+                    "is_cct"   => $cctControl,
+                    "cct"     => $daliCctValue,
                 ];
                 $stmt = System::$db->prepare("UPDATE `dali_devices`
                                                  SET `type` = :type,
@@ -162,8 +162,8 @@ if ((int)$registerValue == 0)
                                                      `failure` = :failure,
                                                      `status` = :status,
                                                      `brightness` = :brightness,
-                                                     `cct_control` = :cct_control,
-                                                     `cct_value` = :cct_value
+                                                     `is_cct` = :is_cct,
+                                                     `cct` = :cct
                                                WHERE `address` =  $address AND `dali_gateway` = $argv[1]");
                 $stmt->execute($values); 
             }

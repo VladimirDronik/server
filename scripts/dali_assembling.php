@@ -2,13 +2,15 @@
 
 require_once '../include.php';
 
+$daliGatewayId = $argv[1];
+
 function nbit($number, $n) 
 {
     return ($number >> $n) & 1;
 }
 
 // Получаем регистр управления сборкой шины DALI
-$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $argv[1] AND `alias` = 'dali_assembling'");
+$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_assembling'");
 $assemblingRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
 // Записываем команду запуска сборки шины
@@ -47,7 +49,7 @@ if ((int)$registerValue == 0)
     // Определяем количество устройств на шине
     $sql = System::$db->query("SELECT `id`
                                  FROM `modbus_registers`
-                                WHERE `slaver_id` = $argv[1]
+                                WHERE `slaver_id` = $daliGatewayId
                                   AND `alias` = 'dali_devices_amount'");
     $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
@@ -57,16 +59,19 @@ if ((int)$registerValue == 0)
     echo "Найдено $daliDevicesAmount устройств" . PHP_EOL;
     
     // Обнуляем все данные об устройствах в таблице DALI устройств
-    $sql = "UPDATE `dali_devices`
-               SET `type` = null,
-                   `failure` = null,
-                   `status` = null,
-                   `brightness` = null, 
-                   `is_cct` = null, 
-                   `cct` = null
-             WHERE `dali_gateway` = $argv[1]";
-    $stmt= System::$db->prepare($sql);
-    $stmt->execute();
+    // $sql = "UPDATE `dali_devices`
+    //            SET `type` = null,
+    //                `failure` = null,
+    //                `status` = null,
+    //                `brightness` = null, 
+    //                `is_cct` = null, 
+    //                `cct` = null
+    //          WHERE `dali_gateway` = $daliGatewayId";
+    // $stmt= System::$db->prepare($sql);
+    // $stmt->execute();
+
+    // Удаляем устройства из таблицы dali_devices
+    $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
 
     // Теперь проверим на каких адресах расположены устройства.
     // Поиск можно остановить, когда все будут определены адреса для всех найденных устройств.
@@ -75,14 +80,14 @@ if ((int)$registerValue == 0)
 
     for ($address = 0; $address < 64; $address ++)
     {
-        // Получаем массив всех регистров устройства $argv[1] для адреса $address с атрибутом ro
+        // Получаем массив всех регистров устройства $daliGatewayId для адреса $address с атрибутом ro
         $sql = System::$db->query("SELECT `id`, `alias` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $argv[1] AND `access` = 'ro' AND `alias` LIKE 'dali%a$address'");
-        $daliAddressRegistersArray = array();
+                                    WHERE `slaver_id` = $daliGatewayId AND `access` = 'ro' AND `alias` LIKE 'dali%a$address'");
+        $daliAddressRegistersArray = [];
         while ($daliAddressRegister = $sql->fetch(PDO::FETCH_OBJ))
             $daliAddressRegistersArray[$daliAddressRegister->alias] = (int)$daliAddressRegister->id;
 
-        // Проверям есть ли на шине устройство с адресом $address
+        // Проверяем есть ли на шине устройство с адресом $address
         $daliDeviceType = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_is_on_bus_a$address"]);
 
         if (isset($daliDeviceType)) 
@@ -99,7 +104,8 @@ if ((int)$registerValue == 0)
             else $status = "on";
             
             // Регистр 3004+A*5 - Текущий уровень яркости
-            $daliBrightness = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_get_brightness_a$address"]);
+            // $daliBrightness = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_get_brightness_a$address"]);
+            $daliBrightness = 100;
 
             // Регистр 3322+A*5 - Варианты управления цветом
             $daliCctVariants = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_cct_variants_a$address"]);
@@ -122,7 +128,7 @@ if ((int)$registerValue == 0)
             
             // Проверим есть ли в бд запись об устройстве с адресом $address
             $isRowExistsQuery = System::$db->query("SELECT * FROM `dali_devices` WHERE `address` =  $address 
-                                                       AND `dali_gateway` = $argv[1]");
+                                                       AND `dali_gateway` = $daliGatewayId");
             $isRowExists = $isRowExistsQuery->fetch(PDO::FETCH_OBJ);
 
             if (!$isRowExists)
@@ -132,7 +138,7 @@ if ((int)$registerValue == 0)
                 $values = [
                     "name"          => "Устройство А$address", 
                     "type"          => $daliDeviceType,
-                    "dali_gateway"  => $argv[1],
+                    "dali_gateway"  => $daliGatewayId,
                     "address"       => $address,
                     "failure"       => $failure,
                     "status"        => $status,
@@ -164,7 +170,7 @@ if ((int)$registerValue == 0)
                                                      `brightness` = :brightness,
                                                      `is_cct` = :is_cct,
                                                      `cct` = :cct
-                                               WHERE `address` =  $address AND `dali_gateway` = $argv[1]");
+                                               WHERE `address` =  $address AND `dali_gateway` = $daliGatewayId");
                 $stmt->execute($values); 
             }
         }

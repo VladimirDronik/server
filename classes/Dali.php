@@ -6,10 +6,8 @@
  */
 class Dali extends Device
 {
-    // private $daliDevice;
     private static $address;
     private static $daliGatewayId;
-    private static $brightness;
 
     public static function daliDeviceInit (int $idObject)
     {
@@ -22,9 +20,19 @@ class Dali extends Device
         self::$daliGatewayId = $daliDevice->dali_gateway;
     }
 
-    private static function nbit($number, $n) 
+    private static function nbit ($number, $n) 
     {
         return ($number >> $n) & 1;
+    }
+
+    private static function percentToArcpower ($percent) 
+    {
+        return (int)round(253*(log10($percent)+1)/3+1);
+    }
+
+    private static function arcpowerTopercent ($arcpower) 
+    {
+        return (int)round(pow(10, (3*($arcpower-1)/253)-1));
     }
 
     public static function getBrightness (int $idObject)
@@ -41,6 +49,7 @@ class Dali extends Device
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
             
         $brightness = (int)Modbus::getRegisterValue ($registerId, 50);
+        $brightness = self::arcpowerTopercent($brightness);
         if ($brightness > 0)
         {
             parent::$db->query("UPDATE `dali_devices`
@@ -67,7 +76,7 @@ class Dali extends Device
 
     public static function getColorTemperatureByAddress (int $address, int $daliGatewayId)
     {
-        $sql = System::$db->query("SELECT `id` FROM `modbus_registers` 
+        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
                                     WHERE `slaver_id` = $daliGatewayId
                                     AND `alias` LIKE 'dali_get_temperature_a$address'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
@@ -78,7 +87,7 @@ class Dali extends Device
                 SET `cct` = ?
                 WHERE `dali_gateway` = $daliGatewayId
                 AND `address` = $address";
-        $stmt = System::$db->prepare($sql);
+        $stmt = parent::$db->prepare($sql);
         $stmt->execute([$colorTemperature]);
 
         return $colorTemperature;
@@ -92,7 +101,7 @@ class Dali extends Device
 
     public static function getStatusByAddress (int $address, int $daliGatewayId)
     {
-        $sql = System::$db->query("SELECT `id` FROM `modbus_registers` 
+        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
                                     WHERE `slaver_id` = $daliGatewayId
                                     AND `alias` LIKE 'dali_device_status_a$address'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
@@ -107,7 +116,7 @@ class Dali extends Device
                    SET `failure` = :failure, `status` = :state
                  WHERE `dali_gateway` = $daliGatewayId
                    AND `address` = $address";
-        $stmt = System::$db->prepare($sql);
+        $stmt = parent::$db->prepare($sql);
         $stmt->execute($statusArray);
         // [failure, state]
         return $statusArray;
@@ -125,9 +134,31 @@ class Dali extends Device
                                     WHERE `slaver_id` = $daliGatewayId
                                     AND `alias` LIKE 'dali_set_brightness_a$address'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+        if ($brightness > 100) $brightness = 100;
+        $brightness = self::percentToArcpower($brightness);
         Modbus::putTaskIntoQueue($registerId, 'write', 5, $brightness);
+        if ($brightness > 0)
+            parent::$db->query("UPDATE `dali_devices`
+                                SET `brightness` =  $brightness
+                                WHERE `dali_gateway` = $daliGatewayId
+                                AND `address` = $address");
+    }
+
+    public static function setColorTemperature (int $idObject, int $cct)
+    {
+        self::daliDeviceInit ($idObject);
+        self::setColorTemperatureByAddress (self::$address, self::$daliGatewayId, $cct);
+    }
+
+    public static function setColorTemperatureByAddress (int $address, int $daliGatewayId, int $cct)
+    {
+        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
+                                    WHERE `slaver_id` = $daliGatewayId
+                                    AND `alias` LIKE 'dali_set_temperature_a$address'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+        Modbus::putTaskIntoQueue($registerId, 'write', 5, $cct);
         parent::$db->query("UPDATE `dali_devices`
-                            SET `brightness` =  $brightness
+                            SET `cct` =  $cct
                             WHERE `dali_gateway` = $daliGatewayId
                             AND `address` = $address");
     }
@@ -158,7 +189,7 @@ class Dali extends Device
 
     public static function daliOn (int $idObject)
     {
-        $sql = System::$db->query(" SELECT `brightness`
+        $sql = parent::$db->query(" SELECT `brightness`
                                     FROM `dali_devices` 
                                     WHERE `id_object` = $idObject");
         $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
@@ -172,7 +203,7 @@ class Dali extends Device
 
     public static function daliSw (int $idObject)
     {
-        $sql = System::$db->query(" SELECT `status`
+        $sql = parent::$db->query(" SELECT `status`
                                     FROM `dali_devices` 
                                     WHERE `id_object` = $idObject");
         $status = $sql->fetch(PDO::FETCH_OBJ)->status;

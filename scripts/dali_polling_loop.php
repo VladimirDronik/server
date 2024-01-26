@@ -49,7 +49,7 @@ if (end($daliAddressesArray) >= 48)
 
 
 // Обнуляем счетчик изменений шины DALI
-Modbus::putTaskIntoQueue($changesAmountRegister, 'write', 0, 0);
+// Modbus::putTaskIntoQueue($changesAmountRegister, 'write', 0, 0);
 
 // Запускаем непрерывный опрос регистра контроля изменений шины DALI
 Modbus::pollingCtl($changesAmountRegister, true, 0);

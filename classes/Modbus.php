@@ -286,6 +286,9 @@ class Modbus extends System {
                             if ($output)
                             {
                                 echo (new datetime())->format('Y-m-d H:i:s.v') . "   Polling register id " . $registerId . " is sent to the queue" . PHP_EOL;
+                                $logString = "[Modbus polling]  Register ID $registerId is sent to the queue" . PHP_EOL;
+                                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . " " . $logString;
+                                System::addStringToLogFile($logString);
                                 self::putTaskIntoQueue($registerId, 'read', 100);
                             }
                         }

@@ -86,6 +86,24 @@ class ModbusQueue extends System {
             $task = json_decode($job['body']);
             // TODO: Добавить обработку задачи для приводов штор с RS-485
             $packet = modbusFunction($task);
+
+            $slaverId = "Slaver ID: " . $task->slave_address . " (0x" . dechex($task->slave_address).")";
+            $registerAddress = "Register: " . $task->starting_address . " (0x" . dechex($task->starting_address).")";
+            $functionCode = "Function code: " . "0x" . dechex($task->function_code);
+            
+            
+            $logString = "  [Modbus queue]  Task for register ID $task->register_id. $slaverId, $registerAddress, $functionCode";
+            $writeFunctionCodesArray = [5, 6, 15, 16];
+            if (in_array($task->function_code, $writeFunctionCodesArray)) 
+            {
+                $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
+                $logString .= ", " . $value;
+            }
+            $logString .= PHP_EOL;
+
+            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . " " . $logString;
+            System::addStringToLogFile($logString);
+            
             $binaryData = self::$modbus->send($packet);
             if ($binaryData) 
             {

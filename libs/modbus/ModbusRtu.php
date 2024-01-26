@@ -159,7 +159,10 @@ class ModbusRtu
 
     public function send($rtuPacket)
     {
-        if ($this->debug) echo 'RTU Binary to sent (in hex):   ' . unpack('H*', $rtuPacket)[1] . PHP_EOL;
+        $logString = "    [Modbus RTU]  ";
+        // if ($this->debug) 
+        echo 'RTU Binary to sent (in hex):   ' . unpack('H*', $rtuPacket)[1] . PHP_EOL;
+        $logString .= "Request: " . unpack('H*', $rtuPacket)[1] . ". ";
         fwrite($this->fd, $rtuPacket);
 
         fflush($this->fd);
@@ -179,14 +182,21 @@ class ModbusRtu
                 $end = (microtime(true) - $start) * 1000;
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                $logString .= "Response: " . unpack('H*', $binaryData)[1] . " in " . $end . " ms" . PHP_EOL;
+                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . " " . $logString;
+                System::addStringToLogFile($logString);
                 return $binaryData;
             }
             else
             {
                 echo "No response from device" . PHP_EOL;
+                $logString .= "Response: No response in " . $end . " ms" . PHP_EOL;
+                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . " " . $logString;
+                System::addStringToLogFile($logString);
                 return false;
             }
-            
+
+        
         // }
     }
 

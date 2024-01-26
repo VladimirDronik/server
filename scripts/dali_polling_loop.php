@@ -2,12 +2,16 @@
 
 require_once '../include.php';
 
+$daliGatewayId = $argv[1];
+
+$pid = getmypid();
+echo "Скрипт запущен с PID " . $pid . PHP_EOL;
+System::setVariable("daliPollinLoop_ID$daliGatewayId", $pid);
+
 function nbit($number, $n) 
 {
     return ($number >> $n) & 1;
 }
-
-$daliGatewayId = $argv[1];
 
 $getRegisterQuery = System::$db->prepare("  SELECT `id`
                                             FROM `modbus_registers`

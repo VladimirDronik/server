@@ -154,5 +154,9 @@ class System
         return $id_object = $variable->value;
     }
 
-
+    public static function addStringToLogFile($string)
+    {
+        $file = ROOT_DIR."/logs/modbus.log";
+        file_put_contents ($file, $string, FILE_APPEND);
+    }
 }

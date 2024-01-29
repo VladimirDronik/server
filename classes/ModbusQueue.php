@@ -79,7 +79,7 @@ class ModbusQueue extends System {
     private static function jobProcess()
     {
         $beanstalk = self::$beanstalk;
-
+        $writeFunctionCodesArray = [5, 6, 15, 16];
         while (true)
         {
             $job = $beanstalk->reserve(); // Block until job is available.
@@ -92,8 +92,7 @@ class ModbusQueue extends System {
             $functionCode = "Function code: " . "0x" . dechex($task->function_code);
             
             
-            $logString = "  [Modbus queue]  Task for register ID $task->register_id. $slaverId, $registerAddress, $functionCode";
-            $writeFunctionCodesArray = [5, 6, 15, 16];
+            $logString = "[Modbus queue]    Register ID $task->register_id. Task: $slaverId, $registerAddress, $functionCode";
             if (in_array($task->function_code, $writeFunctionCodesArray)) 
             {
                 $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
@@ -101,40 +100,30 @@ class ModbusQueue extends System {
             }
             $logString .= PHP_EOL;
 
-            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . " " . $logString;
+            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
             System::addStringToLogFile($logString);
             
             $binaryData = self::$modbus->send($packet);
+            // Modbus::processResponse($binaryData);
             if ($binaryData) 
             {
-                $response = modbusFunction($task, true, $binaryData);
-                if (isset($response))
-                {
-                    if ($task->function_code == 5) 
-                    {
-                       $response = $task->value;
-                    }
-                    elseif ($task->function_code == 6) 
-                    {
-                        $response = $task->value;
-                    }
-                    // elseif ($task->function_code == 1) 
-                    // {
-                    //     if ($response) $response = 'true';
-                    //     else $response = 'false';
-                    // }
-                    else if ($response == 0) $response = "0";
-                }
                 $activity = 1;
+                $response = modbusFunction($task, true, $binaryData);
+                // if (isset($response))
+                // {
+                // if (in_array($task->function_code, $writeFunctionCodesArray)) $response = null;
+                // }
+                
             }
             else
             {
-                $response = NULL;
                 $activity = 0;
+                $response = null;
             }
-
+            // var_dump ($response);
             Modbus::setValue($task->register_id, $response);
             Modbus::setSlaverActivity($task->slaver_id, $activity);
+            System::addStringToLogFile(PHP_EOL);
             $beanstalk->delete($job['id']);
         }
     }

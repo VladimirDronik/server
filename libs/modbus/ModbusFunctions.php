@@ -135,7 +135,10 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
             echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
             echo PHP_EOL;
-            return $result;
+            $logString = "[Modbus data]     Register ID $task->register_id. $task->title: $result $task->units" . PHP_EOL;
+            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
+            System::addStringToLogFile($logString);
+            return strval($result);
         }
 
     }
@@ -225,7 +228,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
-        return $response;
+        // return $response;
     }
 
     /**

@@ -135,8 +135,8 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_set_brightness_a$address'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
         if ($brightness > 100) $brightness = 100;
-        $brightness = self::percentToArcpower($brightness);
-        Modbus::putTaskIntoQueue($registerId, 'write', 5, $brightness);
+        $arcpower = self::percentToArcpower($brightness);
+        Modbus::putTaskIntoQueue($registerId, 'write', 5, $arcpower);
         if ($brightness > 0)
             parent::$db->query("UPDATE `dali_devices`
                                 SET `brightness` =  $brightness
@@ -182,9 +182,9 @@ class Dali extends Device
     public static function daliOff (int $idObject)
     {
         self::sendCmd ($idObject, 0);
-        parent::$db->query("UPDATE `dali_devices`
+        parent::$db->query("UPDATE `objects`
                             SET `status` = 'off'
-                            WHERE `id_object` = $idObject");
+                            WHERE `id` = $idObject");
     }
 
     public static function daliOn (int $idObject)
@@ -196,19 +196,36 @@ class Dali extends Device
 
         self::setBrightness ($idObject, $brightness);
 
-        parent::$db->query("UPDATE `dali_devices`
+        parent::$db->query("UPDATE `objects`
                             SET `status` = 'on'
-                            WHERE `id_object` = $idObject");
+                            WHERE `id` = $idObject");
     }
 
     public static function daliSw (int $idObject)
     {
         $sql = parent::$db->query(" SELECT `status`
-                                    FROM `dali_devices` 
-                                    WHERE `id_object` = $idObject");
+                                    FROM `objects` 
+                                    WHERE `id` = $idObject");
         $status = $sql->fetch(PDO::FETCH_OBJ)->status;
 
         if ($status == "on") self::daliOff ($idObject);
         else self::daliOn ($idObject);
+    }
+
+    /**
+     * Получение списка DALI шин из БД
+     */
+    public static function getDaliBuses()
+    {
+        $sql = parent::$db->query(" SELECT `modbus_slavers`.`id` AS 'dali_gateway'
+                                    FROM `modbus_slavers`
+                                    INNER JOIN `modbus_slavers_types` ON `modbus_slavers_types`.`id` = `modbus_slavers`.`type`
+                                    WHERE `modbus_slavers_types`.`type` = 'ecodim-dali-gw2'");
+        
+        $daliBusesArray = [];
+        while ($daliControllerId = $sql->fetch(PDO::FETCH_OBJ))
+            $daliBusesArray[] = (int)$daliControllerId->dali_gateway;
+        
+        return $daliBusesArray;  
     }
 }

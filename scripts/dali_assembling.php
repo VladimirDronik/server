@@ -70,8 +70,14 @@ if ((int)$registerValue == 0)
     // $stmt= System::$db->prepare($sql);
     // $stmt->execute();
 
-    // Удаляем устройства из таблицы dali_devices
-    $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
+    // Удаляем связанные с DALI устройствами объекты. Устройства и методы должны удаляться каскадно.
+    // $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
+    $sql = System::$db->query("SELECT `id_object` FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
+    $daliObjectsIdsArray = [];
+    while ($daliObjectsId = $sql->fetch(PDO::FETCH_OBJ))
+        $daliObjectsIdsArray[] = (int)$daliObjectsId->id_object;
+    foreach ($daliObjectsIdsArray as $objectId)
+        System::$db->query("DELETE FROM `objects` WHERE `id` = $objectId");
 
     // Теперь проверим на каких адресах расположены устройства.
     // Поиск можно остановить, когда все будут определены адреса для всех найденных устройств.
@@ -134,19 +140,18 @@ if ((int)$registerValue == 0)
             if (!$isRowExists)
             {
                 // Если записи не существует, добавляем.
-                $placeholders = ":name,:type,:dali_gateway,:address,:failure,:status,:brightness,:is_cct,:cct";
+                $placeholders = ":name,:type,:dali_gateway,:address,:failure,:brightness,:is_cct,:cct";
                 $values = [
                     "name"          => "Устройство А$address", 
                     "type"          => $daliDeviceType,
                     "dali_gateway"  => $daliGatewayId,
                     "address"       => $address,
                     "failure"       => $failure,
-                    "status"        => $status,
                     "brightness"    => $daliBrightness,
-                    "is_cct"   => $cctControl,
-                    "cct"     => $daliCctValue,
+                    "is_cct"        => $cctControl,
+                    "cct"           => $daliCctValue,
                 ];
-                $columns = "name,type,dali_gateway,address,failure,status,brightness,is_cct,cct";
+                $columns = "name,type,dali_gateway,address,failure,brightness,is_cct,cct";
                 $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
                 $stmt->execute($values);            
             }
@@ -157,16 +162,14 @@ if ((int)$registerValue == 0)
                     "type"          => $daliDeviceType,
                     "address"       => $address,
                     "failure"       => $failure,
-                    "status"        => $status,
                     "brightness"    => $daliBrightness,
-                    "is_cct"   => $cctControl,
-                    "cct"     => $daliCctValue,
+                    "is_cct"        => $cctControl,
+                    "cct"           => $daliCctValue,
                 ];
                 $stmt = System::$db->prepare("UPDATE `dali_devices`
                                                  SET `type` = :type,
                                                      `address` = :address,
                                                      `failure` = :failure,
-                                                     `status` = :status,
                                                      `brightness` = :brightness,
                                                      `is_cct` = :is_cct,
                                                      `cct` = :cct

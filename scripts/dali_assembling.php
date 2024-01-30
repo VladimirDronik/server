@@ -110,7 +110,6 @@ if ((int)$registerValue == 0)
             else $status = "on";
             
             // Регистр 3004+A*5 - Текущий уровень яркости
-            // $daliBrightness = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_get_brightness_a$address"]);
             $daliBrightness = 100;
 
             // Регистр 3322+A*5 - Варианты управления цветом
@@ -137,45 +136,23 @@ if ((int)$registerValue == 0)
                                                        AND `dali_gateway` = $daliGatewayId");
             $isRowExists = $isRowExistsQuery->fetch(PDO::FETCH_OBJ);
 
-            if (!$isRowExists)
-            {
-                // Если записи не существует, добавляем.
-                $placeholders = ":name,:type,:dali_gateway,:address,:failure,:brightness,:is_cct,:cct";
-                $values = [
-                    "name"          => "Устройство А$address", 
-                    "type"          => $daliDeviceType,
-                    "dali_gateway"  => $daliGatewayId,
-                    "address"       => $address,
-                    "failure"       => $failure,
-                    "brightness"    => $daliBrightness,
-                    "is_cct"        => $cctControl,
-                    "cct"           => $daliCctValue,
-                ];
-                $columns = "name,type,dali_gateway,address,failure,brightness,is_cct,cct";
-                $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
-                $stmt->execute($values);            
-            }
-            else
-            {
-                // Если запись была добавлена ранее, обновляем.
-                $values = [ 
-                    "type"          => $daliDeviceType,
-                    "address"       => $address,
-                    "failure"       => $failure,
-                    "brightness"    => $daliBrightness,
-                    "is_cct"        => $cctControl,
-                    "cct"           => $daliCctValue,
-                ];
-                $stmt = System::$db->prepare("UPDATE `dali_devices`
-                                                 SET `type` = :type,
-                                                     `address` = :address,
-                                                     `failure` = :failure,
-                                                     `brightness` = :brightness,
-                                                     `is_cct` = :is_cct,
-                                                     `cct` = :cct
-                                               WHERE `address` =  $address AND `dali_gateway` = $daliGatewayId");
-                $stmt->execute($values); 
-            }
+            // Добавляем запись в БД.
+            $placeholders = ":name,:type,:dali_gateway,:address,:failure,:brightness,:is_cct,:cct";
+            $values = [
+                "name"          => "Устройство А$address", 
+                "type"          => $daliDeviceType,
+                "dali_gateway"  => $daliGatewayId,
+                "address"       => $address,
+                "failure"       => $failure,
+                "brightness"    => $daliBrightness,
+                "is_cct"        => $cctControl,
+                "cct"           => $daliCctValue,
+            ];
+            $columns = "name,type,dali_gateway,address,failure,brightness,is_cct,cct";
+            $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
+            $stmt->execute($values);
+
+            Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness);
         }
         
         // Если для всех найденых устройсв определены адреса выходим из цикла. Нет смысла продолжать опрос.

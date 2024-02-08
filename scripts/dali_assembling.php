@@ -40,7 +40,7 @@ Modbus::pollingCtl($assemblingRegister, false);
 if ((int)$registerValue == 6) 
 {
     echo "[ERROR] Сбор шины провален" . PHP_EOL;
-    exit ("Сбор сети провален. Код ошибки: 0x06.");
+    exit ("Сбор шины провален. Код ошибки: 0x06.");
 }
 if ((int)$registerValue == 0)
 {
@@ -58,18 +58,6 @@ if ((int)$registerValue == 0)
     $daliDevicesAmount = Modbus::getRegisterValue ($daliDevicesAmountRegister);
     echo "Найдено $daliDevicesAmount устройств" . PHP_EOL;
     
-    // Обнуляем все данные об устройствах в таблице DALI устройств
-    // $sql = "UPDATE `dali_devices`
-    //            SET `type` = null,
-    //                `failure` = null,
-    //                `status` = null,
-    //                `brightness` = null, 
-    //                `is_cct` = null, 
-    //                `cct` = null
-    //          WHERE `dali_gateway` = $daliGatewayId";
-    // $stmt= System::$db->prepare($sql);
-    // $stmt->execute();
-
     // Удаляем связанные с DALI устройствами объекты. Устройства и методы должны удаляться каскадно.
     // $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
     $sql = System::$db->query("SELECT `id_object` FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
@@ -132,9 +120,9 @@ if ((int)$registerValue == 0)
             else $daliCctValue = null;
             
             // Проверим есть ли в бд запись об устройстве с адресом $address
-            $isRowExistsQuery = System::$db->query("SELECT * FROM `dali_devices` WHERE `address` =  $address 
-                                                       AND `dali_gateway` = $daliGatewayId");
-            $isRowExists = $isRowExistsQuery->fetch(PDO::FETCH_OBJ);
+            // $isRowExistsQuery = System::$db->query("SELECT * FROM `dali_devices` WHERE `address` =  $address 
+            //                                            AND `dali_gateway` = $daliGatewayId");
+            // $isRowExists = $isRowExistsQuery->fetch(PDO::FETCH_OBJ);
 
             // Добавляем запись в БД.
             $placeholders = ":name,:type,:dali_gateway,:address,:failure,:brightness,:is_cct,:cct";

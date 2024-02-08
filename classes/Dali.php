@@ -109,16 +109,21 @@ class Dali extends Device
         $status = (int)Modbus::getRegisterValue ($registerId, 50);
         $statusArray = [];
         // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
-        $statusArray["failure"] = self::nbit ($status,1);
+        $isFailure = self::nbit ($status,1);
+        $statusArray["failure"] = $isFailure;
         // bit 2 - состояние устройства. 0 = off; 1 = on
-        (self::nbit ($status,2) == 0) ? $statusArray["state"] = "off" : $statusArray["state"] = "on";
-        $sql = "UPDATE `dali_devices`
-                   SET `failure` = :failure, `status` = :state
-                 WHERE `dali_gateway` = $daliGatewayId
-                   AND `address` = $address";
-        $stmt = parent::$db->prepare($sql);
-        $stmt->execute($statusArray);
-        // [failure, state]
+        (self::nbit ($status,2) == 0) ? $state = "off" : $state = "on";
+        $statusArray["state"] = $state;
+        parent::$db->query("UPDATE `dali_devices`
+                            SET `failure` = $isFailure
+                            WHERE `dali_gateway` = $daliGatewayId
+                            AND `address` = $address");
+        // $stmt = parent::$db->prepare($sql);
+        parent::$db->query("UPDATE `objects`
+                            INNER JOIN `dali_devices` ON `objects`.`id` = `dali_devices`.`id_object`
+                            SET `objects`.`status` = '$state'
+                            WHERE `dali_devices`.`address` = $address
+                            AND `dali_devices`.`dali_gateway` = $daliGatewayId");
         return $statusArray;
     }
 

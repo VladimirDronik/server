@@ -8,16 +8,19 @@ class Dali extends Device
 {
     private static $address;
     private static $daliGatewayId;
+    private static $daliState;
 
     public static function daliDeviceInit (int $idObject)
     {
-        $sql = parent::$db->query("SELECT `address`, `dali_gateway`, `brightness`
-                                     FROM `dali_devices`
+        $sql = parent::$db->query(" SELECT `dali_devices`.`address`, `dali_devices`.`dali_gateway`,
+                                    `dali_devices`.`brightness`, `objects`.`status`
+                                    FROM `dali_devices`
+                                    INNER JOIN `objects` ON `dali_devices`.`id_object` = `objects`.`id`
                                     WHERE `id_object` = $idObject");
-
         $daliDevice = $sql->fetch(PDO::FETCH_OBJ);
         self::$address = $daliDevice->address;
         self::$daliGatewayId = $daliDevice->dali_gateway;
+        self::$daliState = $daliDevice->status;
     }
 
     private static function nbit ($number, $n) 
@@ -127,21 +130,24 @@ class Dali extends Device
         return $statusArray;
     }
 
-    public static function setBrightness (int $idObject, int $brightness)
+    public static function setBrightness (int $idObject, int $brightness, bool $isOnCmd = false)
     {
         self::daliDeviceInit ($idObject);
+        if ($isOnCmd) self::$daliState = "on";
         self::setBrightnessByAddress (self::$address, self::$daliGatewayId, $brightness);
     }
 
     public static function setBrightnessByAddress (int $address, int $daliGatewayId, int $brightness)
     {
+        var_dump (self::$daliState);
         $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
                                     WHERE `slaver_id` = $daliGatewayId
                                     AND `alias` LIKE 'dali_set_brightness_a$address'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
         if ($brightness > 100) $brightness = 100;
         $arcpower = self::percentToArcpower($brightness);
-        Modbus::putTaskIntoQueue($registerId, 'write', 5, $arcpower);
+        if (self::$daliState == "on")
+            Modbus::putTaskIntoQueue($registerId, 'write', 5, $arcpower);
         if ($brightness > 0)
             parent::$db->query("UPDATE `dali_devices`
                                 SET `brightness` =  $brightness
@@ -199,7 +205,7 @@ class Dali extends Device
                                     WHERE `id_object` = $idObject");
         $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
 
-        self::setBrightness ($idObject, $brightness);
+        self::setBrightness ($idObject, $brightness, true);
 
         parent::$db->query("UPDATE `objects`
                             SET `status` = 'on'

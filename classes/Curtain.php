@@ -331,7 +331,7 @@
     public static function changeAddress($a, $g)
     {
         $curtain = self::$_curtain;
-        $packet = self::packetAssembling(0xfe, 0xfe, [0x02, 0x00, 0x02], $a, $g);
+        $packet = self::packetAssembling(0x01, 0x02, [0x02, 0x00, 0x02], $a, $g);
         self::sendCmd($packet);
     }
 

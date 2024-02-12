@@ -10,7 +10,7 @@ function nbit($number, $n)
 }
 
 // Получаем регистр управления сборкой шины DALI
-$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_assembling'");
+$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_bus_assembling'");
 $assemblingRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
 // Записываем команду запуска сборки шины
@@ -50,7 +50,7 @@ if ((int)$registerValue == 0)
     $sql = System::$db->query("SELECT `id`
                                  FROM `modbus_registers`
                                 WHERE `slaver_id` = $daliGatewayId
-                                  AND `alias` = 'dali_devices_amount'");
+                                  AND `alias` = 'dali_devices_quantity'");
     $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
     // Modbus::putTaskIntoQueue($daliDevicesAmount->id, 'read', 5);
@@ -140,7 +140,8 @@ if ((int)$registerValue == 0)
             $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
             $stmt->execute($values);
 
-            Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness);
+            // Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness);
+            Dali::sendCmdByAddress ($address, $daliGatewayId, 0);
         }
         
         // Если для всех найденых устройсв определены адреса выходим из цикла. Нет смысла продолжать опрос.

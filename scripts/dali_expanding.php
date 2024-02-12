@@ -17,7 +17,7 @@ while ($existingDaliDevice = $sql->fetch(PDO::FETCH_OBJ)) $existingDaliDevicesAr
 // var_dump (count($existingDaliDevicesArray));
 
 // Получаем регистр управления сборкой шины DALI
-$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_assembling'");
+$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_bus_assembling'");
 $assemblingRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
 // Записываем команду запуска сборки шины
@@ -57,7 +57,7 @@ if ((int)$registerValue == 0)
     $sql = System::$db->query("SELECT `id`
                                  FROM `modbus_registers`
                                 WHERE `slaver_id` = $daliGatewayId
-                                  AND `alias` = 'dali_devices_amount'");
+                                  AND `alias` = 'dali_devices_quantity'");
     $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
     $daliDevicesAmount = Modbus::getRegisterValue ($daliDevicesAmountRegister);

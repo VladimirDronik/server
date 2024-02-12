@@ -140,8 +140,9 @@ if ((int)$registerValue == 0)
             $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
             $stmt->execute($values);
 
-            // Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness);
-            Dali::sendCmdByAddress ($address, $daliGatewayId, 0);
+            Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness, true);
+            // Dali::sendCmdByAddress ($address, $daliGatewayId, 0);
+
         }
         
         // Если для всех найденых устройсв определены адреса выходим из цикла. Нет смысла продолжать опрос.

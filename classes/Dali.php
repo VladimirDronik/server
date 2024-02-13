@@ -137,6 +137,11 @@ class Dali extends Device
         self::daliDeviceInit ($idObject);
         if ($isOnCmd) self::$daliState = "on";
         self::setBrightnessByAddress (self::$address, self::$daliGatewayId, $brightness);
+        $object = new Objects();
+        $object->select($idObject);
+        if ($brightness > 0) $state = 'on';
+        else $state = 'off';
+        $object->setStatus($state,true,false);
     }
 
     public static function setBrightnessByAddress (int $address, int $daliGatewayId, int $brightness)
@@ -194,9 +199,12 @@ class Dali extends Device
     public static function daliOff (int $idObject)
     {
         self::sendCmd ($idObject, 0);
-        parent::$db->query("UPDATE `objects`
-                            SET `status` = 'off'
-                            WHERE `id` = $idObject");
+        $object = new Objects();
+        $object->select($idObject);
+        $object->setStatus('off',true,false);
+        // parent::$db->query("UPDATE `objects`
+        //                     SET `status` = 'off'
+        //                     WHERE `id` = $idObject");
     }
 
     public static function daliOn (int $idObject)
@@ -208,9 +216,9 @@ class Dali extends Device
 
         self::setBrightness ($idObject, $brightness, true);
 
-        parent::$db->query("UPDATE `objects`
-                            SET `status` = 'on'
-                            WHERE `id` = $idObject");
+        // parent::$db->query("UPDATE `objects`
+        //                     SET `status` = 'on'
+        //                     WHERE `id` = $idObject");
     }
 
     public static function daliSw (int $idObject)

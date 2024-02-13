@@ -64,7 +64,7 @@ class Tape extends Device
      */
     function setValue(int $color, int $shade, int $bright, int $wbright, string $status) {
 
-        var_dump ($color, $shade, $bright, $wbright, $status);
+        // var_dump ($color, $shade, $bright, $wbright, $status);
 
         //обработка включения ленты с выбором цвета и яркости (если пользователь выбрал цвет в приложении)
         if ($status == "on") {

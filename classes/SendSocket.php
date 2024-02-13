@@ -47,9 +47,11 @@ class SendSocket
      */
     private function send($data)
     {
-    	if (isset($this->users[$this->currentUser])) {
-        $webconnection = $this->users[$this->currentUser];
-        $webconnection->send("$data");
+    	if (isset($this->users[$this->currentUser]))
+        {
+            $webconnection = $this->users[$this->currentUser];
+            print_r('Server response: '.$data.PHP_EOL);
+            $webconnection->send("$data");
         }
     }
 
@@ -411,6 +413,13 @@ class SendSocket
          $this->send($this->views->getTape($this->param1));
     }
 
+    /**
+     * Отпарвка данных настраиваемого источника света
+     */
+    public function getCustomizableLight()
+    {
+        $this->send($this->views->getCustomizableLight($this->param1));
+    }
 
 
 }

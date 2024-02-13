@@ -476,7 +476,6 @@ class Views extends System
             $itemValue = $data_array->items[0]->value;
             $set_value = $data_array->items[0]->set_value;
 
-
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
 
@@ -621,7 +620,7 @@ class Views extends System
                         $status = $itemStatus;
     
                          //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                         if ($itemValue->h != null)  {
+                         if ($itemValue->v != null)  {
                             //пришло конкретное значение для ленты
                             if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
                                 $color = $itemValue->h;
@@ -636,8 +635,133 @@ class Views extends System
                          $tape->setStatus($color, $shade, $bright, $wbright, $status);
                          $newObject->setStatus($status, true, false);
 
-                         break;
-                    }
+                    
+                    break;
+                    
+                    case 'customizable_light':
+                        
+                        $status = $itemStatus;
+
+                        $deviceTables = ['dimmers', 'dali_devices', 'tapes'];
+
+                            foreach ($deviceTables as $table)
+                            {
+                                $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
+                                if ($sql->fetch(PDO::FETCH_OBJ))
+                                {
+                                    $deviceTable = $table;
+                                    break;
+                                }
+                            }
+
+
+                        if ($itemValue[0]->type == 'cct')
+                        {
+                            $cct = $itemValue[0]->cct;
+                            $brightness = $itemValue[0]->brightness;
+                            
+                            if ($table == 'dali_devices')
+                            {
+                                if ($status == 'off' || $brightness == 0) Dali::daliOff($idObject);
+                                else
+                                {
+                                    Dali::setColorTemperature($idObject, $cct);
+                                    Dali::setBrightness($idObject, $brightness);
+                                    Dali::daliOn($idObject);
+                                }
+                            }
+                            //TODO: добавить реализацию cct для WB-LED
+                        }
+                        
+                        if ($itemValue[0]->type == 'hsv')
+                        {
+                            $tape = new Tape($idObject);
+                            $color = 0;
+                            $shade = 0;
+                            $bright = 0;
+                            $wbright = 0;
+                            
+                            //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                            if ($itemValue[0]->v != null)
+                            {
+                                //пришло конкретное значение для ленты
+                                $color = $itemValue[0]->h;
+                                $shade = $itemValue[0]->s;
+                                $bright = $itemValue[0]->v;
+                            }
+                            
+                            $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                            $newObject->setStatus($status, true, false);
+                        }
+
+                        if ($itemValue[0]->type == 'hsv_dim')
+                        {
+                            $tape = new Tape($idObject);
+                            $color = 0;
+                            $shade = 0;
+                            $bright = 0;
+                            $wbright = 0;
+                            
+                            //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                            if ($itemValue->v != null)
+                            {
+                                //пришло конкретное значение для ленты
+                                $color = $itemValue->h;
+                                $shade = $itemValue->s;
+                                $bright = $itemValue->v;
+                                $wbright = $itemValue->w;
+                            }
+                        
+                            $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                            $newObject->setStatus($status, true, false);
+                        }
+
+                        if ($itemValue[0]->type == 'dim')
+                        {
+                            if ($table == 'tapes')
+                            {
+                                $tape = new Tape($idObject);
+                                $color = 0;
+                                $shade = 0;
+                                $bright = 0;
+                                $wbright = 0;
+
+                                //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                                if ($itemValue->v != null)
+                                {
+                                    //пришло конкретное значение для ленты
+                                    $wbright = $itemValue->w;
+                                }
+                        
+                                $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                                $newObject->setStatus($status, true, false);
+                            }
+
+                            if ($table == 'dimmers')
+                            {
+                                $dimmer = new Dimmer($idObject);
+
+                                //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                                if ($itemValue === null) 
+                                {
+                                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                                    System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
+    
+                                }
+                                else 
+                                { 
+                                    //пришло конкретное значение диммера
+                                    //Устанавливаем яркость диммера
+                                    $dimmer->setValue($itemValue);
+                                    $status = 'ON';
+                                    if ($itemValue == 0) $status = 'OFF'; //Выключаем диммер
+                                    $newObject->setStatus($status, true, false);
+                                }
+                            }
+                        }
+                        
+                    break;
+                }
 
 
                 //TODO: проверить является ли объект виртуальным
@@ -754,7 +878,8 @@ class Views extends System
             ($viewObject->type == 'link') ||
             ($viewObject->type == 'conditioner') ||
             ($viewObject->type == 'socket') ||
-            ($viewObject->type == 'tape'))
+            ($viewObject->type == 'tape') ||
+            ($viewObject->type == 'customizable_light'))
 
             return array('id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
@@ -1230,7 +1355,6 @@ class Views extends System
 
     }
 
-
     /**
      * Функия отдает параметры RGB ленты
      */
@@ -1267,6 +1391,113 @@ class Views extends System
 
         }   else System::addlog('error','Данные для отображения"'.$idTape.'"" не найдены', 'tape');
 
+    }
+
+    /** Функция отдает параметры выбранного настраиваемого источника света
+     *
+     * @param int $customizableLightViewId
+     * @return json
+     */
+    function getCustomizableLight($customizableLightViewId)
+    {
+        $isDeviceFound = false;
+        $items = ['id' => $customizableLightViewId];
+        
+        $sql = parent::$db->query(" SELECT `dali_devices`.`brightness`,
+                                           `dali_devices`.`cct`,
+                                           `objects`.`status`
+                                    FROM `dali_devices`
+                                    INNER JOIN `objects` ON `objects`.`id` = `dali_devices`.`id_object`
+                                    INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
+                                    WHERE `view_items`.`id` = $customizableLightViewId");
+        if ($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $isDeviceFound = true;
+
+            if (isset($customizableLight->cct))
+            {
+                $items += [
+                    'type' => 'cct',
+                    'cct' => $customizableLight->cct
+                ];
+            }
+            else $items += ['type' => 'brightness'];
+            
+            $items += [
+                'status' => $customizableLight->status,
+                'brightness' => $customizableLight->brightness
+            ];
+        }
+
+
+        $sql = parent::$db->query(" SELECT `tapes`.`h`,
+                                           `tapes`.`s`,
+                                           `tapes`.`v`,
+                                           `tapes`.`w`,
+                                           `tapes`.`type`,
+                                           `tapes`.`status`
+                                    FROM `tapes`
+                                    INNER JOIN `objects` ON `objects`.`id` = `tapes`.`id_object` 
+                                    INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
+                                    WHERE `view_items`.`id` = $customizableLightViewId");
+        if ($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $isDeviceFound = true;
+
+            $items += ['status' => $customizableLight->status];
+
+            $sqlcolors = parent::$db->query("SELECT `value` FROM `colors` WHERE type = 'hsv'");
+            while ($color = $sqlcolors->fetch(PDO::FETCH_OBJ)) if($color) $colors_array[] = $color->value;
+
+            if ($customizableLight->type == "RGBW")
+            {
+                $items += [
+                    'type' => "hsv_dim",
+                    'h' => $customizableLight->h,
+                    's' => $customizableLight->s,
+                    'v' => $customizableLight->v,
+                    'brightness' => $customizableLight->w,
+                    'colors' => $colors_array
+                ];
+            }
+            if ($customizableLight->type == "RGB")
+            {
+                $items += [
+                    'type' => "hsv",
+                    'h' => $customizableLight->h,
+                    's' => $customizableLight->s,
+                    'v' => $customizableLight->v,
+                    'colors' => $colors_array
+                ];
+            }
+            
+            if ($customizableLight->type == "W")
+            {
+                $items += [
+                    'type' => "dim",
+                    'brightness' => $customizableLight->w
+                ];
+            }
+        }
+
+
+        $sql = parent::$db->query(" SELECT `dimmers`.`value`, `objects`.`status`
+                                    FROM `dimmers`
+                                    INNER JOIN `objects` ON `objects`.`id` = `dimmers`.`id_object` 
+                                    INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
+                                    WHERE `view_items`.`id` = $customizableLightViewId");
+        if($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $isDeviceFound = true;
+
+            $items = [
+                'type' => 'dim',
+                'status' => mb_strtolower($customizableLight->status),
+                'brightness' => $customizableLight->value
+            ];
+        }
+        
+        if ($isDeviceFound) return json_encode(array('status' => 'customizableLightLoad', 'entity'=> $items));
     }
 
 }

@@ -20,8 +20,6 @@ if ($status!=0)
     exec("/etc/init.d/xl2tpd restart");
 */
 
-
-
 // connect to a local tcp-server
 $instance = stream_socket_client($localsocket, $errno, $errstr, 30);
 
@@ -85,4 +83,10 @@ if ($restart)
     passthru("(php -f server.php restart " . $options . "& ) >> /dev/null 2>&1");
 }
 
+chdir ('scripts');
+exec ('php modbusctl.php start');
+
+
 return true;
+
+

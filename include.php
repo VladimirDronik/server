@@ -56,6 +56,9 @@ require_once __DIR__. '/classes/Page.php';
 require_once __DIR__. '/classes/YandexStation.php';
 require_once __DIR__. '/classes/Tape.php';
 require_once __DIR__. '/classes/Labels.php';
+require_once __DIR__. '/classes/Modbus.php';
+require_once __DIR__. '/classes/ModbusQueue.php';
+require_once __DIR__. '/classes/Dali.php';
 require_once __DIR__. '/libs/YandexTTS.php';
 
 
@@ -72,9 +75,12 @@ require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
 // ModbusTCP library
 require_once __DIR__.'/libs/modbus/ModbusTcp.php';
+require_once __DIR__. '/libs/modbus/ModbusFunctions.php';
 
 // ModbusSerial library
 require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';
+require_once __DIR__.'/libs/modbus/ModbusRtu.php';
 
+require_once  __DIR__.'/vendor/autoload.php';
 
 System::dbConnect($host, $dbname, $dbuser, $dbpass);

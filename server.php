@@ -337,7 +337,11 @@ file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\
                 case 'getTape':
                     $send->getTape();
                     break;
-            
+                
+                case 'getCustomizableLight':
+                    // print_r('Test message: '.$send->getCustomizableLight().PHP_EOL);
+                    $send->getCustomizableLight();
+                    break;
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

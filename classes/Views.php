@@ -1401,7 +1401,7 @@ class Views extends System
     function getCustomizableLight($customizableLightViewId)
     {
         $isDeviceFound = false;
-        $items = ['id' => $customizableLightViewId];
+        $items = ['id' => (int)$customizableLightViewId];
         
         $sql = parent::$db->query(" SELECT `dali_devices`.`brightness`,
                                            `dali_devices`.`cct`,

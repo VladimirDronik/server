@@ -296,7 +296,6 @@ class Thermostats extends Objects
             {
                 
                 $termometrs = Megad::status($termostat->port, 'get', $termostat->device);
-                var_dump($termometrs);
                 $termometrsarray = explode(':', $termometrs);
                 $id_termometr = $termostat->id_termometr;
                 $termometr_value = $termometrsarray[1];

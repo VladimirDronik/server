@@ -123,7 +123,7 @@ class ModbusQueue extends System {
             // var_dump ($response);
             Modbus::setValue($task->register_id, $response);
             Modbus::setSlaverActivity($task->slaver_id, $activity);
-            System::addStringToLogFile(PHP_EOL);
+            // System::addStringToLogFile(PHP_EOL);
             $beanstalk->delete($job['id']);
         }
     }

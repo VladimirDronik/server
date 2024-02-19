@@ -644,120 +644,80 @@ class Views extends System
 
                         $deviceTables = ['dimmers', 'dali_devices', 'tapes'];
 
-                            foreach ($deviceTables as $table)
-                            {
-                                $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
-                                if ($sql->fetch(PDO::FETCH_OBJ))
-                                {
-                                    $deviceTable = $table;
-                                    break;
-                                }
-                            }
-
-
-                        if ($itemValue[0]->type == 'cct')
+                        foreach ($deviceTables as $table)
                         {
-                            $cct = $itemValue[0]->cct;
-                            $brightness = $itemValue[0]->brightness;
-                            
-                            if ($table == 'dali_devices')
+                            $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
+                            if ($sql->fetch(PDO::FETCH_OBJ))
                             {
-                                if ($status == 'off' || $brightness == 0) Dali::daliOff($idObject);
-                                else
-                                {
-                                    Dali::setColorTemperature($idObject, $cct);
-                                    Dali::setBrightness($idObject, $brightness);
-                                    Dali::daliOn($idObject);
-                                }
+                                $deviceTable = $table;
+                                break;
                             }
-                            //TODO: добавить реализацию cct для WB-LED
                         }
+
+
+                        if ($table == 'dali_devices')
+                        {
+
+                            if ($itemValue[0]->type == 'cct')
+                            {
+                                $brightness = $itemValue[0]->brightness;
+                                $cct = $itemValue[0]->cct;
+                                Dali::setColorTemperature($idObject, $cct);
+                                Dali::setBrightness($idObject, $brightness);
+                            }
+
+                            if ($itemValue[0]->type == 'dim')
+                            {
+                                $brightness = $itemValue[0]->brightness;
+                                Dali::setBrightness($idObject, $brightness);
+                            }
+                                
+                            //TODO: добавить реализацию cct для WB-LED  
+                            if ($status == 'off' || (isset($brightness) && $brightness == 0)) Dali::daliOff($idObject);
+                            else Dali::daliOn($idObject);
+                        }
+
                         
-                        if ($itemValue[0]->type == 'hsv')
+                        if ($table == 'tapes')
                         {
                             $tape = new Tape($idObject);
                             $color = 0;
                             $shade = 0;
                             $bright = 0;
                             $wbright = 0;
-                            
-                            //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                            if ($itemValue[0]->v != null)
+
+                            //Пришли конкретные значения для ленты
+                            if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
                             {
-                                //пришло конкретное значение для ленты
                                 $color = $itemValue[0]->h;
                                 $shade = $itemValue[0]->s;
                                 $bright = $itemValue[0]->v;
                             }
                             
+                            if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim')
+                            {
+                                $wbright = $itemValue[0]->brightness;
+                            }
+
                             $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                            $newObject->setStatus($status, true, false);
+                            $newObject->setStatus($status, true, false);   
                         }
-
-                        if ($itemValue[0]->type == 'hsv_dim')
-                        {
-                            $tape = new Tape($idObject);
-                            $color = 0;
-                            $shade = 0;
-                            $bright = 0;
-                            $wbright = 0;
-                            
-                            //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                            if ($itemValue->v != null)
-                            {
-                                //пришло конкретное значение для ленты
-                                $color = $itemValue->h;
-                                $shade = $itemValue->s;
-                                $bright = $itemValue->v;
-                                $wbright = $itemValue->w;
-                            }
                         
-                            $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                        if ($table == 'dimmers')
+                        {
+                            $dimmer = new Dimmer($idObject);
+                            $brightness = $itemValue[0]->brightness;
+                            //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                            if ($brightness === null) 
+                            {
+                                // if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                                //     System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
+                                $brightness = $dimmer->getValue();
+                            }
+                            if ($brightness == 0) $status = 'off'; //Выключаем диммер
+                            $dimmer->setValue($brightness);
                             $newObject->setStatus($status, true, false);
-                        }
 
-                        if ($itemValue[0]->type == 'dim')
-                        {
-                            if ($table == 'tapes')
-                            {
-                                $tape = new Tape($idObject);
-                                $color = 0;
-                                $shade = 0;
-                                $bright = 0;
-                                $wbright = 0;
-
-                                //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                                if ($itemValue->v != null)
-                                {
-                                    //пришло конкретное значение для ленты
-                                    $wbright = $itemValue->w;
-                                }
-                        
-                                $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                                $newObject->setStatus($status, true, false);
-                            }
-
-                            if ($table == 'dimmers')
-                            {
-                                $dimmer = new Dimmer($idObject);
-
-                                //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                                if ($itemValue === null) 
-                                {
-                                    if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                                    System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
-    
-                                }
-                                else 
-                                { 
-                                    //пришло конкретное значение диммера
-                                    //Устанавливаем яркость диммера
-                                    $dimmer->setValue($itemValue);
-                                    $status = 'ON';
-                                    if ($itemValue == 0) $status = 'OFF'; //Выключаем диммер
-                                    $newObject->setStatus($status, true, false);
-                                }
-                            }
                         }
                         
                     break;
@@ -952,7 +912,6 @@ class Views extends System
      * Функция выполняет метод кнопки в зависимости от состоятиния
      */
     static private function runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemId, $itemType) {
-
         //Для кнопки без фиксации не выполняем действий по смене статуса
         if (($itemType != 'button') && ($itemType != 'label')) {
             /*Меняем состояние итема и состояние объекта, физическим портом не управляем.
@@ -1490,7 +1449,7 @@ class Views extends System
         {
             $isDeviceFound = true;
 
-            $items = [
+            $items += [
                 'type' => 'dim',
                 'status' => mb_strtolower($customizableLight->status),
                 'brightness' => $customizableLight->value

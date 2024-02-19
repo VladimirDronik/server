@@ -213,7 +213,6 @@ class Dali extends Device
                                     FROM `dali_devices` 
                                     WHERE `id_object` = $idObject");
         $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
-
         self::setBrightness ($idObject, $brightness, true);
 
         // parent::$db->query("UPDATE `objects`

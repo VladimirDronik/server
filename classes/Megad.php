@@ -57,12 +57,12 @@ class Megad extends System
     {
         $device = self::getDeviceParams($id_device);
 
-        if ($speed != 0)
-            $speedParam = '&cnt='.$speed;
-
+        if ($speed != 0) $speedParam = '&cnt='.$speed;
+        else $speedParam = '';
+        
         //Если устройство не активно, то не выполняем действие
         if($device->active)
-            file_get_contents("http://$device->ip_address/$device->password?pt=$numPort&pwm={$val}{$speedParam}");
+            file_get_contents("http://$device->ip_address/$device->password?pt=$numPort&pwm=$val$speedParam");
         else
             system::addLog('error', "Сервер попытался обратиться к устройству $device->ip_address, но оно недоступно", 'controller');
     }

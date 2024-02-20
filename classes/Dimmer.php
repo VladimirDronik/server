@@ -60,12 +60,17 @@ class Dimmer extends Device
             $mega->setValueToDimmerExt($object->device, $ext->sda_port, $object->port, $value);
         }
 
-        if($value != 0) $oldvalue = " ,`oldvalue` = $value";
+        if($value > 0)
+        {
+            //Заносим текущее состояние в таблицу
+            parent::$db->query("UPDATE `dimmers` SET `value` = $value WHERE `id_object` =".self::$idObject);
+            $object->setStatus('on', true, false);
+        }
+        else $object->setStatus('off', true, false);
 
-        //Заносим текущее состояние в таблицу
-            parent::$db->query("UPDATE dimmers SET
-                                `value` = $value $oldvalue
-                                WHERE id_object =".self::$idObject);
+
+
+        
     }
 
     public function setEasy($command)
@@ -95,10 +100,8 @@ class Dimmer extends Device
                                 WHERE id_object =".self::$idObject);
 
             //Отображение у объекта приводим в состояние "включено" или выключено
-            if ($value>0)
-            $object->setStatus('ON');
-            else
-                $object->setStatus('OFF');
+            if ($value>0) $object->setStatus('on', true, false);
+            else $object->setStatus('off', true, false);
         }
     }
 
@@ -109,6 +112,7 @@ class Dimmer extends Device
     {
         $sql = parent::$db->query('SELECT `value` FROM `dimmers` WHERE id_object ='.self::$idObject);
         $dimer = $sql->fetch(PDO::FETCH_OBJ);
+        // var_dump ($dimer->value);
         return $dimer->value;
     }
 
@@ -145,8 +149,8 @@ class Dimmer extends Device
         parent::$db->query("UPDATE dimmers SET `value` = $value $oldvalue WHERE id_object = ".self::$idObject);
 
         //Отображение у объекта приводим в состояние "включено" или "выключено"
-        if ($value>0) $object->setStatus('ON');
-        else $object->setStatus('OFF');
+        if ($value>0) $object->setStatus('on', true, false);
+        else $object->setStatus('off', true, false);
 
     }
 

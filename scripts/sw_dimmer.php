@@ -11,12 +11,5 @@ $object = new Objects();
 
 $object->select($argv[1]);
 
-
-if($dimmer->getValue() == 0) {
-    $dimmer->setValue($dimmer->getOldValue());
-    $object->setStatus('ON');
-}
-else {
-    $dimmer->setValue(0);
-    $object->setStatus('OFF');
-}
+if($object->status == 'off') $dimmer->setValue($dimmer->getValue());
+else $dimmer->setValue(0);

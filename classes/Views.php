@@ -635,14 +635,13 @@ class Views extends System
                          $tape->setStatus($color, $shade, $bright, $wbright, $status);
                          $newObject->setStatus($status, true, false);
 
-                    
                     break;
                     
                     case 'customizable_light':
                         
                         $status = $itemStatus;
 
-                        $deviceTables = ['dimmers', 'dali_devices', 'tapes'];
+                        $deviceTables = ['lamps', 'dimmers', 'dali_devices', 'tapes'];
 
                         foreach ($deviceTables as $table)
                         {
@@ -702,27 +701,25 @@ class Views extends System
                             $tape->setStatus($color, $shade, $bright, $wbright, $status);
                             $newObject->setStatus($status, true, false);   
                         }
-                        
-                        if ($table == 'dimmers')
+
+                        if ($table == 'dimmers' || $table == 'lamps')
                         {
                             $dimmer = new Dimmer($idObject);
                             $brightness = $itemValue[0]->brightness;
                             //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                            if ($brightness === null) 
+                            if (!isset($brightness))
                             {
-                                // if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                                //     System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
-                                $brightness = $dimmer->getValue();
+                                if ($status == 'off') $brightness = 0;
+                                else $brightness = $dimmer->getValue();
                             }
+                            
                             if ($brightness == 0) $status = 'off'; //Выключаем диммер
                             $dimmer->setValue($brightness);
                             $newObject->setStatus($status, true, false);
-
                         }
                         
                     break;
                 }
-
 
                 //TODO: проверить является ли объект виртуальным
 
@@ -1372,7 +1369,6 @@ class Views extends System
         if ($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
         {
             $isDeviceFound = true;
-
             if (isset($customizableLight->cct))
             {
                 $items += [
@@ -1402,7 +1398,6 @@ class Views extends System
         if ($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
         {
             $isDeviceFound = true;
-
             $items += ['status' => $customizableLight->status];
 
             $sqlcolors = parent::$db->query("SELECT `value` FROM `colors` WHERE type = 'hsv'");
@@ -1439,7 +1434,6 @@ class Views extends System
             }
         }
 
-
         $sql = parent::$db->query(" SELECT `dimmers`.`value`, `objects`.`status`
                                     FROM `dimmers`
                                     INNER JOIN `objects` ON `objects`.`id` = `dimmers`.`id_object` 
@@ -1448,7 +1442,21 @@ class Views extends System
         if($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
         {
             $isDeviceFound = true;
+            $items += [
+                'type' => 'dim',
+                'status' => mb_strtolower($customizableLight->status),
+                'brightness' => $customizableLight->value
+            ];
+        }
 
+        $sql = parent::$db->query(" SELECT `lamps`.`value`, `objects`.`status`
+                                    FROM `lamps`
+                                    INNER JOIN `objects` ON `objects`.`id` = `lamps`.`id_object` 
+                                    INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
+                                    WHERE `view_items`.`id` = $customizableLightViewId");
+        if($customizableLight = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $isDeviceFound = true;
             $items += [
                 'type' => 'dim',
                 'status' => mb_strtolower($customizableLight->status),

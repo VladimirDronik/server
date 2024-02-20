@@ -9,14 +9,26 @@ class Dimmer extends Device
 {
     private static $idObject; // id объекта диммера
     private static $speed; // скорость изменения диммера
-
+    private static $deviceTable;
 
     function __construct($idObject)
     {
         self::$idObject = $idObject;
-        $sql = parent::$db->query("SELECT `speed` FROM `dimmers` WHERE id_object = $idObject");
-        $dimer = $sql->fetch(PDO::FETCH_OBJ);
-        self::$speed = $dimer->speed;
+        
+        $deviceTables = ['lamps', 'dimmers'];
+        foreach ($deviceTables as $table)
+        {
+            $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
+            if ($sql->fetch(PDO::FETCH_OBJ))
+            {
+                self::$deviceTable = $table;
+                break;
+            }
+        }
+
+        $sql = parent::$db->query("SELECT `speed` FROM `".self::$deviceTable."` WHERE id_object = $idObject");
+        $dimmer = $sql->fetch(PDO::FETCH_OBJ);
+        self::$speed = $dimmer->speed;
     }
 
     /**
@@ -25,9 +37,7 @@ class Dimmer extends Device
      */
     public function setSpeed($speed)
     {
-        parent::$db->query("UPDATE dimmers SET 
-                                `speed` = $speed
-                                WHERE id_object = self::$idObject");
+        parent::$db->query("UPDATE `".self::$deviceTable."` SET `speed` = $speed WHERE id_object = ".self::$idObject);
     }
 
     /**
@@ -63,7 +73,7 @@ class Dimmer extends Device
         if($value > 0)
         {
             //Заносим текущее состояние в таблицу
-            parent::$db->query("UPDATE `dimmers` SET `value` = $value WHERE `id_object` =".self::$idObject);
+            parent::$db->query("UPDATE `".self::$deviceTable."` SET `value` = $value WHERE `id_object` =".self::$idObject);
             $object->setStatus('on', true, false);
         }
         else $object->setStatus('off', true, false);
@@ -95,9 +105,9 @@ class Dimmer extends Device
             if($value != 0) $oldvalue = " ,`oldvalue` = $value";
 
             //Заносим текущее состояние в таблицу
-            parent::$db->query("UPDATE dimmers SET 
+            parent::$db->query("UPDATE `".self::$deviceTable."` SET 
                                 `value` = $value $oldvalue
-                                WHERE id_object =".self::$idObject);
+                                WHERE `id_object` =".self::$idObject);
 
             //Отображение у объекта приводим в состояние "включено" или выключено
             if ($value>0) $object->setStatus('on', true, false);
@@ -110,7 +120,7 @@ class Dimmer extends Device
      */
     public function getValue()
     {
-        $sql = parent::$db->query('SELECT `value` FROM `dimmers` WHERE id_object ='.self::$idObject);
+        $sql = parent::$db->query("SELECT `value` FROM `".self::$deviceTable."` WHERE `id_object` =".self::$idObject);
         $dimer = $sql->fetch(PDO::FETCH_OBJ);
         // var_dump ($dimer->value);
         return $dimer->value;
@@ -122,7 +132,7 @@ class Dimmer extends Device
      */
     public function getOldValue()
     {
-        $sql = parent::$db->query('SELECT `oldvalue` FROM `dimmers` WHERE id_object ='.self::$idObject);
+        $sql = parent::$db->query('SELECT `oldvalue` FROM `".self::$deviceTable."` WHERE id_object ='.self::$idObject);
         $dimer = $sql->fetch(PDO::FETCH_OBJ);
         return $dimer->oldvalue;
     }
@@ -146,7 +156,7 @@ class Dimmer extends Device
         else $oldvalue = " ,`oldvalue` = " . self::getOldValue();
 
         //Заносим текущее состояние в таблицу
-        parent::$db->query("UPDATE dimmers SET `value` = $value $oldvalue WHERE id_object = ".self::$idObject);
+        parent::$db->query("UPDATE `".self::$deviceTable."` SET `value` = $value $oldvalue WHERE id_object = ".self::$idObject);
 
         //Отображение у объекта приводим в состояние "включено" или "выключено"
         if ($value>0) $object->setStatus('on', true, false);

@@ -211,7 +211,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         else $result = 'false';
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ' изменено на: ' . $result . PHP_EOL;
         echo PHP_EOL;
-        return $response;
+        return $result;
     }
 
     /**

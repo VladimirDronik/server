@@ -11,25 +11,151 @@ class Tape extends Device
     private $s;
     private $v;
     private $w;
+    
+    private $tape = null;
+    private $registersIds = [];
+    private $object = null;
 
-    function __construct($idObject)
+    function __construct($objectId)
     {
-       //Определяем адрес контроллера ленты и порт, к которому подключена
-       $sql = parent::$db->query("SELECT tapes.id AS id, tapes.type AS type, tapes.status, h, s, v, w FROM tapes 
-                                    WHERE tapes.id_object = $idObject");
+        //Определяем параметры ленты
+        $sql = parent::$db->query(" SELECT `tapes`.`type` AS 'type',
+                                           `tapes`.`h` AS 'hue',
+                                           `tapes`.`s` AS 'saturation',
+                                           `tapes`.`v` AS 'value',
+                                           `tapes`.`w` AS 'brightness',
+                                           `tapes`.`channel` AS 'channel',
+                                           `tapes`.`controller_id` AS 'controller'
+                                    FROM `tapes`
+                                    WHERE `tapes`.`id_object` = $objectId");
 
-        if($sql->rowCount() > 0) {
-
-            $tape = $sql->fetch(PDO::FETCH_OBJ);
-
-            $this->idObject = $idObject;
-            $this->type = $tape->type;
-            $this->status = $tape->status;
-            $this->h = $tape->h;
-            $this->s = $tape->s;
-            $this->v = $tape->v;
-            $this->w = $tape->w;
+        if($sql->rowCount() > 0)
+        {
+            $this->tape = $sql->fetch(PDO::FETCH_OBJ);
+            $this->registersIds = $this->getRegistersIdByTapeType();
+            $this->object = new Objects();
+            $this->object->select($objectId);
         }
+        
+        // else self::$tape = null;
+    }
+
+
+    private function getRegistersIdByTapeType()
+    {
+        $channelAliasConnection = [
+            1 => 'ch1',
+            2 => 'ch2',
+            3 => 'ch3',
+            4 => 'ch4',
+            12 => 'ch1_ch2',
+            34 => 'ch3_ch4',
+            123 => 'ch1_ch2_ch3',
+            1234 => 'ch1_ch2_ch3_ch4'
+        ];
+
+        // $keys = [];
+        // $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+        //             $channelAliasConnection[$this->tape->channel].'_state');
+        // var_dump ($this->tape->type);
+
+        switch ($this->tape->type)
+        {
+            case 'RGB':
+                $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller, 'ch1_ch2_ch3_rgb_state');
+                $registersIds['h_component'] = Modbus::getRegisterIdByAlias($this->tape->controller, 'h_component');
+                $registersIds['s_component'] = Modbus::getRegisterIdByAlias($this->tape->controller, 's_component');
+                $registersIds['brightness'] = Modbus::getRegisterIdByAlias($this->tape->controller, 'v_component');
+                break;
+            
+            case 'CCT':
+                $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+                    $channelAliasConnection[$this->tape->channel].'_cct_state');
+                $registersIds['temperature'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+                    $channelAliasConnection[$this->tape->channel].'_cct_brightness');
+                $registersIds['brightness'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+                    $channelAliasConnection[$this->tape->channel].'_cct_brightness');
+                break;
+                
+            case 'W':
+                if ($this->tape->channel < 5) $str = '_independent';
+                else $str = '_parallel';
+                $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+                    $channelAliasConnection[$this->tape->channel].$str.'_state');
+                $registersIds['brightness'] = Modbus::getRegisterIdByAlias($this->tape->controller,
+                    $channelAliasConnection[$this->tape->channel].$str.'_brightness');
+                break;
+        }
+        var_dump ($registersIds);
+        return $registersIds;
+    }
+
+    public function tapeOn()
+    {
+        Modbus::putTaskIntoQueue($this->registersIds['state'], 'write', 5, 1);
+        $this->object->setStatus('on',true,false);
+    }
+
+    public function tapeOff()
+    {
+        Modbus::putTaskIntoQueue($this->registersIds['state'], 'write', 5, 0);
+        $this->object->setStatus('off',true,false);
+    }
+
+    public function tapeSw()
+    {
+        if ($this->object->status == 'on') $this->tapeOff();
+        else $this->tapeOn();
+    }
+    
+    /**
+     * Цвет задается в палитре HSV. Необходимо передать H и S компоненты.
+     * V компонент используется для управления яркостью RGB ленты
+     * @param int $hue - H компонент
+     * @param int $saturation - S компонент
+     */
+    public function tapeSetColor (int $hue, int $saturation)
+    {
+        if ($this->tape->type == 'RGB')
+        {
+            Modbus::putTaskIntoQueue($this->registersIds['h_component'], 'write', 5, $hue);
+            Modbus::putTaskIntoQueue($this->registersIds['s_component'], 'write', 5, $saturation);
+            parent::$db->query("UPDATE `tapes` SET `h` = $hue, `s` = $saturation
+                                WHERE `id_object` = ". $this->object->id);
+        }
+        else echo "Устройство не поддерживает настройку цвета" . PHP_EOL;
+    }
+
+    /**
+     * @param int $temperature - значение цветовой температуры, 0 до 100 %
+     * 0 - тёплый цвет, 100 - холодный цвет
+     */
+    public function tapeSetTemperature (int $temperature)
+    {
+        if ($this->tape->type == 'CCT')
+        {
+            Modbus::putTaskIntoQueue($this->registersIds['temperature'], 'write', 5, $temperature);
+            parent::$db->query("UPDATE `tapes` SET `cct` = $temperature
+                                WHERE `id_object` = ". $this->object->id);
+        }
+        else echo "Устройство не поддерживает настройку цветовой температуры" . PHP_EOL;
+    }
+
+    /**
+     * @param int $brightness - значение яркости, от 0 до 100 %
+     */
+    public function tapeSetBrightness (int $brightness)
+    {
+        if ($brightness > 0)
+        {
+            Modbus::putTaskIntoQueue($this->registersIds['brightness'], 'write', 5, $brightness);
+            $this->tapeOn();
+            if ($this->tape->type == 'RGB') $column = 'v';
+            else $column = 'w';
+            parent::$db->query("UPDATE `tapes` SET `$column` = $brightness
+                                WHERE `id_object` = ". $this->object->id);
+        }
+        else $this->tapeOff();
     }
 
     /**

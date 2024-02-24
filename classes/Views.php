@@ -609,33 +609,33 @@ class Views extends System
 
                         break;
 
-                    case 'tape':
+                    // case 'tape':
                         
-                        $tape = new Tape($idObject);
-                        $color = 0;
-                        $shade = 0;
-                        $bright = 0;
-                        $wbright = 0;
+                    //     $tape = new Tape($idObject);
+                    //     $color = 0;
+                    //     $shade = 0;
+                    //     $bright = 0;
+                    //     $wbright = 0;
     
-                        $status = $itemStatus;
+                    //     $status = $itemStatus;
     
-                         //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                         if ($itemValue->v != null)  {
-                            //пришло конкретное значение для ленты
-                            if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
-                                $color = $itemValue->h;
-                                $shade = $itemValue->s;
-                                $bright = $itemValue->v;
-                            }
-                            if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
-                                $wbright = $itemValue->w;
-                            }
-                         }
+                    //      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
+                    //      if ($itemValue->v != null)  {
+                    //         //пришло конкретное значение для ленты
+                    //         if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
+                    //             $color = $itemValue->h;
+                    //             $shade = $itemValue->s;
+                    //             $bright = $itemValue->v;
+                    //         }
+                    //         if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
+                    //             $wbright = $itemValue->w;
+                    //         }
+                    //      }
     
-                         $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                         $newObject->setStatus($status, true, false);
+                    //      $tape->setStatus($color, $shade, $bright, $wbright, $status);
+                    //      $newObject->setStatus($status, true, false);
 
-                    break;
+                    // break;
                     
                     case 'customizable_light':
                         
@@ -671,7 +671,6 @@ class Views extends System
                                 Dali::setBrightness($idObject, $brightness);
                             }
                                 
-                            //TODO: добавить реализацию cct для WB-LED  
                             if ($status == 'off' || (isset($brightness) && $brightness == 0)) Dali::daliOff($idObject);
                             else Dali::daliOn($idObject);
                         }
@@ -680,26 +679,31 @@ class Views extends System
                         if ($table == 'tapes')
                         {
                             $tape = new Tape($idObject);
-                            $color = 0;
-                            $shade = 0;
-                            $bright = 0;
-                            $wbright = 0;
+                            // $color = 0;
+                            // $shade = 0;
+                            // $bright = 0;
+                            // $wbright = 0;
 
                             //Пришли конкретные значения для ленты
                             if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
                             {
-                                $color = $itemValue[0]->h;
-                                $shade = $itemValue[0]->s;
-                                $bright = $itemValue[0]->v;
+                                $hue = $itemValue[0]->h;
+                                $saturation = $itemValue[0]->s;
+                                $brightness = $itemValue[0]->v;
+                                $tape->tapeSetColor($hue, $saturation);
+                                $tape->tapeSetBrightness($brightness);
                             }
                             
-                            if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim')
+                            if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim' || $itemValue[0]->type == 'cct')
                             {
-                                $wbright = $itemValue[0]->brightness;
+                                $brightness = $itemValue[0]->brightness;
+                                $tape->tapeSetBrightness($brightness);
                             }
+                        
+                            if ($status == 'off' || (isset($brightness) && $brightness == 0)) $tape->tapeOff();
+                            else $tape->tapeOn();
 
-                            $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                            $newObject->setStatus($status, true, false);   
+                            // $newObject->setStatus($status, true, false);
                         }
 
                         if ($table == 'dimmers' || $table == 'lamps')

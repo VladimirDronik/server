@@ -203,6 +203,7 @@ class Modbus extends System {
     {
         if (is_null ($value)) $value = 'NULL';
         else $value = "'$value'";
+        // var_dump ($value);
         $sql = parent::$db->exec("UPDATE `modbus_registers`
                                      SET `timestamp` = CURRENT_TIMESTAMP(3),
                                          `last_value` = $value
@@ -341,9 +342,33 @@ class Modbus extends System {
         }
         else
         {
-            $sql = parent::$db->query("SELECT `last_value` FROM `modbus_registers` WHERE `id` = $registerId");
-            $value = $sql->fetch(PDO::FETCH_OBJ)->last_value;
-            return $value;
+            $sql = parent::$db->query(" SELECT `last_value`, `data_format`
+                                        FROM `modbus_registers` WHERE `id` = $registerId");
+            $value = $sql->fetch(PDO::FETCH_OBJ);
+            switch ($value->data_format)
+            {
+                case 'bool':
+                    $result = filter_var($value->last_value, FILTER_VALIDATE_BOOLEAN);
+                break;
+                case 'string':
+                    $result = $value->last_value;
+                break;
+                default:
+                    $result = filter_var($value->last_value, FILTER_VALIDATE_INT);
+            }
+            // var_dump ($result);
+            return $result;
         }
+    }
+
+    /**
+     *  Получение id регистра по его alias
+     */
+    public static function getRegisterIdByAlias (int $slaverId, string $alias)
+    {
+        $sql = parent::$db->query(" SELECT `id` FROM `modbus_registers` 
+                                    WHERE `slaver_id` = $slaverId
+                                    AND `alias` = '$alias'");
+        return $sql->fetch(PDO::FETCH_OBJ)->id;
     }
 }

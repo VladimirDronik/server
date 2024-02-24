@@ -109,6 +109,7 @@ class ModbusQueue extends System {
             {
                 $activity = 1;
                 $response = modbusFunction($task, true, $binaryData);
+                
                 // if (isset($response))
                 // {
                 // if (in_array($task->function_code, $writeFunctionCodesArray)) $response = null;
@@ -121,6 +122,7 @@ class ModbusQueue extends System {
                 $response = null;
             }
             // var_dump ($response);
+            // var_dump ($task);
             Modbus::setValue($task->register_id, $response);
             Modbus::setSlaverActivity($task->slaver_id, $activity);
             // System::addStringToLogFile(PHP_EOL);

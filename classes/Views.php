@@ -699,6 +699,14 @@ class Views extends System
                                 $brightness = $itemValue[0]->brightness;
                                 $tape->tapeSetBrightness($brightness);
                             }
+
+                            if ($itemValue[0]->type == 'cct')
+                            {
+                                $cct = $itemValue[0]->cct;
+                                // Переводим в проценты значение цветовой температуры
+                                $cctInPercent = round((($cct-1000)*100)/(10000-1000));
+                                $tape->tapeSetTemperature($cctInPercent);
+                            }
                         
                             if ($status == 'off' || (isset($brightness) && $brightness == 0)) $tape->tapeOff();
                             else $tape->tapeOn();
@@ -1393,7 +1401,9 @@ class Views extends System
                                            `tapes`.`s`,
                                            `tapes`.`v`,
                                            `tapes`.`w`,
-                                           `tapes`.`type`
+                                           `tapes`.`cct`,
+                                           `tapes`.`type`,
+                                           `objects`.`status`
                                     FROM `tapes`
                                     INNER JOIN `objects` ON `objects`.`id` = `tapes`.`id_object` 
                                     INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
@@ -1432,6 +1442,17 @@ class Views extends System
             {
                 $items += [
                     'type' => "dim",
+                    'brightness' => $customizableLight->w
+                ];
+            }
+
+            if ($customizableLight->type == "CCT")
+            {
+                // Переводим проценты в значение cct в диапазоне от 1000 до 10000
+                $cct = 1000+((10000-1000)/100*$customizableLight->cct);
+                $items += [
+                    'type' => "cct",
+                    'cct' => $cct,
                     'brightness' => $customizableLight->w
                 ];
             }

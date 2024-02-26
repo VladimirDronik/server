@@ -72,7 +72,7 @@ class Tape extends Device
                 $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller,
                     $channelAliasConnection[$this->tape->channel].'_cct_state');
                 $registersIds['temperature'] = Modbus::getRegisterIdByAlias($this->tape->controller,
-                    $channelAliasConnection[$this->tape->channel].'_cct_brightness');
+                    $channelAliasConnection[$this->tape->channel].'_cct_temperature');
                 $registersIds['brightness'] = Modbus::getRegisterIdByAlias($this->tape->controller,
                     $channelAliasConnection[$this->tape->channel].'_cct_brightness');
                 break;

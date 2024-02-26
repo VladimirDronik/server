@@ -183,7 +183,7 @@ class ModbusRtu
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
                 $logString .= "Response: " . unpack('H*', $binaryData)[1] . " in " . $end . " ms" . PHP_EOL;
-                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
+                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "   " . $logString;
                 System::addStringToLogFile($logString);
                 return $binaryData;
             }

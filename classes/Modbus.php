@@ -95,45 +95,54 @@ class Modbus extends System {
     {
         // var_dump ($value);
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
-        
-        if ($action == 'read')
+        if ($modbusRegister)
         {
-            if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
-            if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
-            if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
-            if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
+            if ($action == 'read')
+            {
+                if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
+                if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
+                if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
+                if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
+            }
+    
+            if ($action == 'write')
+            {
+                $priority = 0;
+                if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
+                elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
+                elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
+                else $modbusFunction = 6;
+            }
+            
+            // var_dump ($modbusFunction);
+            $beanstalk = new Client();
+            $beanstalk->connect();
+            $beanstalk->useTube($modbusRegister->bus_id);
+    
+            $task = array (
+                'register_id' => $modbusRegisterId,                         // ID регистра
+                'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
+                'function_code' => $modbusFunction,                         // Функция Modbus
+                'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
+                'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
+                'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
+                'value' => (int)$value,                                          // Данные для операций записи
+                'format' => $modbusRegister->data_format,                   // Формат считываемых данных
+                'title' => $modbusRegister->register_name,                  // Название регистра
+                'units' => $modbusRegister->units,                          // Единицы имерения
+                'scale' => $modbusRegister->scale_unit                      // Множитель значения
+            );
+            
+            // echo "Priority = $priority" . PHP_EOL;
+            $beanstalk->put($priority, 0, 5, json_encode($task));
+        }
+        else
+        {
+            $logString = "[Modbus Error]    Register doesn't exist in DB" . PHP_EOL;
+            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
+            System::addStringToLogFile($logString);
         }
 
-        if ($action == 'write')
-        {
-            $priority = 0;
-            if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
-            elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
-            elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
-            else $modbusFunction = 6;
-        }
-        
-        // var_dump ($modbusFunction);
-        $beanstalk = new Client();
-        $beanstalk->connect();
-        $beanstalk->useTube($modbusRegister->bus_id);
-
-        $task = array (
-            'register_id' => $modbusRegisterId,                         // ID регистра
-            'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
-            'function_code' => $modbusFunction,                         // Функция Modbus
-            'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
-            'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
-            'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
-            'value' => (int)$value,                                          // Данные для операций записи
-            'format' => $modbusRegister->data_format,                   // Формат считываемых данных
-            'title' => $modbusRegister->register_name,                  // Название регистра
-            'units' => $modbusRegister->units,                          // Единицы имерения
-            'scale' => $modbusRegister->scale_unit                      // Множитель значения
-        );
-        
-        // echo "Priority = $priority" . PHP_EOL;
-        $beanstalk->put($priority, 0, 5, json_encode($task));
     }
 
     /**

@@ -1393,8 +1393,7 @@ class Views extends System
                                            `tapes`.`s`,
                                            `tapes`.`v`,
                                            `tapes`.`w`,
-                                           `tapes`.`type`,
-                                           `tapes`.`status`
+                                           `tapes`.`type`
                                     FROM `tapes`
                                     INNER JOIN `objects` ON `objects`.`id` = `tapes`.`id_object` 
                                     INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`

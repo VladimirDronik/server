@@ -86,7 +86,7 @@ class Tape extends Device
                     $channelAliasConnection[$this->tape->channel].$str.'_brightness');
                 break;
         }
-        var_dump ($registersIds);
+        // var_dump ($registersIds);
         return $registersIds;
     }
 

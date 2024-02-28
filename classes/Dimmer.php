@@ -122,7 +122,6 @@ class Dimmer extends Device
     {
         $sql = parent::$db->query("SELECT `value` FROM `".self::$deviceTable."` WHERE `id_object` =".self::$idObject);
         $dimer = $sql->fetch(PDO::FETCH_OBJ);
-        // var_dump ($dimer->value);
         return $dimer->value;
     }
 

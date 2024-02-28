@@ -106,13 +106,19 @@ class Objects extends System
                                        WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
 
         }else
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`, 
-                                              `ports`.`num_port` AS port, `ports`.`id_device` AS device,
-                                              `ports`.`status` AS portstate,  `ports`.`extension_module_id` AS extid
-                                       FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
-                                       WHERE `objects`.`id`= $object");
+            $sql = parent::$db->query(" SELECT `objects`.`id`,
+                                               `objects`.`type`,
+                                               `objects`.`status`,
+                                               `ports`.`num_port` AS port,
+                                               `ports`.`id_device` AS device,
+                                               `ports`.`status` AS portstate,
+                                               `ports`.`extension_module_id` AS extid
+                                        FROM `objects` 
+                                        LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
+                                        WHERE `objects`.`id`= $object");
 
-        if ($sql->rowCount() != 0) {
+        if ($sql->rowCount() != 0)
+        {
             $obj = $sql->fetch(PDO::FETCH_OBJ);
 
             $this->id = $obj->id;
@@ -122,8 +128,21 @@ class Objects extends System
             $this->portstate = $obj->portstate;
             $this->extid = $obj->extid;
             $this->device = (int)$obj->device;
+            
+            if ($obj->extid)
+            {
+                $sql = parent::$db->query(" SELECT `sda_port` 
+                                            FROM `extension_modules` 
+                                            WHERE `device_id` = $obj->device 
+                                            AND `id` = $obj->extid");
+                $sda = $sql->fetch(PDO::FETCH_OBJ)->sda_port;
+                $extPort = $sda . "e" . $obj->port;
+                $this->port = $extPort;
+            }
+
             return true;
-        } else return false;
+        } 
+        else return false;
 
     }
 
@@ -143,7 +162,7 @@ class Objects extends System
      */
     function setStatus($status, $set_object_status = true, $portrelease = true, $whence = null, $idCausing = null)
     {
-
+// var_dump ($status, $set_object_status);
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->checkSwitchState($status);
 

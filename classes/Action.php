@@ -36,7 +36,6 @@ class Action extends Megad
      */
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $method_params=null, $sendMessage=true)
     {
-
         // var_dump ($idMethod, $whence, $idCausing, $params, $method_params, $sendMessage);
         // var_dump ($params);
         if ($idCausing)
@@ -61,10 +60,10 @@ class Action extends Megad
             FROM `methods` WHERE `methods`.`id`=$idMethod");
             $method = $sql->fetch(PDO::FETCH_OBJ);
 
-        self::$easy = $method->easy;
-        self::$idScript = $method->script;
-        $object = new Objects();
-        $object->select($method->id_object);
+            self::$easy = $method->easy;
+            self::$idScript = $method->script;
+            $object = new Objects();
+            $object->select($method->id_object);
 
             if ($idCausing) Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
             if ($idCausing != $method->id_object)
@@ -85,72 +84,72 @@ class Action extends Megad
      */
     static private function easy($object, $whence, $params = null)
     {
-        
         $porteasy = explode(';',self::$easy);
-        if ($porteasy[0] == 'm') { //Если в easy указано устройство модбас
-            // var_dump ($porteasy[1], $params);
+        if ($porteasy[0] == 'm') 
+        {   
+            //Если в easy указано устройство модбас
             //Запускаем команду на устройстве модбас по его id
             $params = str_replace("'", "", $params);
-            
             return Modbus::putTaskIntoQueue($porteasy[1], 'write', 5, $params);
-        } else { //Если в easy указано другое устройство, нарпимер контроллер мегадевайс
+
+        } 
+        else
+        {
+            //Если в easy указано другое устройство, нарпимер контроллер мегадевайс
             $device = parent::getDeviceParams($porteasy[0]);
             $ip_device = $device->ip_address;
             $password = $device->password;
-        
 
-        $portAndCmd = explode(':', $porteasy[1]);
-        $port = $portAndCmd[0];
-        $command = $portAndCmd[1];
+            $portAndCmd = explode(':', $porteasy[1]);
+            $port = $portAndCmd[0];
+            $command = $portAndCmd[1];
 
-        if ($device->active) {
-
-            //Если тип устройства хитпро
-            if(Device::getTypeName($device->type) == 'Hite-pro') {
-
-                HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
-
-                sleep(1);
-                $state = HitePro::getHiteProCommand($ip_device, $password, $port);
-
-
-            } else { //если обычная мега
-
-                //Если есть доп. параметры
-                if (($params == 'ON') || ($params == 'OFF')) {
-                    if ($params == 'ON')
-                        $command = 1;
-
-                    if($params == 'OFF')
-                        $command = 0;
+            if ($device->active)
+            {
+                //Если тип устройства хитпро
+                if(Device::getTypeName($device->type) == 'Hite-pro')
+                {
+                    HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
+                    sleep(1);
+                    $state = HitePro::getHiteProCommand($ip_device, $password, $port);
+                } 
+                else
+                { 
+                    //если обычная мега
+                    //Если есть доп. параметры
+                    if (($params == 'ON') || ($params == 'OFF'))
+                    {
+                        if ($params == 'ON') $command = 1;
+                        if($params == 'OFF') $command = 0;
+                    }
 
                     file_get_contents("http://$ip_device/$password?cmd=$port:$command");
+                    
+                    //Получаем состояние порта, на который воздействуем
+                    $state = file_get_contents("http://$ip_device/$password?pt=$port&cmd=get");
+                    if ($object->extid)
+                    {
+                        $extPort = explode('e', $portAndCmd[0])[1];
+                        $state = mb_strtolower(explode(';', $state)[$extPort]);
+                    }
+                    else $state = mb_strtolower(explode('/', $state)[0]);
 
-                } else {
-                        //Меняем статус порта на физическом устройстве так как есть без параметров
-                        file_get_contents("http://$ip_device/$password?cmd=$porteasy[1]");
                 }
 
+                //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
+                if($whence == 'device') {
+                    //$idCausing->setStatus($state);
 
-                //Получаем состояние порта, на который воздействуем
-                $state = file_get_contents("http://$ip_device/$password?pt=$porteasy[1]&cmd=get");
-                $state = mb_strtolower(explode('/', $state)[0]);
+                    //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
+                    if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
+                        $object->setStatus($state, true, false);
+                }
+
+                //Меняем статус объекта, которым управляем
+                $object->setStatus($state);
+                return $state;
             }
-
-            //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
-            if($whence == 'device') {
-                //$idCausing->setStatus($state);
-
-                //Если у порта, которым управляем имеется связанный объект, то меняем его состояние
-                if ($object->select(null, $porteasy[0], explode(':', $porteasy[1])[0]))
-                    $object->setStatus($state, true, false);
-            }
-
-            //Меняем статус объекта, которым управляем
-            $object->setStatus($state);
-            return $state;
         }
-    }
     }
 
 
@@ -235,35 +234,44 @@ class Action extends Megad
      */
     static public function runWithoutMethod($idObject)
     {
-        $object = new Objects();
-        $object->select($idObject);
-        
-        if ($object->type == 'drycontact') {
+        if ($idObject)
+        {
+            $object = new Objects();
+            $object->select($idObject);
             
-            //Получаем состояние порта, на котором висит данный элемент
-            $status = $object->getPortState();
+            if ($object->type == 'drycontact') {
+                
+                //Получаем состояние порта, на котором висит данный элемент
+                // $status = $object->getPortState();
 
-            //Присваиваем объекту это состояние
-            $object->setStatus($status, true, false);
+                $deviceParams = Megad::getDeviceParams($object->device);
+                
+                $state = file_get_contents("http://$deviceParams->ip_address/$deviceParams->password?pt=$object->port&cmd=get");
+                if ($object->extid)
+                {
+                    $extPort = explode('e', $object->port)[1];
+                    $status = mb_strtolower(explode(';', $state)[$extPort]);
+                }
+                else $status = mb_strtolower(explode('/', $state)[0]);
 
+                //Присваиваем объекту это состояние
+                $object->setStatus($status, true, false);
 
-            $sql = parent::$db->query("SELECT `method_on`, `method_off`, `param_method_on`, `param_method_off` 
-                                        FROM `drycontacts` WHERE `id_object`=$idObject");
-            $drycontQuery = $sql->fetch(PDO::FETCH_OBJ);
-            
-            Messages::sendByObject($idObject);
+                $sql = parent::$db->query("SELECT `method_on`, `method_off`, `param_method_on`, `param_method_off` 
+                                            FROM `drycontacts` WHERE `id_object`=$idObject");
+                $drycontQuery = $sql->fetch(PDO::FETCH_OBJ);
 
-            if ($object->status == 'ON')
-            {
-                self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on, false);
+                Messages::sendByObject($idObject);
+
+                if ($object->status == 'on')
+                {
+                    self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on, false);
+                }
+                else
+                {
+                    self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off, false);
+                }
             }
-            else
-            {
-                self::runAction($drycontQuery->method_off, null, $idObject, $drycontQuery->param_method_off, false);
-            }
-            
         }
     }
-
-
 }

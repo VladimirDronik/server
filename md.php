@@ -162,7 +162,7 @@ if (array_key_exists('pt', $parametersArray))
                     $ports[] = [
                         'method' => $port->lc_method,
                         'portObject' => $port->object,
-                        'params' => $m,
+                        'params' => $value,
                         'method_params' => 'lc',
                         'log' => "$log длительное замыкание"
                     ];
@@ -226,7 +226,7 @@ if (array_key_exists('pt', $parametersArray))
                     $ports[] = [
                         'method' => null,
                         'portObject' => $port->object,
-                        'params' => null,
+                        'params' => 1,
                         'method_params' => null,
                         'log' => "$log Порт $extPort : размыкание"
                     ];
@@ -257,7 +257,7 @@ if (array_key_exists('pt', $parametersArray))
         // System::addLog("Messages", "method = $port['method']", "port");
         if($port['method']) Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params']);
         //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
-        else if ($port['params'] != 2) Action::runWithoutMethod($port['portObject']);
+        else Action::runWithoutMethod($port['portObject'], $port['params']);
         System::addLog("Messages", $port['log'], "port");
     }
 }

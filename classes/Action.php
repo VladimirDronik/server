@@ -232,7 +232,7 @@ class Action extends Megad
     /**
      * Выполнение действий для объектов исходя из их типа
      */
-    static public function runWithoutMethod($idObject)
+    static public function runWithoutMethod($idObject, $portState)
     {
         if ($idObject)
         {
@@ -244,15 +244,18 @@ class Action extends Megad
                 //Получаем состояние порта, на котором висит данный элемент
                 // $status = $object->getPortState();
 
-                $deviceParams = Megad::getDeviceParams($object->device);
+                // $deviceParams = Megad::getDeviceParams($object->device);
                 
-                $state = file_get_contents("http://$deviceParams->ip_address/$deviceParams->password?pt=$object->port&cmd=get");
-                if ($object->extid)
-                {
-                    $extPort = explode('e', $object->port)[1];
-                    $status = mb_strtolower(explode(';', $state)[$extPort]);
-                }
-                else $status = mb_strtolower(explode('/', $state)[0]);
+                // $state = file_get_contents("http://$deviceParams->ip_address/$deviceParams->password?pt=$object->port&cmd=get");
+                // if ($object->extid)
+                // {
+                //     $extPort = explode('e', $object->port)[1];
+                //     $status = mb_strtolower(explode(';', $state)[$extPort]);
+                // }
+                // else $status = mb_strtolower(explode('/', $state)[0]);
+
+                if ($portState == 1) $status = 'off';
+                else $status = 'on';
 
                 //Присваиваем объекту это состояние
                 $object->setStatus($status, true, false);
@@ -263,7 +266,7 @@ class Action extends Megad
 
                 Messages::sendByObject($idObject);
 
-                if ($object->status == 'on')
+                if ($status == 'on')
                 {
                     self::runAction($drycontQuery->method_on, null, $idObject, $drycontQuery->param_method_on, false);
                 }

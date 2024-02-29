@@ -6,7 +6,7 @@
 
 require_once 'include.php';
 flush();
-$debug = false;
+$debug = true;
 $params = null;
 $logstr = '';
 $log = '';
@@ -109,7 +109,7 @@ if (array_key_exists('pt', $parametersArray))
 
     $mega = new Megad();
 
-    $log = "Сработал порт устройства $deviceName ($ip_device). ";
+    $log = "Устройство $deviceName ($ip_device). ";
 
     if (array_key_exists('click', $parametersArray) || array_key_exists('m', $parametersArray))
     {
@@ -257,7 +257,7 @@ if (array_key_exists('pt', $parametersArray))
         // System::addLog("Messages", "method = $port['method']", "port");
         if($port['method']) Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params']);
         //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
-        else if ($params != 2) Action::runWithoutMethod($port['portObject']);
+        else if ($port['params'] != 2) Action::runWithoutMethod($port['portObject']);
         System::addLog("Messages", $port['log'], "port");
     }
 }

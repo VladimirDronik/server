@@ -84,48 +84,49 @@ class ModbusQueue extends System {
         {
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
+
+            if ($task->mode == 'modbus_rtu')
+            {
+                $packet = modbusFunction($task);
+
+                $slaverId = "Slaver ID: " . $task->slave_address . " (0x" . dechex($task->slave_address).")";
+                $registerAddress = "Register: " . $task->starting_address . " (0x" . dechex($task->starting_address).")";
+                $functionCode = "Function code: " . "0x" . dechex($task->function_code);
+                
+                
+                $logString = "[Modbus queue]    Register ID $task->register_id. Task: $slaverId, $registerAddress, $functionCode";
+                if (in_array($task->function_code, $writeFunctionCodesArray)) 
+                {
+                    $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
+                    $logString .= ", " . $value;
+                }
+                $logString .= PHP_EOL;
+    
+                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
+                System::addStringToLogFile($logString);
+                
+                $binaryData = self::$modbus->send($packet);
+    
+                if ($binaryData) 
+                {
+                    $activity = 1;
+                    $response = modbusFunction($task, true, $binaryData);
+                }
+                else
+                {
+                    $activity = 0;
+                    $response = null;
+                }
+    
+                Modbus::setValue($task->register_id, $response);
+                Modbus::setSlaverActivity($task->slaver_id, $activity);
+            }
+
+            if ($task->mode == 'rs485_raw')
+            {
             // TODO: Добавить обработку задачи для приводов штор с RS-485
-            $packet = modbusFunction($task);
+            }
 
-            $slaverId = "Slaver ID: " . $task->slave_address . " (0x" . dechex($task->slave_address).")";
-            $registerAddress = "Register: " . $task->starting_address . " (0x" . dechex($task->starting_address).")";
-            $functionCode = "Function code: " . "0x" . dechex($task->function_code);
-            
-            
-            $logString = "[Modbus queue]    Register ID $task->register_id. Task: $slaverId, $registerAddress, $functionCode";
-            if (in_array($task->function_code, $writeFunctionCodesArray)) 
-            {
-                $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
-                $logString .= ", " . $value;
-            }
-            $logString .= PHP_EOL;
-
-            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
-            System::addStringToLogFile($logString);
-            
-            $binaryData = self::$modbus->send($packet);
-            // Modbus::processResponse($binaryData);
-            if ($binaryData) 
-            {
-                $activity = 1;
-                $response = modbusFunction($task, true, $binaryData);
-                
-                // if (isset($response))
-                // {
-                // if (in_array($task->function_code, $writeFunctionCodesArray)) $response = null;
-                // }
-                
-            }
-            else
-            {
-                $activity = 0;
-                $response = null;
-            }
-            // var_dump ($response);
-            // var_dump ($task);
-            Modbus::setValue($task->register_id, $response);
-            Modbus::setSlaverActivity($task->slaver_id, $activity);
-            // System::addStringToLogFile(PHP_EOL);
             $beanstalk->delete($job['id']);
         }
     }

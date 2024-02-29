@@ -114,26 +114,25 @@ class Modbus extends System {
                 else $modbusFunction = 6;
             }
             
-            // var_dump ($modbusFunction);
             $beanstalk = new Client();
             $beanstalk->connect();
             $beanstalk->useTube($modbusRegister->bus_id);
     
             $task = array (
+                'mode' => 'modbus_rtu',
                 'register_id' => $modbusRegisterId,                         // ID регистра
                 'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
                 'function_code' => $modbusFunction,                         // Функция Modbus
                 'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
                 'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
                 'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
-                'value' => (int)$value,                                          // Данные для операций записи
+                'value' => (int)$value,                                     // Данные для операций записи
                 'format' => $modbusRegister->data_format,                   // Формат считываемых данных
                 'title' => $modbusRegister->register_name,                  // Название регистра
                 'units' => $modbusRegister->units,                          // Единицы имерения
                 'scale' => $modbusRegister->scale_unit                      // Множитель значения
             );
             
-            // echo "Priority = $priority" . PHP_EOL;
             $beanstalk->put($priority, 0, 5, json_encode($task));
         }
         else

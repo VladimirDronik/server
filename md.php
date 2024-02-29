@@ -6,7 +6,7 @@
 
 require_once 'include.php';
 flush();
-$debug = true;
+$debug = false;
 $params = null;
 $logstr = '';
 $log = '';
@@ -106,7 +106,6 @@ $deviceName = $sql->fetch(PDO::FETCH_OBJ)->device_name;
 if (array_key_exists('pt', $parametersArray))
 {
     Megad::$ip_device = $ip_device;
-
     $mega = new Megad();
 
     $log = "Устройство $deviceName ($ip_device). ";
@@ -267,12 +266,15 @@ if (array_key_exists('pt', $parametersArray))
 
 if (array_key_exists('st', $parametersArray))
 {
+    Megad::$ip_device = $ip_device;
+    $mega = new Megad();
+    
     foreach ($parametersArray as $key=>$value)
     {
         if ($key == 'st')
         {
             System::addLog("Messages", "Контроллер $deviceName ($ip_device) был перезагружен.", "port");
-            // TODO: Восстанавливать состояние портов из БД
+            $mega->restoreOutPortsStatus();
         }
     }
 }

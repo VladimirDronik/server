@@ -149,4 +149,32 @@ class Megad extends System
 
     }
 
+    /**
+     * Актуализация статусов OUT портов со статусами объектов из БД
+     */
+    public function restoreOutPortsStatus()
+    {
+        $ipAddress = self::$ip_device;
+        $object = new Objects();
+        $objectsWithStatus = [];
+
+        $sql = System::$db->query(" SELECT `ports`.`object`, `ports`.`status`, `ports`.`num_port`, `objects`.`status`
+                                    FROM `ports` 
+                                    INNER JOIN `devices` ON `devices`.`id`=`ports`.`id_device`
+                                    INNER JOIN `objects` ON `objects`.`id` = `ports`.`object`
+                                    WHERE `ports`.`object` IS NOT NULL
+                                    AND `devices`.`ip_address` = '$ipAddress'
+                                    AND LOWER(`ports`.`status`) = 'out'");
+
+        while ($outPortObject = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $objectsWithStatus [$outPortObject->object] = $outPortObject->status;
+        }
+
+        foreach ($objectsWithStatus as $objectId => $objectStatus)
+        {
+            $object->select($objectId);
+            $object->setStatus($objectStatus, true, true);
+        }
+    }
 }

@@ -122,9 +122,29 @@ class ModbusQueue extends System {
                 Modbus::setSlaverActivity($task->slaver_id, $activity);
             }
 
-            if ($task->mode == 'rs485_raw')
+            if ($task->mode == 'rs485_curtains')
             {
-            // TODO: Добавить обработку задачи для приводов штор с RS-485
+                if ($binaryData = self::$modbus->send(base64_decode($task->raw_data)))
+                {
+                    var_dump (bin2hex($binaryData));
+                    $bytesArray = unpack('C*', $binaryData);
+                    $curtain = new Curtain ($task->object_id);
+                    $object = new Objects();
+                    $object->select($task->object_id);
+                
+                    if ($task->command == 'setPercent' || $task->command == 'getPercent')
+                    {   
+                        $percent = $bytesArray[6];
+                        $curtain->putPercentToDb($percent);
+                        if ($percent > 0) $object->setStatus('open', true, false);
+                        else $object->setStatus('close', true, false);
+                    }
+    
+                    if ($task->command == 'getMotorType')
+                    {
+                        var_dump ($bytesArray[6]);
+                    }
+                }  
             }
 
             $beanstalk->delete($job['id']);

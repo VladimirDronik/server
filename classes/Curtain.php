@@ -6,13 +6,16 @@
  * Для приводов с фазным управлением и сухим контактом доступны методы: open и close.
  * Повторный вызов метода останавливает привод.
  * 
- * Для приводов с RS485 доступны методы: open, close, stop, openPercent.
+ * Для приводов с RS485 доступны методы: open, close, stop, setPercent.
  * Для унификации методов повторный вызов метода open или close останавливает привод.
  */
 
- class Curtain extends Device
+use Beanstalk\Client;
+
+class Curtain extends Device
 {
-    private static $_curtain = null;
+    private $curtain = null;
+    // private $idObject = null;
 
     public function __construct($idObject)
     {
@@ -21,101 +24,92 @@
 
     private function initCurtain($idObject)
     {
-        $sql = parent::$db->query("SELECT curtains.port_open AS `port_open`,
-                                    curtains.port_close AS `port_close`,
-                                    curtains.time AS `time`,
-                                    curtains.place AS `place`,
-                                    curtains.address AS `address`,
-                                    curtains.group AS `group`,
-                                    curtains.percent AS `percent`,
-                                    curtains.id_object AS `id_object`,
-                                    devices.ip_address AS `gateway_ip`,
-                                    devices.port AS `gateway_port`,
-                                    devtypes.name AS `gateway_type`
-                                    FROM curtains 
-                                    JOIN devices ON devices.id=curtains.device_id
-                                    JOIN devtypes ON devtypes.id=devices.type
-                                    WHERE curtains.id_object = $idObject");
+        $sql = parent::$db->query(" SELECT `curtains`.`port_open`,
+                                           `curtains`.`port_close`,
+                                           `curtains`.`time`,
+                                           `curtains`.`place`,
+                                           `curtains`.`address`,
+                                           `curtains`.`group`,
+                                           `curtains`.`percent`,
+                                           `curtains`.`bus_id`,
+                                           `modbus_buses`.`type` AS 'bus_type'
+                                    FROM `curtains`
+                                    INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
+                                    WHERE `curtains`.`id_object` = $idObject");
 
-        $curtain =  $sql->fetch(PDO::FETCH_OBJ);
-        $this->idObject = $curtain->id_object;
-        $this->place = $curtain->place;
-        
-        if($curtain->place == 'rs485')
-        {
-            $this->address = $curtain->address;
-            $this->group = $curtain->group;
-            if ($curtain->gateway_type == 'ModbusTCP')
-            {
-                $this->gateway_ip = $curtain->gateway_ip;
-                $this->gateway_port = $curtain->gateway_port;
-            }
-            $this->percent = $curtain->percent;
-            $this->gateway_type = $curtain->gateway_type;
-        }
-        else
-        {
-            $this->openPort = $curtain->port_open;
-            $this->closePort = $curtain->port_close;
-            $this->time = $curtain->time;
-            if($curtain->place == 'port' || $curtain->place == 'phase') 
-            $this->device = Device::getDevice($idObject);
-        }
-        self::$_curtain = $this;
+        $this->curtain =  $sql->fetch(PDO::FETCH_OBJ);
+        $this->curtain->id_object = $idObject;
     }
+
+    /**
+     * Функция расчета CRC суммы (для штор с RS485)
+     */
+    private static function crc16($data)
+	{
+		$crc = 0xFFFF;
+		for ($i = 0; $i < strlen($data); $i++)
+		{
+			$crc ^=ord($data[$i]);
+     		for ($j = 8; $j !=0; $j--)
+			{
+				if (($crc & 0x0001) !=0)
+				{
+					$crc >>= 1;
+					$crc ^= 0xA001;
+				}
+				else $crc >>= 1;
+			}		
+		}
+		$highCrc=floor($crc/256);
+		$lowCrc=($crc-$highCrc*256);
+		return chr($lowCrc).chr($highCrc);
+	}
 
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private static function packetAssembling ($address, $group, $cmd, $percent=null, $direction=null)
+    private static function packetAssembling (int $address, int $group, array $cmd, int $params=null)
     {
         $packet = array_merge([0x55, $address, $group], $cmd);
         $packet = pack ('c*', ...$packet);
-        if ($percent) $packet .= pack ("c", $percent);
-        if ($direction) $packet .= pack ("c", $direction);
+        if (isset($params)) $packet .= pack ("c", $params);
+        $packet .= self::crc16($packet);
         return $packet;
     }
 
-    private static function sendCmd ($packet)
+    /**
+     * Отправка команды (для штор с RS485)
+     */
+    private function sendCmd (string $packet, string $cmd=null)
 	{
-        $curtain = self::$_curtain;
-
-	    if ($curtain->gateway_type == "ModbusTCP")
+	    if ($this->curtain->bus_type == "tcp")
         {
             $modbus = new ModbusTcp();
             $modbus->debug = false;
             $modbus->socketCreate();
             $modbus->socketSetOption();
-            $modbus->socketConnect($curtain->gateway_ip, $curtain->gateway_port);
-            $f = $modbus->modbusTcpTransactionId()."\x00\x00".pack('n', strlen($packet)).$packet.$modbus->crc16($packet);
+            $modbus->socketConnect($this->curtain->gateway_ip, $this->curtain->gateway_port);
+            $f = $modbus->modbusTcpTransactionId()."\x00\x00".pack('n', strlen($packet)).$packet;
             $modbus->socketWrite($f);
             $result = $modbus->socketRead();
             $result = unpack('C*', $result);
             $result = $result[count($result)];
             $modbus->socketClose();
         }
-        else
+        
+        if ($this->curtain->bus_type == "rtu")
         {
-            if ($curtain->gateway_type == "JetHomeModbusSerial0") $dev = '/dev/ttyUSB0';
-            if ($curtain->gateway_type == "JetHomeModbusSerial1") $dev = '/dev/ttyUSB1';
-
-            $modbus = new PhpSerialModbus;
-            $modbus->deviceInit($dev, 9600, 'none', 8, 1, 'none');
-            $modbus->deviceOpen();
-            $modbus->debug = true;
-            $pkg = $packet.$modbus->crc16($packet);
-            // var_dump (unpack('H*',$pkg)[1]);
-            $modbus->sendRawQuery($pkg,false);
-            $result = $modbus->getResponse(true);
-            // var_dump (is_null($result));
-            if (!empty($result))
-            {
-                $result = unpack('C*', $result);
-                $result = $result[count($result)-2];
-            }
-            $modbus->deviceClose();
+            $beanstalk = new Client();
+            $beanstalk->connect();
+            $beanstalk->useTube($this->curtain->bus_id);
+            $task = [
+                'mode' => 'rs485_curtains',
+                'object_id' => $this->curtain->id_object,
+                'raw_data' => base64_encode($packet),
+                'command' => $cmd
+            ];
+            $beanstalk->put(5, 0, 5, json_encode($task));
         }
-        return $result;
 	}
     
     /**
@@ -123,15 +117,14 @@
      */
     public static function getInfo()
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0x05, 0x01]); // 010501 - команда считывания текущего состояния привода
-        $response = self::sendCmd($packet);
-            // Возможные ответы
-            // 0 - остановлен
-            // 1 - открывается
-            // 2 - закрывается
-            // 3 - режим настройки
-        return $response;
+        // 010501 - команда считывания текущего состояния привода
+        // Возможные ответы
+        // 0 - остановлен
+        // 1 - открывается
+        // 2 - закрывается
+        // 3 - режим настройки
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x05, 0x01]);
+        self::sendCmd($packet); 
     }
 
     /**
@@ -139,167 +132,148 @@
      */
     public function open()
     {
-        $curtain = self::$_curtain;
-        if($curtain->place == 'rs485')
+        $object = new Objects();
+        $object->select($this->curtain->id_object);
+
+        if($this->curtain->place == 'rs485')
         {
-            if (self::getInfo() != 0) self::stop();
-            else
-            {
-                $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x01]); // 0301 - команда открытия
-                self::sendCmd($packet);
-                // self::percent_db(100);
-            }
+            // 0301 - команда открытия
+            // $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x01]);
+            // $this->sendCmd($packet);
+            // $this->percent_db(100);
+            $this->setPercent(100);
         }
-        elseif ($curtain->place == 'port')
+        elseif ($this->curtain->place == 'port')
         {
             $mega = new Megad();
-            $port = Device::getNumPort($curtain->openPort);
-            $mega->set($port,1,$curtain->device);
+            $port = Device::getNumPort($this->curtain->openPort);
+            $mega->set($port,1,$this->curtain->device);
             usleep(500000);
-            $mega->set($port,0,$curtain->device);
+            $mega->set($port,0,$this->curtain->device);
+            $object->setStatus('open', true, false);
         }
-        elseif ($curtain->place == 'phase')
+        elseif ($this->curtain->place == 'phase')
         {
             $mega = new Megad();
-            if ($mega->status(Device::getNumPort($curtain->closePort), 'get', $curtain->device) != 'OFF')
+            if ($mega->status(Device::getNumPort($this->curtain->closePort), 'get', $this->curtain->device) != 'OFF')
             {
-                $mega->set(Device::getNumPort($curtain->closePort),0,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->closePort),0,$curtain->device);
                 usleep(500000);
             }
 
-            if ($mega->status(Device::getNumPort($curtain->openPort), 'get', $curtain->device) != 'OFF')
-                $mega->set(Device::getNumPort($curtain->openPort),0,$curtain->device);
+            if ($mega->status(Device::getNumPort($this->curtain->openPort), 'get', $this->curtain->device) != 'OFF')
+                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
             else
             {
-                $mega->set(Device::getNumPort($curtain->openPort),1,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->openPort),1,$this->curtain->device);
                 sleep($curtain->time+1);
-                $mega->set(Device::getNumPort($curtain->openPort),0,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
             }
+            $object->setStatus('open', true, false);
         }
     }
 
     /**
      * Закрытие шторы
      */
-    public static function close()
+    public function close()
     {
-        $curtain = self::$_curtain;
-        if($curtain->place == 'rs485')
+        $object = new Objects();
+        $object->select($this->curtain->id_object);
+
+        if($this->curtain->place == 'rs485')
         {
-            if (self::getInfo() != 0) self::stop();
-            else
-            {
-                $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x02]); // 0302 - команда закрытия
-                self::sendCmd($packet);
-                self::percent_db(0);
-            }
+            // 0302 - команда закрытия
+            // $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x02]);
+            // $this->sendCmd($packet);
+            // $this->percent_db(0);
+            $this->setPercent(0);
         }
-        elseif ($curtain->place == 'port')
+        elseif ($this->curtain->place == 'port')
         {
             $mega = new Megad();
-            $port = Device::getNumPort($curtain->closePort);
-            $mega->set($port,1,$curtain->device);
+            $port = Device::getNumPort($this->curtain->closePort);
+            $mega->set($port,1,$this->curtain->device);
             usleep(500000);
-            $mega->set($port,0,$curtain->device);
+            $mega->set($port,0,$this->curtain->device);
+            $object->setStatus('close', true, false);
         }
-        elseif ($curtain->place == 'phase')
+        elseif ($this->curtain->place == 'phase')
         {
             $mega = new Megad();
-            if ($mega->status(Device::getNumPort($curtain->openPort), 'get', $curtain->device) != 'OFF')
+            if ($mega->status(Device::getNumPort($this->curtain->openPort), 'get', $this->curtain->device) != 'OFF')
             {
-                $mega->set(Device::getNumPort($curtain->openPort),0,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
                 usleep(500000);
             }
 
-            if ($mega->status(Device::getNumPort($curtain->closePort), 'get', $curtain->device) != 'OFF')
-                $mega->set(Device::getNumPort($curtain->closePort),0,$curtain->device);
+            if ($mega->status(Device::getNumPort($this->curtain->closePort), 'get', $this->curtain->device) != 'OFF')
+                $mega->set(Device::getNumPort($this->curtain->closePort),0,$this->curtain->device);
             else
             {
-                $mega->set(Device::getNumPort($curtain->closePort),1,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->closePort),1,$this->curtain->device);
                 sleep($curtain->time+1);
-                $mega->set(Device::getNumPort($curtain->closePort),0,$curtain->device);
+                $mega->set(Device::getNumPort($this->curtain->closePort),0,$this->curtain->device);
             }
+            $object->setStatus('close', true, false);
         }
     }
 
     /**
      * Остановка привода (для приводов с RS-485)
      */
-    public static function stop()
+    public function stop()
     {
-        $curtain = self::$_curtain;
-        if($curtain->place == 'rs485')
+        if($this->curtain->place == 'rs485')
         {
-            $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x03]); // 0303 - команда остановки
-            self::sendCmd($packet);
-            self::getPercent();
+            // 0303 - команда остановки
+            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x03]);
+            $this->sendCmd($packet);
+            $this->getPercent();
         }
     }
 
     /**
      * Открытие шторы на процент (для приводов с RS-485)
      */
-    public static function openPercent($percent)
+    public function setPercent(int $percent)
     {
         if ($percent >= 0 && $percent <= 100)
         {
-            $curtain = self::$_curtain;
-            $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x04], $percent); 
-                // 0304 - команда установки процента открытия
-            $response = self::sendCmd($packet);
-
-            if ($response > 100)
-            {
-                if (self::getMotorType() == 17)
-                {
-                    echo "[WARNING] Set the limits first!\n";
-                }
-                else
-                {
-                    self::open();
-                    while (self::getInfo() != 0) usleep(500000);
-                    self::close();
-                    while (self::getInfo() != 0) usleep(500000);
-                    $response = self::sendCmd($packet);
-                }
-            }
-            self::percent_db($response);
+            // 0304 - команда установки процента открытия
+            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x04], $percent);
+            $this->sendCmd($packet, 'setPercent');
         }
     }
 
     /**
      * Получение процента открытия шторы (для штор с RS485)
      */
-    public static function getPercent()
+    public function getPercent()
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0x02, 0x01]); 
-            // 010201 - команда считывания текущего процента открытия
-        $response = self::sendCmd($packet);
-        self::percent_db($response);
+        // 010201 - команда считывания текущего процента открытия
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x02, 0x01]);
+        $this->sendCmd($packet, 'getPercent');
     }
 
     /**
      * Запись процента открытия в БД
      */
-    private static function percent_db(int $value)
+    public function putPercentToDb(int $value)
     {
-        var_dump ($value);
-        $curtain = self::$_curtain;
         //Заносим процент открытия в БД
-        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object='$curtain->idObject'");
+        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
     }
 
     /**
      * Считывание типа двигателя (для штор с RS485)
      */
-    public static function getMotorType()
+    public function getMotorType()
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x01, 0xF0, 0x01]); 
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xF0, 0x01]); 
             // 01F001 - в ответ 17(0x11) - рулонка, ???17(0x11)??? - жалюзи
-        $response = self::sendCmd($packet);
-        return $response;
+        $response = $this->sendCmd($packet, 'getMotorType');
+        // return $response;
     }
 
     /**
@@ -307,10 +281,9 @@
      */
     public static function resetLimits()
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x07]); 
-            // 0307 - команда сброса выставленных пределов
-       self::sendCmd($packet);
+        // 0307 - команда сброса выставленных пределов
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x07]); 
+        $this->sendCmd($packet);
     }
 
     /**
@@ -318,21 +291,19 @@
      */
     public static function changeDirection($direction) // 0 - мотор слева, 1 - мотор справа
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x02, 0x03, 0x01], $direction); 
-            // 020301 - команда сброса выставленных пределов
-            // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        self::sendCmd($packet);
+        // 020301 - команда сброса выставленных пределов
+        // $direction = 0 - левый мотор или $direction = 1 - правый мотор
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], $direction); 
+        $this->sendCmd($packet);
     }
 
     /**
      * Отправка адреса (для штор с RS485)
      */
-    public static function changeAddress($a, $g)
+    public static function changeAddress(int $address, int $group)
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling(0x01, 0x02, [0x02, 0x00, 0x02], $a, $g);
-        self::sendCmd($packet);
+        $packet = $this->packetAssembling(0x01, 0x02, [0x02, 0x00, 0x02], $address, $group);
+        $this->sendCmd($packet);
     }
 
     /**
@@ -340,8 +311,7 @@
      */
     public static function reset()
     {
-        $curtain = self::$_curtain;
-        $packet = self::packetAssembling($curtain->address, $curtain->group, [0x03, 0x08]);
-        self::sendCmd($packet);
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x08]);
+        $this->sendCmd($packet);
     }
 }

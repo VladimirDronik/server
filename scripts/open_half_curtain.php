@@ -4,4 +4,4 @@
  */
 require_once '../include.php';
 $curtain = new Curtain($argv[1]);
-$curtain->openPercent($argv[2]);
+$curtain->setPercent($argv[2]);

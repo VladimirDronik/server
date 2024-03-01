@@ -176,14 +176,14 @@ class ModbusRtu
             usleep(150000);
             $binaryData = fread($this->fd, 255);
         } while ($binaryData === '' && (microtime(true) - $start) < 3);
-
+        $end = (microtime(true) - $start) * 1000;
         // if ($this->debug) {
             if ($binaryData) {
-                $end = (microtime(true) - $start) * 1000;
+                
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
                 $logString .= "Response: " . unpack('H*', $binaryData)[1] . " in " . $end . " ms" . PHP_EOL;
-                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "   " . $logString;
+                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
                 System::addStringToLogFile($logString);
                 return $binaryData;
             }

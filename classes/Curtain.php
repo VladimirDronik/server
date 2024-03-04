@@ -14,31 +14,48 @@ use Beanstalk\Client;
 
 class Curtain extends Device
 {
-    private $curtain = null;
-    // private $idObject = null;
+    private $curtain;
 
-    public function __construct($idObject)
+    public function __construct($idObject, $busId = null)
     {
-        $this->initCurtain($idObject);
+        $this->initCurtain($idObject, $busId);
     }
 
-    private function initCurtain($idObject)
+    private function initCurtain($idObject, $busId = null)
     {
-        $sql = parent::$db->query(" SELECT `curtains`.`port_open`,
-                                           `curtains`.`port_close`,
-                                           `curtains`.`time`,
-                                           `curtains`.`place`,
-                                           `curtains`.`address`,
-                                           `curtains`.`group`,
-                                           `curtains`.`percent`,
-                                           `curtains`.`bus_id`,
-                                           `modbus_buses`.`type` AS 'bus_type'
-                                    FROM `curtains`
-                                    INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
-                                    WHERE `curtains`.`id_object` = $idObject");
+        if (isset($idObject))
+        {
+            $sql = parent::$db->query(" SELECT `curtains`.`port_open` AS 'openPort',
+                                               `curtains`.`port_close` AS 'closePort',
+                                               `curtains`.`time`,
+                                               `curtains`.`place`,
+                                               `curtains`.`address`,
+                                               `curtains`.`group`,
+                                               `curtains`.`percent`,
+                                               `curtains`.`bus_id`,
+                                               `modbus_buses`.`type` AS 'bus_type'
+                                        FROM `curtains`
+                                        LEFT JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
+                                        WHERE `curtains`.`id_object` = $idObject");
 
-        $this->curtain =  $sql->fetch(PDO::FETCH_OBJ);
-        $this->curtain->id_object = $idObject;
+            if ($this->curtain = $sql->fetch(PDO::FETCH_OBJ))
+            {
+                $this->curtain->id_object = $idObject;
+            }
+        }
+        else
+        {
+            if (isset($busId))
+            {
+                $sql = parent::$db->query(" SELECT `modbus_buses`.`type` AS 'bus_type'
+                                            FROM `modbus_buses`
+                                            WHERE `modbus_buses`.`id` = $busId");
+
+                $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+                $this->curtain->bus_id = $busId;
+                $this->curtain->id_object = null;
+            }
+        }
     }
 
     /**
@@ -68,11 +85,11 @@ class Curtain extends Device
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private static function packetAssembling (int $address, int $group, array $cmd, int $params=null)
+    private static function packetAssembling (int $address, int $group, array $cmd, array $params=null)
     {
         $packet = array_merge([0x55, $address, $group], $cmd);
         $packet = pack ('c*', ...$packet);
-        if (isset($params)) $packet .= pack ("c", $params);
+        if (isset($params)) $packet .= pack ("c*", ...$params);
         $packet .= self::crc16($packet);
         return $packet;
     }
@@ -84,6 +101,7 @@ class Curtain extends Device
 	{
 	    if ($this->curtain->bus_type == "tcp")
         {
+            // TODO: Переделать реализацию для ModbusTCP
             $modbus = new ModbusTcp();
             $modbus->debug = false;
             $modbus->socketCreate();
@@ -124,7 +142,7 @@ class Curtain extends Device
         // 2 - закрывается
         // 3 - режим настройки
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x05, 0x01]);
-        self::sendCmd($packet); 
+        self::sendCmd($packet);
     }
 
     /**
@@ -146,28 +164,33 @@ class Curtain extends Device
         elseif ($this->curtain->place == 'port')
         {
             $mega = new Megad();
+            $deviceId = Device::getDevice($this->curtain->id_object);
             $port = Device::getNumPort($this->curtain->openPort);
-            $mega->set($port,1,$this->curtain->device);
+            $mega->set($port, 1, $deviceId);
             usleep(500000);
-            $mega->set($port,0,$this->curtain->device);
+            $mega->set($port, 0, $deviceId);
             $object->setStatus('open', true, false);
         }
         elseif ($this->curtain->place == 'phase')
         {
             $mega = new Megad();
-            if ($mega->status(Device::getNumPort($this->curtain->closePort), 'get', $this->curtain->device) != 'OFF')
+            $deviceId = Device::getDevice($this->curtain->id_object);
+            $closePort = Device::getNumPort($this->curtain->closePort);
+            $openPort = Device::getNumPort($this->curtain->openPort);
+            
+            if ($mega->status($closePort, 'get', $deviceId) != 'OFF')
             {
-                $mega->set(Device::getNumPort($this->curtain->closePort),0,$curtain->device);
+                $mega->set($closePort, 0, $deviceId);
                 usleep(500000);
             }
 
-            if ($mega->status(Device::getNumPort($this->curtain->openPort), 'get', $this->curtain->device) != 'OFF')
-                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
+            if ($mega->status($openPort, 'get', $deviceId) != 'OFF')
+                $mega->set($openPort, 0, $deviceId);
             else
             {
-                $mega->set(Device::getNumPort($this->curtain->openPort),1,$this->curtain->device);
-                sleep($curtain->time+1);
-                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
+                $mega->set($openPort, 1, $deviceId);
+                sleep($this->curtain->time+1);
+                $mega->set($openPort, 0, $deviceId);
             }
             $object->setStatus('open', true, false);
         }
@@ -192,28 +215,33 @@ class Curtain extends Device
         elseif ($this->curtain->place == 'port')
         {
             $mega = new Megad();
+            $deviceId = Device::getDevice($this->curtain->id_object);
             $port = Device::getNumPort($this->curtain->closePort);
-            $mega->set($port,1,$this->curtain->device);
+            $mega->set($port, 1, $deviceId);
             usleep(500000);
-            $mega->set($port,0,$this->curtain->device);
+            $mega->set($port, 0, $deviceId);
             $object->setStatus('close', true, false);
         }
         elseif ($this->curtain->place == 'phase')
         {
             $mega = new Megad();
-            if ($mega->status(Device::getNumPort($this->curtain->openPort), 'get', $this->curtain->device) != 'OFF')
+            $deviceId = Device::getDevice($this->curtain->id_object);
+            $closePort = Device::getNumPort($this->curtain->closePort);
+            $openPort = Device::getNumPort($this->curtain->openPort);
+
+            if ($mega->status($openPort, 'get', $deviceId) != 'OFF')
             {
-                $mega->set(Device::getNumPort($this->curtain->openPort),0,$this->curtain->device);
+                $mega->set($openPort, 0, $deviceId);
                 usleep(500000);
             }
 
-            if ($mega->status(Device::getNumPort($this->curtain->closePort), 'get', $this->curtain->device) != 'OFF')
-                $mega->set(Device::getNumPort($this->curtain->closePort),0,$this->curtain->device);
+            if ($mega->status($closePort, 'get', $deviceId) != 'OFF')
+                $mega->set($closePort, 0, $deviceId);
             else
             {
-                $mega->set(Device::getNumPort($this->curtain->closePort),1,$this->curtain->device);
-                sleep($curtain->time+1);
-                $mega->set(Device::getNumPort($this->curtain->closePort),0,$this->curtain->device);
+                $mega->set($closePort, 1, $deviceId);
+                sleep($this->curtain->time+1);
+                $mega->set($closePort, 0, $deviceId);
             }
             $object->setStatus('close', true, false);
         }
@@ -241,7 +269,7 @@ class Curtain extends Device
         if ($percent >= 0 && $percent <= 100)
         {
             // 0304 - команда установки процента открытия
-            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x04], $percent);
+            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x04], [$percent]);
             $this->sendCmd($packet, 'setPercent');
         }
     }
@@ -289,27 +317,37 @@ class Curtain extends Device
     /**
      * Изменение направления привода (для штор с RS485)
      */
-    public static function changeDirection($direction) // 0 - мотор слева, 1 - мотор справа
+    public function changeDirection(int $direction) // 0 - мотор слева, 1 - мотор справа
     {
         // 020301 - команда сброса выставленных пределов
         // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], $direction); 
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], [$direction]);
         $this->sendCmd($packet);
     }
 
     /**
-     * Отправка адреса (для штор с RS485)
+     * Смена адреса (для штор с RS485)
      */
-    public static function changeAddress(int $address, int $group)
+    public function changeAddress(int $newAddress, int $newGroup)
     {
-        $packet = $this->packetAssembling(0x01, 0x02, [0x02, 0x00, 0x02], $address, $group);
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
+        $this->sendCmd($packet);
+    }
+
+    /**
+     * Назначение адреса (для штор с RS485)
+     * Для установки адреса после сброса
+     */
+    public function setAddress(int $newAddress, int $newGroup)
+    {
+        $packet = $this->packetAssembling(0xFE, 0xFE, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
         $this->sendCmd($packet);
     }
 
     /**
      * Сброс (для штор с RS485)
      */
-    public static function reset()
+    public function reset()
     {
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x08]);
         $this->sendCmd($packet);

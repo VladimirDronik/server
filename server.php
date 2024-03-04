@@ -342,6 +342,10 @@ file_put_contents('server.log',date("Y-m-d H:i:s")." -> client send:\n".$data."\
                     // print_r('Test message: '.$send->getCustomizableLight().PHP_EOL);
                     $send->getCustomizableLight();
                     break;
+                    
+                case 'getCurtain':
+                    $send->getCurtain();
+                    break;
 
                 default: //itemChange, settingChange, eventChange, temperaturesChange
                     $send->changeReseive($data, $debugmode);

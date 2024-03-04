@@ -469,12 +469,12 @@ class Views extends System
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status == 'itemChange') {
 
-            $itemID = $data_array->items[0]->id;
-            $itemDescription = $data_array->items[0]->description;
-            $itemType = $data_array->items[0]->type;
-            $itemStatus = $data_array->items[0]->status;
-            $itemValue = $data_array->items[0]->value;
-            $set_value = $data_array->items[0]->set_value;
+            if (isset($data_array->items[0]->id)) $itemID = $data_array->items[0]->id;
+            if (isset($data_array->items[0]->description)) $itemDescription = $data_array->items[0]->description;
+            if (isset($data_array->items[0]->type)) $itemType = $data_array->items[0]->type;
+            if (isset($data_array->items[0]->status)) $itemStatus = $data_array->items[0]->status;
+            if (isset($data_array->items[0]->value)) $itemValue = $data_array->items[0]->value;
+            if (isset($data_array->items[0]->set_value)) $set_value = $data_array->items[0]->set_value;
 
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
@@ -731,6 +731,19 @@ class Views extends System
                         }
                         
                     break;
+
+                    case  'curtain':
+var_dump ($idObject);
+                        $curtain = new Curtain($idObject);
+
+                        if (!isset($set_value))
+                        {
+                            if ($itemStatus == "on") $curtain->open();
+                            if ($itemStatus == "off") $curtain->close();
+                        }
+                        else $curtain->setPercent($set_value);
+
+                    break;
                 }
 
                 //TODO: проверить является ли объект виртуальным
@@ -848,7 +861,8 @@ class Views extends System
             ($viewObject->type == 'conditioner') ||
             ($viewObject->type == 'socket') ||
             ($viewObject->type == 'tape') ||
-            ($viewObject->type == 'customizable_light'))
+            ($viewObject->type == 'customizable_light') ||
+            ($viewObject->type == 'curtain'))
 
             return array('id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
@@ -1491,6 +1505,29 @@ class Views extends System
         if ($isDeviceFound) return json_encode(array('status' => 'customizableLightLoad', 'entity'=> $items));
     }
 
+    /** Функция отдает параметры выбранного привода штор
+     *
+     * @param int $curtainViewId
+     * @return json
+     */
+    function getCurtain($curtainViewId)
+    {
+        $items = ['id' => (int)$curtainViewId];
+        
+        $sql = parent::$db->query(" SELECT `curtains`.`place`,
+                                           `curtains`.`percent`,
+                                           `objects`.`status`
+                                    FROM `curtains`
+                                    INNER JOIN `objects` ON `objects`.`id` = `curtains`.`id_object`
+                                    INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
+                                    WHERE `view_items`.`id` = $curtainViewId");
+        if ($curtain = $sql->fetch(PDO::FETCH_OBJ))
+        {
+            $items += ['type' => $curtain->place];
+            if ($curtain->place == 'rs485') $items += ['openRate' => $curtain->percent];
+            return json_encode(array('status' => 'curtainLoad', 'entity'=> $items));
+        }      
+    }
 }
 
 

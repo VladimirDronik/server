@@ -126,14 +126,13 @@ class ModbusQueue extends System {
             {
                 if ($binaryData = self::$modbus->send(base64_decode($task->raw_data)))
                 {
-                    var_dump (bin2hex($binaryData));
                     $bytesArray = unpack('C*', $binaryData);
-                    $curtain = new Curtain ($task->object_id);
-                    $object = new Objects();
-                    $object->select($task->object_id);
-                
+                    
                     if ($task->command == 'setPercent' || $task->command == 'getPercent')
                     {   
+                        $curtain = new Curtain ($task->object_id);
+                        $object = new Objects();
+                        $object->select($task->object_id);
                         $percent = $bytesArray[6];
                         $curtain->putPercentToDb($percent);
                         if ($percent > 0) $object->setStatus('open', true, false);

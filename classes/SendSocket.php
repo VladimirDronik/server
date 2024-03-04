@@ -6,10 +6,10 @@
  * Date: 09.05.20
  * Time: 19:36
  */
-use Views;
-use Messages;
-use Cameras;
-use Page;
+// use Views;
+// use Messages;
+// use Cameras;
+// use Page;
 
 class SendSocket
 {
@@ -28,10 +28,9 @@ class SendSocket
     function __construct($data, $users, Views $views, Messages $message, Device $device, Cameras $cameras, Page $page)
     {
         $this->data = $data;
-        $this->currentUser = $data[1];
-
-        if (isset($data[2])) $this->param1 = $data[2];
-        if (isset($data[3])) $this->param2 = $data[3];
+        if (array_key_exists('1', $data)) $this->currentUser = $data[1];
+        if (array_key_exists('2', $data)) $this->param1 = $data[2];
+        if (array_key_exists('3', $data)) $this->param2 = $data[3];
 
         $this->users = $users;
         $this->views = $views;
@@ -340,10 +339,8 @@ class SendSocket
             $dimmer = new Dimmer($idObject);
 
             //Если передаем яркость
-            if ($instance == 'brightness')
-            $dimmer->setValue($status);
-            elseif ($instance == 'on')
-                $dimmer->setValue($status);
+            if ($instance == 'brightness') $dimmer->setValue($status);
+            elseif ($instance == 'on') $dimmer->setValue($status);
         
         } elseif ($object->type == 'conditioner') {
 
@@ -363,22 +360,12 @@ class SendSocket
                 $curtain = new Curtain($idObject);
                 $curtain->close();
             }
+        } elseif ($object->type == 'virtual') {
+
+            $virtual = new Virtuals($idObject);
+            if ($status == 'on') $virtual->on('view',$idObject);
+            elseif ($status == 'off') $virtual->off('view',$idObject);
         }
-
-        elseif ($object->type == 'virtual') {
-
-        $virtual = new Virtuals($idObject);
-
-        if ($status == 'on')
-            $virtual->on('view',$idObject);
-        elseif ($status == 'off')
-            $virtual->off('view',$idObject);
-
-
-        }
-
-
-
     }
 
     /**
@@ -421,5 +408,11 @@ class SendSocket
         $this->send($this->views->getCustomizableLight($this->param1));
     }
 
-
+    /**
+     * Отпарвка данных настраиваемого источника света
+     */
+    public function getCurtain()
+    {
+        $this->send($this->views->getCurtain($this->param1));
+    }
 }

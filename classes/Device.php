@@ -15,17 +15,13 @@ class Device extends System
      * */
     static public function getDevice($idObject)
     {
-        $sql = parent::$db->query("SELECT `id_device` FROM ports WHERE
-                                    `object` = $idObject");
-
+        $sql = parent::$db->query("SELECT `id_device` FROM `ports` WHERE `object` = $idObject");
         return  $sql->fetch(PDO::FETCH_OBJ)->id_device;
     }
 
     static public function getNumPort($idPort)
     {
-        $sql = parent::$db->query("SELECT `num_port` FROM ports WHERE
-                                    `id` = $idPort");
-
+        $sql = parent::$db->query("SELECT `num_port` FROM `ports` WHERE `id` = $idPort");
         return  $sql->fetch(PDO::FETCH_OBJ)->num_port;
     }
 

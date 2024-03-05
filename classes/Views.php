@@ -733,7 +733,7 @@ class Views extends System
                     break;
 
                     case  'curtain':
-var_dump ($idObject);
+
                         $curtain = new Curtain($idObject);
 
                         if (!isset($set_value))

@@ -84,7 +84,7 @@ if ($restart)
 }
 
 chdir ('scripts');
-exec ('php modbusctl.php start');
+exec ('php polling_loops_ctl.php start');
 
 
 return true;

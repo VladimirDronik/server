@@ -352,4 +352,20 @@ class Curtain extends Device
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x08]);
         $this->sendCmd($packet);
     }
+
+    /**
+     * Получение списка приводов штор с RS485
+     */
+    public static function getRsMotors()
+    {
+        $sql = parent::$db->query(" SELECT `curtains`.`id_object`
+                                    FROM `curtains`
+                                    WHERE `curtains`.`place` = 'rs485'");
+        
+        $rsMotors = [];
+        while ($motor = $sql->fetch(PDO::FETCH_OBJ))
+            $rsMotors[] = (int)$motor->id_object;
+        
+        return $rsMotors;  
+    }
 }

@@ -133,7 +133,7 @@ class Curtain extends Device
     /**
      * Считывание текущего состояния двигателя (для штор с RS485)
      */
-    public static function getInfo()
+    public function getInfo()
     {
         // 010501 - команда считывания текущего состояния привода
         // Возможные ответы
@@ -142,7 +142,7 @@ class Curtain extends Device
         // 2 - закрывается
         // 3 - режим настройки
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x05, 0x01]);
-        self::sendCmd($packet);
+        $this->sendCmd($packet, 'getInfo');
     }
 
     /**

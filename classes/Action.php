@@ -56,9 +56,22 @@ class Action extends Megad
         // ) {
         if ($idMethod != null) {
 
-            $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
-            FROM `methods` WHERE `methods`.`id`=$idMethod");
+            $sql = parent::$db->query(" SELECT `easy`, `script`, `id_object`, `name`, `is_system`
+                                        FROM `methods` WHERE `methods`.`id` = $idMethod");
             $method = $sql->fetch(PDO::FETCH_OBJ);
+
+            //Проверяем есть ли действующий таймер для объекта.
+            //Если есть, отключаем таймер
+            $scriptPid = parent::getVariable("timerForObjectId" . $method->id_object);
+            if (isset($scriptPid))
+            {
+                exec("ps -p $scriptPid", $output);
+                if (isset($output[1]))
+                {
+                    exec("(kill -9 $scriptPid &) >> /dev/null 2>&1");
+                    System::deleteVariable("timerForObjectId" . $method->id_object);
+                }
+            }
 
             self::$easy = $method->easy;
             self::$idScript = $method->script;
@@ -175,7 +188,7 @@ class Action extends Megad
      */
     static private function runSystem($idObject, $params=null)
     {
-        $params = $idObject . ' ' .$params;
+        $params = $idObject . ' ' . $params;
 
         //Запускаем связанный скрипт
         $script = new Scripts();
@@ -239,6 +252,19 @@ class Action extends Megad
             $object = new Objects();
             $object->select($idObject);
             
+            //Проверяем есть ли действующий таймер для объекта.
+            //Если есть, отключаем таймер
+            $scriptPid = parent::getVariable("timerForObjectId$idObject");
+            if (isset($scriptPid))
+            {
+                exec("ps -p $scriptPid", $output);
+                if (isset($output[1]))
+                {
+                    exec("(kill -9 $scriptPid &) >> /dev/null 2>&1");
+                    System::deleteVariable("timerForObjectId$idObject");
+                }
+            }
+
             if ($object->type == 'drycontact') {
                 
                 //Получаем состояние порта, на котором висит данный элемент

@@ -150,8 +150,14 @@ class System
     public static function getVariable($varname) {
 
         $sql = self::$db->query("SELECT `value` FROM `variables` WHERE `name`= '$varname'");
-        $variable = $sql->fetch(PDO::FETCH_OBJ);
-        return $id_object = $variable->value;
+        if ($variable = $sql->fetch(PDO::FETCH_OBJ)) return $id_object = $variable->value;
+    }
+
+    public static function deleteVariable($varname) {
+
+        system::$db->query("DELETE FROM `variables` WHERE `name`= '$varname'");
+        // $variable = $sql->fetch(PDO::FETCH_OBJ);
+        // return $id_object = $variable->value;
     }
 
     public static function addStringToLogFile($string)
@@ -159,4 +165,4 @@ class System
         $file = ROOT_DIR."/logs/modbus.log";
         file_put_contents ($file, $string, FILE_APPEND);
     }
-}
+    }

@@ -162,7 +162,15 @@ class Objects extends System
      */
     function setStatus($status, $set_object_status = true, $portrelease = true, $whence = null, $idCausing = null)
     {
-// var_dump ($status, $set_object_status);
+        //Проверяем есть ли действующий таймер для объекта.
+        //Если есть, отключаем таймер
+        // $scriptPid = parent::getVariable("timerForObjectId".$this->id);
+        // if (isset($scriptPid))
+        // {
+        //     exec("ps -p $scriptPid", $output);
+        //     if (isset($output[1])) exec("(kill -9 $scriptPid &) >> /dev/null 2>&1");
+        // }
+
         //Если статус объекта переключатель, то определяем текущее значение
         $status = $this->checkSwitchState($status);
 

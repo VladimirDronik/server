@@ -1419,23 +1419,12 @@ class Views extends System
     }
 
 
-/** Функция отдает параметры выбранного кондицинера
+    /** Функция отдает параметры выбранного кондицинера
      *
      */
-    public function getConditioner($idConditionerView) {
-
-
-
-        // $sql = parent::$db->query("SELECT min, max, operationModes, fanModes, conditioner_kinds.precision AS prec, 
-        // conditioners.state AS state, conditioners.temp AS temp, conditioners.operation AS operation, conditioners.fan AS fan    
-        // FROM `conditioner_kinds` 
-        // INNER JOIN conditioner_models ON conditioner_models.kind = conditioner_kinds.id 
-        // INNER JOIN conditioners ON conditioner_models.id = conditioners.model 
-        // INNER JOIN objects ON objects.id = conditioners.id_object 
-        // INNER JOIN view_items ON view_items.id_object = objects.id 
-        // WHERE view_items.id = $idConditioner");
-
-   $sql = parent::$db->query("  SELECT `conditioners_types`.`temperature` AS 'temp_range',
+    public function getConditioner($idConditionerView)
+    {
+        $sql = parent::$db->query(" SELECT `conditioners_types`.`temperature` AS 'temp_range',
                                        `conditioners_types`.`mode` AS 'modes',
                                        `conditioners_types`.`fan` AS 'fans',
                                        `conditioners_types`.`vdir` AS 'vdirs',
@@ -1452,11 +1441,10 @@ class Views extends System
                                 INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id` 
                                 WHERE `view_items`.`id` = $idConditionerView");
 
-        if($sql->rowCount() > 0) {
-
+        if($sql->rowCount() > 0)
+        {
             $conditioner = $sql->fetch(PDO::FETCH_OBJ);
 
-            
             $operationModes = json_decode($conditioner->modes);
             $operationModes = get_object_vars($operationModes);
             $operationModes = array_keys($operationModes);
@@ -1464,6 +1452,7 @@ class Views extends System
             $fanModes = json_decode($conditioner->fans);
             $fanModes = get_object_vars($fanModes);
             $fanModes = array_keys($fanModes);
+            $fanModes = array_map('strval', $fanModes);
 
             $temperatureRange = json_decode($conditioner->temp_range);
 
@@ -1471,14 +1460,37 @@ class Views extends System
                 'id' => $idConditionerView,
                 'type' => 'conditioner',
                 'state' => $conditioner->state,
-                'temp' => $conditioner->temperature,
-                'operation' => $conditioner->mode,
-                'fan' => $conditioner->fan,
-                'operation_modes' => $operationModes,
-                'fan_modes' => $fanModes,
                 'min' => $temperatureRange->min,
-                'max' => $temperatureRange->max
+                'max' => $temperatureRange->max,
+                'temp' => $conditioner->temperature,
+                'operation_modes' => $operationModes,
+                'operation' => $conditioner->mode,
+                'fan_modes' => $fanModes,
+                'fan' => $conditioner->fan
             ];
+
+
+            if (isset($conditioner->vdirs))
+            {
+                $vdir_modes = json_decode($conditioner->vdirs);
+                $vdir_modes = get_object_vars($vdir_modes);
+                $vdir_modes = array_keys($vdir_modes);
+                $items += [
+                    'vdir_modes' => $vdir_modes,
+                    'vdir' => $conditioner->vdir
+                ];
+            }
+
+            if (isset($conditioner->hdirs))
+            {
+                $hdir_modes = json_decode($conditioner->hdirs);
+                $hdir_modes = get_object_vars($hdir_modes);
+                $hdir_modes = array_keys($hdir_modes);
+                $items += [
+                    'hdir_modes' => $hdir_modes,
+                    'hdir' => $conditioner->hdir
+                ];
+            }
             
             return  $json = json_encode(array('status' => 'conditionerLoad', 'entity'=> $items));
 

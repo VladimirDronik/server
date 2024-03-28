@@ -60,6 +60,8 @@ require_once __DIR__. '/classes/Modbus.php';
 require_once __DIR__. '/classes/ModbusQueue.php';
 require_once __DIR__. '/classes/Dali.php';
 require_once __DIR__. '/libs/YandexTTS.php';
+require_once __DIR__. '/classes/Pressurestat.php';
+require_once __DIR__. '/classes/Carbdioxide.php';
 
 
 //i2c drivers

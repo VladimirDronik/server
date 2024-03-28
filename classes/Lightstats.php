@@ -228,7 +228,7 @@ class Lightstats extends Objects
         elseif (($lux < $lightstat->min_threshold) || ($lux > $lightstat->max_threshold))
         {
             System::addLog('error', 
-                'Гигростат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
+                'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
                 '). Значение '.$lux.' выходит за пределы измерения.',
                 'sensor');
             return $error = true;
@@ -263,7 +263,7 @@ class Lightstats extends Objects
      */
     function set_light($idObject, $value)
     {
-        //Заносим значение термостата в БД
+        //Заносим значение датчика в БД
         parent::$db->query("UPDATE lightstats SET `optimal` = $value WHERE id_object='$idObject'");
     }
 }

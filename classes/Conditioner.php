@@ -60,7 +60,8 @@ class Conditioner extends Device
                                     FROM `conditioners_types`
                                     INNER JOIN `conditioners`
                                     ON `conditioners_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id);
+                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
+                                    AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acTemperatureRange = json_decode($sql->fetch(PDO::FETCH_OBJ)->temperature, true);
 
         if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
@@ -83,7 +84,8 @@ class Conditioner extends Device
                                     FROM `conditioners_types`
                                     INNER JOIN `conditioners`
                                     ON `conditioners_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id);
+                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
+                                    AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acModes = json_decode($sql->fetch(PDO::FETCH_OBJ)->mode, true);
 
         if (array_key_exists($mode, $acModes))
@@ -106,14 +108,15 @@ class Conditioner extends Device
                                     FROM `conditioners_types`
                                     INNER JOIN `conditioners`
                                     ON `conditioners_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id);
+                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
+                                    AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acFanSpeeds = json_decode($sql->fetch(PDO::FETCH_OBJ)->fan, true);
 
         if (array_key_exists($speed, $acFanSpeeds))
         {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
             Modbus::putTaskIntoQueue($registerId, 'write', 5, $acFanSpeeds[$speed]);
-                
+
             $object = new Objects();
             $object->select($this->ac->id_object);
             $object->setStatus('on', true, false);
@@ -129,7 +132,8 @@ class Conditioner extends Device
                                     FROM `conditioners_types`
                                     INNER JOIN `conditioners`
                                     ON `conditioners_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id);
+                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
+                                    AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $queryResult = $sql->fetch(PDO::FETCH_OBJ);
 
         if(isset($queryResult->vdir))
@@ -157,7 +161,8 @@ class Conditioner extends Device
                                     FROM `conditioners_types`
                                     INNER JOIN `conditioners`
                                     ON `conditioners_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id);
+                                    WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
+                                    AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $queryResult = $sql->fetch(PDO::FETCH_OBJ);
 
         if(isset($queryResult->hdir))

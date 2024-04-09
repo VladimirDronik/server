@@ -31,7 +31,6 @@ class Pressurestat extends Objects
                                               `min_alarm`,
                                               `max_alarm`,
                                               `objects`.`type` as `type_object`,
-                                              `placetype`,
                                               `usensor_id`,
                                               `type_sensor`,
                                               pressurestats.`name`
@@ -56,9 +55,8 @@ class Pressurestat extends Objects
         $object = new Objects();
         $object->select($pressurestat->idObject);
 
-        if ($pressurestat->type_sensor = 'bmx280') {
-            $unit = ' мм рт.ст.';
-        } elseif ($pressurestat->type_sensor = 'ptsensor') $unit = ' бар.';
+        if ($pressurestat->type_sensor == 'ptsensor') $unit = ' бар.';
+        else $unit = ' мм рт.ст.';
 
         //Отправка значения для labels
         Labels::setValue(round($pressurestat->current,1).$unit, "текущее давление", $pressurestat->idObject);
@@ -155,30 +153,11 @@ class Pressurestat extends Objects
     {
         $pressurestat = self::$pressurestat;
 
-        if($pressurestat->placetype == 'port') 
-        {
-            //Ищем к какому порту и устройству принадлежит датчик давления
-            $sql = parent::$db->query("SELECT ports_SDA.num_port AS SDA,
-                                              ports_SCL.num_port AS SCL,
-                                              devices.id AS device_id
-                                       FROM pressurestats     
-                                       INNER JOIN ports AS ports_SDA ON ports_SDA.id = pressurestats.port_SDA
-                                       INNER JOIN ports AS ports_SCL ON ports_SCL.id = pressurestats.port_SCL
-                                       INNER JOIN devices ON ports_SDA.id_device = devices.id
-                                       WHERE pressurestats.id_object = $pressurestat->idObject");
-
-            $pressurestat_i2c = $sql->fetch(PDO::FETCH_OBJ);          
-            $pressure = Megad::getI2C($pressurestat_i2c->device_id, $pressurestat_i2c->SDA, $pressurestat_i2c->SCL, $pressurestat->type_sensor);
-            sleep(1); //пауза перед повторным чтением значения датчка
-            $pressure = Megad::getI2C($pressurestat_i2c->device_id, $pressurestat_i2c->SDA, $pressurestat_i2c->SCL, $pressurestat->type_sensor);
-        } 
-        else 
-        { 
-            //Датчик входит в состав унивесального датчика
-            $result = Usensors::checkI2C($pressurestat->usensor_id);
-            $pressure = $result['atm_pressure'];
-        }
-
+        //Датчик входит в состав унивесального датчика
+        $result = Usensors::checkI2C($pressurestat->usensor_id);
+        if ($pressurestat->type_sensor == 'ptsensor') $pressure = $result['pressure'];
+        else $pressure = $result['atm_pressure'];
+        
         $error = self::validateValue($pressure);
 
         if (!$error)

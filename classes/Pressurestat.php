@@ -55,12 +55,6 @@ class Pressurestat extends Objects
         $object = new Objects();
         $object->select($pressurestat->idObject);
 
-        if ($pressurestat->type_sensor == 'ptsensor') $unit = ' бар.';
-        else $unit = ' мм рт.ст.';
-
-        //Отправка значения для labels
-        Labels::setValue(round($pressurestat->current,1).$unit, "текущее давление", $pressurestat->idObject);
-
         //Если датчик с реакцией на повышение давления
         if ($pressurestat->mode == 1)
         {
@@ -171,6 +165,12 @@ class Pressurestat extends Objects
             //Далее работаем с полученным от датчика значением
             $pressurestat->current = $pressure;
             }
+
+            if ($pressurestat->type_sensor == 'ptsensor') $unit = ' бар.';
+            else $unit = '';
+
+            //Отправка значения для labels
+            Labels::setValue(round($pressurestat->current,1).$unit, 'current', $pressurestat->idObject);
         }
 
         //Отдаем значение визуальному компоненту

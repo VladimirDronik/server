@@ -158,9 +158,6 @@ class Thermostats extends Objects
         $object->select($this->idObject);
 
         // Events::exicute($this->idObject, 'onStatus');
-        
-        //Отправка значения для labels
-        Labels::setValue(round($this->termostat->current,1).'°C', "current", $this->idObject);
 
         if($this->termostat->current)
         {
@@ -336,6 +333,9 @@ class Thermostats extends Objects
             {
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
             }
+
+            //Отправка значения для labels
+            Labels::setValue(round($this->termostat->current,1).'°C', "current", $this->idObject);
         }
 
         //Отдаем значение визуальному компоненту

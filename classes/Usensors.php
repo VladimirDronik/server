@@ -65,7 +65,7 @@ class Usensors extends Objects
                 $humidity = Megad::status($sensor->SDA, 'get', $sensor->device_id, 2);
                 break;
 
-            case 'PTsensor':
+            case 'ptsensor':
                 // Отправка запроса на измерение давления 
                 Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'ptsensor', 1);
                 sleep (1);

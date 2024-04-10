@@ -10,9 +10,80 @@ class Boiler extends System
 
     function __construct($idObject)
     {
-        $sql = parent::$db->query("SELECT * FROM boiler WHERE `id_object` = $idObject");
+        $sql = parent::$db->query("SELECT * FROM boilers WHERE `id_object` = $idObject");
         $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
+        
     }
+
+    private function getValueFromDbByAlias(string $alias)
+    {
+        $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $alias);
+        return Modbus::getRegisterValueFromDB($registerId);
+    }
+
+    public function getChCurrentTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $chCurrentTemp = (int)$this->getValueFromDbByAlias('ch_current_temp');
+        }
+        return $chCurrentTemp;
+    }
+
+    public function getChSetpointTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $chSetpointTemp = (int)$this->getValueFromDbByAlias('ch_setpoint_temp');
+        }
+        return $chSetpointTemp;
+    }
+
+    public function getDhwCurrentTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $dhwCurrentTemp = (int)$this->getValueFromDbByAlias('dhw_current_temp');
+        }
+        return $dhwCurrentTemp;
+    }
+
+    public function getDhwSetpointTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $dhwSetpointTemp = (int)$this->getValueFromDbByAlias('dhw_setpoint_temp');
+        }
+        return $dhwSetpointTemp;
+    }
+
+    public function getWaterTankTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $waterTankTemp = (int)$this->getValueFromDbByAlias('water_tank_temp');
+        }
+        return $waterTankTemp;
+    }
+
+    public function getReturnTemp()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $returnTemp = (int)$this->getValueFromDbByAlias('return_temp');
+        }
+        return $returnTemp;
+    }
+
+    public function getErrorCode()
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $errorCode = (int)$this->getValueFromDbByAlias('error_code');
+        }
+        return $errorCode;
+    }
+
 
     /**
      * Функция заполнения данными таблицы с элементами

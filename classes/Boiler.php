@@ -7,6 +7,7 @@ class Boiler extends System
 {
 
     private $boiler;
+    public $debug = false;
 
     function __construct($idObject)
     {
@@ -83,6 +84,65 @@ class Boiler extends System
         }
         return $errorCode;
     }
+
+    public function getParam(string $paramName)
+    {
+        switch ($paramName)
+        {
+            case 'outdoor_temp':
+            case 'indoor_temp':
+                if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
+                else $columnName = 'indoor_sensor';
+                $sql = parent::$db->query(" SELECT `termostats`.`current`
+                                            FROM `termostats`
+                                            INNER JOIN `boilers`
+                                            ON `boilers`.`$columnName` = `termostats`.`id_object`
+                                            WHERE `boilers`.`id` = " . $this->boiler->id);
+                $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
+                break;
+            
+            case 'ch_setpoint_temp':
+            case 'dhw_setpoint_temp':
+                
+                break;
+                
+            default:
+                if ($this->boiler->gateway_type == 'modbus') 
+                {
+                    $paramValue = (int)$this->getValueFromDbByAlias($paramName);
+                }
+                break;
+        }
+
+        // Если значение не получено, пишем БД NULL
+        if (!isset($paramValue)) $paramValue = 'NULL';
+        // Заносим значение параметра в БД
+        parent::$db->query("UPDATE `boilers_params`
+                            SET `$paramName` = $paramValue
+                            WHERE `boiler_id` = " . $this->boiler->id);
+        if ($this->debug) echo "$paramName: $paramValue" . PHP_EOL;
+    }
+    
+    public function checkBoiler()
+    {
+        $sql = parent::$db->query(" SELECT *
+                                    FROM `boilers_params_flags`
+                                    WHERE `boiler_id` = " . $this->boiler->id);
+        $params = $sql->fetch(PDO::FETCH_OBJ);
+        $params = (array)$params;
+        unset($params['id'], $params['boiler_id']);
+
+        foreach ($params as $paramName => $flag)
+        {
+            if ($flag == 1) $this->getParam($paramName);
+        }
+
+    }
+
+
+
+
+
 
 
     /**

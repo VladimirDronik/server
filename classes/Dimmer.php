@@ -60,14 +60,8 @@ class Dimmer extends Device
         }
             elseif ($object->portstate == "0..10V")
         {
-            //Определяем к какому порту подключен модуль расширения
-            $sql = parent::$db->query("SELECT `sda_port` 
-                                       FROM `extension_modules` 
-                                       WHERE `device_id` = $object->device 
-                                       AND `id` = $object->extid");
-            $ext = $sql->fetch(PDO::FETCH_OBJ);
             //Отправляем данные на модуль 0-10В
-            $mega->setValueToDimmerExt($object->device, $ext->sda_port, $object->port, $value);
+            $mega->setValueToDimmerExt($object->device, $object->port, $value);
         }
 
         if($value > 0)

@@ -138,14 +138,14 @@ class Megad extends System
     }
 
     //Установка значения через расширитель портов
-    function setValueToDimmerExt($idDevice, $sdaPort, $numPort, $value) {
+    function setValueToDimmerExt($idDevice, $numPort, $value) {
 
         $device = self::getDeviceParams($idDevice);
 
         $value = round(4095*$value/100);
 
         if($device->active)
-            file_get_contents("http://$device->ip_address/$device->password?cmd=".$sdaPort."e".$numPort.":".$value);
+            file_get_contents("http://$device->ip_address/$device->password?cmd=".$numPort.":".$value);
 
     }
 

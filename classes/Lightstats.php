@@ -31,7 +31,6 @@ class Lightstats extends Objects
                                               `min_alarm`,
                                               `max_alarm`,
                                               `objects`.`type` as `type_object`,
-                                              `placetype`,
                                               `usensor_id`,
                                               lightstats.`name`
                                        FROM lightstats 
@@ -150,27 +149,27 @@ class Lightstats extends Objects
     {
         $lightstat = self::$lightstat;
 
-        if($lightstat->placetype == 'port') 
-        {
-            //Ищем к какому порту и устройству принадлежит светостат
-            $sql = parent::$db->query("SELECT ports_SDA.num_port AS SDA,
-                                              ports_SCL.num_port AS SCL,
-                                              devices.id AS device_id
-                                       FROM lightstats     
-                                       INNER JOIN ports AS ports_SDA ON ports_SDA.id = lightstats.port_SDA
-                                       INNER JOIN ports AS ports_SCL ON ports_SCL.id = lightstats.port_SCL
-                                       INNER JOIN devices ON ports_SDA.id_device = devices.id
-                                       WHERE lightstats.id_object = $lightstat->idObject");
+        // if($lightstat->placetype == 'port') 
+        // {
+        //     //Ищем к какому порту и устройству принадлежит светостат
+        //     $sql = parent::$db->query("SELECT ports_SDA.num_port AS SDA,
+        //                                       ports_SCL.num_port AS SCL,
+        //                                       devices.id AS device_id
+        //                                FROM lightstats     
+        //                                INNER JOIN ports AS ports_SDA ON ports_SDA.id = lightstats.port_SDA
+        //                                INNER JOIN ports AS ports_SCL ON ports_SCL.id = lightstats.port_SCL
+        //                                INNER JOIN devices ON ports_SDA.id_device = devices.id
+        //                                WHERE lightstats.id_object = $lightstat->idObject");
 
-            $lightstat_i2c = $sql->fetch(PDO::FETCH_OBJ);
-            $lux = Megad::getI2C($lightstat_i2c->device_id, $lightstat_i2c->SDA, $lightstat_i2c->SCL, 'bh1750');
-        } 
-        else 
-        { 
-            //Светостат входит в состав унивесального датчика
-            $result = Usensors::checkI2C($lightstat->usensor_id);
-            $lux = $result['lux'];
-        }
+        //     $lightstat_i2c = $sql->fetch(PDO::FETCH_OBJ);
+        //     $lux = Megad::getI2C($lightstat_i2c->device_id, $lightstat_i2c->SDA, $lightstat_i2c->SCL, 'bh1750');
+        // } 
+        // else 
+        // { 
+        //Светостат входит в состав унивесального датчика
+        $result = Usensors::checkI2C($lightstat->usensor_id);
+        $lux = (int)$result['lux'];
+        // }
 
         $error = self::validateValue($lux);
 

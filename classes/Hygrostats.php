@@ -31,10 +31,8 @@ class Hygrostats extends Objects
                                               `min_alarm`,
                                               `max_alarm`,
                                               `objects`.`type` as `type_object`,
-                                              `placetype`,
                                               `usensor_id`,
-                                              hygrostats.`name`,
-                                              `subdev_id`
+                                              hygrostats.`name`
                                        FROM hygrostats 
                                        INNER JOIN objects ON id_object=objects.id
                                        WHERE id_object=$idObject");
@@ -58,9 +56,6 @@ class Hygrostats extends Objects
 
         // Events::exicute($this->idObject, 'onStatus');
         
-        //Отправка значения для labels
-        Labels::setValue(round($hygrostat->current,1).'%', "current", $hygrostat->idObject);
-
         if($hygrostat->current) 
         {
             //Если гигростат с функцией осушения
@@ -157,11 +152,11 @@ class Hygrostats extends Objects
         $hygrostat = self::$hygrostat;
 
         //Термостат входит в состав унивесального датчика
-        if ($hygrostat->placetype == 'usensor')
-        {
-            $result = Usensors::checkI2C($hygrostat->usensor_id);
-            $humidity = $result['hum'];
-        } 
+        // if ($hygrostat->placetype == 'usensor')
+        // {
+        $result = Usensors::checkI2C($hygrostat->usensor_id);
+        $humidity = $result['hum'];
+        // } 
 
         $error = self::checkValue($humidity);
 
@@ -181,6 +176,9 @@ class Hygrostats extends Objects
                 //Заносим значение гигростата в БД в таблицу графиков
                 Graphs::insertToHygrostats($hygrostat->id_hygrostat, $humidity);
             }
+
+            //Отправка значения для labels
+            Labels::setValue(round($hygrostat->current,1).'%', "current", $hygrostat->idObject);
         }
 
         //Отдаем значение визуальному компоненту

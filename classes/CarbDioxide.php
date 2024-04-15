@@ -31,7 +31,6 @@ class CarbDioxide extends Objects
                                               `min_alarm`,
                                               `max_alarm`,
                                               `objects`.`type` as `type_object`,
-                                              `placetype`,
                                               `usensor_id`,
                                               carbdioxides.`name`
                                        FROM carbdioxides 
@@ -54,9 +53,6 @@ class CarbDioxide extends Objects
         $sendMessage = false;
         $object = new Objects();
         $object->select($carbdioxide->idObject);
-
-        //Отправка значения для labels
-        Labels::setValue(round($carbdioxide->current,1).' ppm', "текущее значение углекислого газа", $carbdioxide->idObject);
 
         //Если датчик с реакцией на увеличение значения
         if ($carbdioxide->mode == 1)
@@ -150,40 +146,46 @@ class CarbDioxide extends Objects
     {
         $carbdioxide = self::$carbdioxide;
 
-        if($carbdioxide->placetype == 'port') 
-        {
-            //Ищем к какому порту и устройству принадлежит датчик
-            $sql = parent::$db->query("SELECT ports_SDA.num_port AS SDA,
-                                              ports_SCL.num_port AS SCL,
-                                              devices.id AS device_id
-                                       FROM carbdioxides     
-                                       INNER JOIN ports AS ports_SDA ON ports_SDA.id = carbdioxides.port_SDA
-                                       INNER JOIN ports AS ports_SCL ON ports_SCL.id = carbdioxides.port_SCL
-                                       INNER JOIN devices ON ports_SDA.id_device = devices.id
-                                       WHERE carbdioxides.id_object = $carbdioxide->idObject");
+        // if($carbdioxide->placetype == 'port') 
+        // {
+        //     //Ищем к какому порту и устройству принадлежит датчик
+        //     $sql = parent::$db->query("SELECT ports_SDA.num_port AS SDA,
+        //                                       ports_SCL.num_port AS SCL,
+        //                                       devices.id AS device_id
+        //                                FROM carbdioxides     
+        //                                INNER JOIN ports AS ports_SDA ON ports_SDA.id = carbdioxides.port_SDA
+        //                                INNER JOIN ports AS ports_SCL ON ports_SCL.id = carbdioxides.port_SCL
+        //                                INNER JOIN devices ON ports_SDA.id_device = devices.id
+        //                                WHERE carbdioxides.id_object = $carbdioxide->idObject");
 
-            $carbdioxide_i2c = $sql->fetch(PDO::FETCH_OBJ);
-            $lux = Megad::getI2C($carbdioxide_i2c->device_id, $carbdioxide_i2c->SDA, $carbdioxide_i2c->SCL, ''); //TODO:: проверить это для получения параметра датчика
-        } 
-        else 
-        { 
+        //     $carbdioxide_i2c = $sql->fetch(PDO::FETCH_OBJ);
+        //     $lux = Megad::getI2C($carbdioxide_i2c->device_id, $carbdioxide_i2c->SDA, $carbdioxide_i2c->SCL, ''); //TODO:: проверить это для получения параметра датчика
+        // } 
+        // else 
+        // { 
+        
             //Светостат входит в состав унивесального датчика
-            $result = Usensors::checkI2C($carbdioxide->usensor_id);
-            $co2 = $result['co2'];
-        }
+        $result = Usensors::checkI2C($carbdioxide->usensor_id);
+        $co2 = $result['co2'];
+        
+        // }
 
         $error = self::validateValue($co2);
 
         if (!$error)
         {
             //Если считаноое значение не равно предыдущему, то пишем данные в БД
-            if ($lux != $carbdioxide->current)
+            if ($co2 != $carbdioxide->current)
             {
             //Заносим значение светостата в БД в таблицу светостатов и в таблицу графиков
             parent::$db->query("UPDATE carbdioxides SET `current` = $co2 WHERE `id_object` = $carbdioxide->idObject");      
             Graphs::insertToCarbdioxides($carbdioxide->carbdioxide_id, $co2);
             //Далее работаем с полученным от датчика значением
-            $carbdioxide->current = $lux;
+            $carbdioxide->current = $co2;
+            
+            //Отправка значения для labels
+            Labels::setValue(round($carbdioxide->current,1).' ppm', "текущее значение углекислого газа", $carbdioxide->idObject);
+
             }
         }
 
@@ -196,7 +198,7 @@ class CarbDioxide extends Objects
             $view = new Views();
             $view->updateItem($viewItem->id);
         }
-        return $lux;
+        return $co2;
     }
 
     /**

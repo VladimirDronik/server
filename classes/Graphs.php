@@ -84,7 +84,7 @@ class Graphs extends System
      */
     static function insertToCarbdioxides ($idCarbDioxide, $carbdioxideValue)
     {
-        parent::$db->query("INSERT INTO graph_carbdioxides (`id`, `id_count`, `datetime`, `value`)
+        parent::$db->query("INSERT INTO graph_carbdioxides (`id`, `id_carbdioxide`, `datetime`, `value`)
                             VALUES (null, '$idCarbDioxide',
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$carbdioxideValue')");
     }

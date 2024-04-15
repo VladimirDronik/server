@@ -60,9 +60,9 @@ class Usensors extends Objects
 
             case 'scd40':
             case 'scd41':
-                $co2 = Megad::status($sensor->SDA, 'get', $sensor->device_id, 0);
-                $temperature = Megad::status($sensor->SDA, 'get', $sensor->device_id, 1);
-                $humidity = Megad::status($sensor->SDA, 'get', $sensor->device_id, 2);
+                $co2 = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 1);
+                $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 2);
+                $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 3);
                 break;
 
             case 'ptsensor':

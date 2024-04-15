@@ -293,8 +293,8 @@ class Views extends System
     }
 
      /**
-     * Отдаем значение влажность визуальному отображению гигростата
-     * @param object $view -  итем с гигростатом
+     * Отдаем значение влажность визуальному отображению светостсата
+     * @param object $view -  итем со светостатом
      */
     static private function getLightstats($view, $typeOutput = 'array')
     {
@@ -333,6 +333,93 @@ class Views extends System
             } else return false;
 
     }
+
+    /**
+     * Отдаем значение влажность визуальному отображению датчика давления
+     * @param object $view -  итем с датчиком давления
+     */
+    static private function getPressurestats($view, $typeOutput = 'array')
+    {
+        $sql = parent::$db->query("SELECT  `pressurestats`.`current`, `pressurestats`.`optimal`, 
+                                            `pressurestats`.`gisteresis`, `pressurestats`.`type_sensor`, `view_items`.`title` AS `title`, 
+                                            `view_items`.`params` 
+                                    FROM `pressurestats` INNER JOIN view_items 
+                                    ON pressurestats.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $view->id");
+        if($sql->rowCount() > 0)
+            while ($pressurestat = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+                $curValue = round($pressurestat->current);
+                $newValue = (float)$pressurestat->optimal;
+
+                if ($pressurestat->type_sensor = 'bmx280') {
+                    $unit = ' мм рт.ст.';
+                } elseif ($pressurestat->type_sensor = 'ptsensor') $unit = ' бар.';
+
+                if($typeOutput == 'array')
+                    $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
+                        'cur_value' => $curValue,  'set_value' => $newValue, 'unit' => $unit, 'title' => $pressurestat->title,
+                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $pressurestat->params);
+                else
+
+                    $item = '{"id":'.$view->id.',
+            "type":"'.$view->type.'","cur_value":"'.$curValue.'",
+            "set_value":"'.$newValue.'",
+            "unit": "'.$unit.'",
+            "title":"'.$view->title.'",
+            "left":"'.$view->position_left.'",
+            "top":"'.$view->position_top.'",
+            "params":"'.$pressurestat->params.'"
+            }';
+
+                return $item;
+            } else return false;
+
+    }
+
+
+     /**
+     * Отдаем значение датчика давления углекислого газа
+     * @param object $view -  итем с датчиком
+     */
+    static private function getCarbdioxide($view, $typeOutput = 'array')
+    {
+        $sql = parent::$db->query("SELECT  `carbdioxide`.`current`, `carbdioxide`.`optimal`, 
+                                            `carbdioxide`.`gisteresis`, `carbdioxide`.`type_sensor`, `view_items`.`title` AS `title`, 
+                                            `view_items`.`params` 
+                                    FROM `carbdioxides` INNER JOIN view_items 
+                                    ON carbdioxides.id_object = view_items.id_object
+                                    WHERE `view_items`.`id` = $view->id");
+        if($sql->rowCount() > 0)
+            while ($carbdioxide = $sql->fetch(PDO::FETCH_OBJ)) {
+
+
+                $curValue = round($carbdioxide->current);
+                $newValue = (float)$carbdioxide->optimal;
+                $unit = "ppm";
+
+                if($typeOutput == 'array')
+                    $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
+                        'cur_value' => $curValue,  'set_value' => $newValue, 'unit' => $unit, 'title' => $carbdioxide->title,
+                        'left' => $view->position_left, 'top' => $view->position_top,  'params' => $carbdioxide->params);
+                else
+
+                    $item = '{"id":'.$view->id.',
+            "type":"'.$view->type.'","cur_value":"'.$curValue.'",
+            "set_value":"'.$newValue.'",
+            "unit": "'.$unit.'",
+            "title":"'.$view->title.'",
+            "left":"'.$view->position_left.'",
+            "top":"'.$view->position_top.'",
+            "params":"'.$carbdioxide->params.'"
+            }';
+
+                return $item;
+            } else return false;
+
+    }
+
 
 
     
@@ -540,9 +627,9 @@ class Views extends System
                         //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
                         parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
 
-                         //Добавляем данные в таблицу гигростатов и больше ничего не делаем
-                         $hygrostat = new Lightstats();
-                         $hygrostat->set_light($idObject, $set_value);
+                         //Добавляем данные в таблицу светостатов и больше ничего не делаем
+                         $lightstat = new Lightstats();
+                         $lightstat->set_light($idObject, $set_value);
 
                          //Запускаем метод 
                          Action::runAction($onMethod, 'view', $idObject);
@@ -553,6 +640,48 @@ class Views extends System
                          //Отправляем данные об освещенности остальным клиентам
                          self::updateItem($itemID);
 
+                        break;    
+
+                    case 'pressurestat':
+                        if ($set_value == '') $set_value = 'NULL';
+    
+                        //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
+    
+                        //Добавляем данные в таблицу датчиков давления и больше ничего не делаем
+                             $pressurestat = new Pressurestat();
+                             $pressurestat->set_pressure($idObject, $set_value);
+    
+                        //Запускаем метод 
+                        Action::runAction($onMethod, 'view', $idObject);
+    
+                        //Добавляем запись в лог
+                        system::addLog('user', "Оптимальное давление для датчика с ID $idObject изменено на " . $set_value . " ", 'socket_server');
+        
+                        //Отправляем данные о давлении остальным клиентам
+                        self::updateItem($itemID);
+    
+                        break;      
+                        
+                    case 'carbdioxide':
+                        if ($set_value == '') $set_value = 'NULL';
+    
+                        //Обновляем данные в таблице представлений с учетом пришедших данных от клиента
+                        parent::$db->exec("UPDATE `view_items` SET `status` = '$itemStatus' WHERE `view_items`.`id` = $itemID");
+    
+                        //Добавляем данные в таблицу датчиков и больше ничего не делаем
+                        $carbdioxide = new CarbDioxide();
+                        $carbdioxide->set_carbdioxide($idObject, $set_value);
+    
+                        //Запускаем метод 
+                        Action::runAction($onMethod, 'view', $idObject);
+    
+                        //Добавляем запись в лог
+                        system::addLog('user', "Оптимальное значение для датчика ID $idObject изменена на " . $set_value . "% ", 'socket_server');
+        
+                        //Отправляем данные о датчике остальным клиентам
+                        self::updateItem($itemID);
+    
                         break;    
 
                     case 'switch':
@@ -888,6 +1017,16 @@ class Views extends System
          // Если тип объекта светостат
          if ($viewObject->type == 'lightstat') {
             return self::getLightstats($viewObject, 'array');
+        }
+
+        // Если тип объекта датчик температуры
+        if ($viewObject->type == 'pressurestat') {
+            return self::getPressurestats($viewObject, 'array');
+        }
+
+         // Если тип объекта датчик углекислого газа
+         if ($viewObject->type == 'carbdioxide') {
+            return self::getCarbdioxide($viewObject, 'array');
         }
         
     }

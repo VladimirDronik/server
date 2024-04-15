@@ -62,6 +62,34 @@ class Graphs extends System
                             CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$lightstatValue')");
     }
 
+    /**
+     * Добавление значения в график давления
+     *
+     * @param $idPressurestat
+     * @param $pressureValue
+     */
+    static function insertToPressurestats ($idPressurestat, $pressureValue)
+    {
+        parent::$db->query("INSERT INTO graph_pressures (`id`, `id_count`, `datetime`, `value`)
+                            VALUES (null, '$idPressurestat',
+                            CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$pressureValue')");
+    }
+
+
+     /**
+     * Добавление значения в график углекислого газа
+     *
+     * @param $idCarbDioxide
+     * @param $carbdioxideValue
+     */
+    static function insertToCarbdioxides ($idCarbDioxide, $carbdioxideValue)
+    {
+        parent::$db->query("INSERT INTO graph_carbdioxides (`id`, `id_carbdioxide`, `datetime`, `value`)
+                            VALUES (null, '$idCarbDioxide',
+                            CONCAT(CURRENT_DATE,' ',CURRENT_TIME),'$carbdioxideValue')");
+    }
+
+
 
     /**
      * Удаление старых данных из таблицы графиков

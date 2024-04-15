@@ -54,9 +54,6 @@ class Lightstats extends Objects
         $object = new Objects();
         $object->select($lightstat->idObject);
 
-        //Отправка значения для labels
-        Labels::setValue(round($lightstat->current,1).'lx', "текущая освещенность", $lightstat->idObject);
-
         //Если светостат с реакцией на посветление
         if ($lightstat->mode == 1)
         {
@@ -184,6 +181,9 @@ class Lightstats extends Objects
             //Далее работаем с полученным от датчика значением
             $lightstat->current = $lux;
             }
+
+            //Отправка значения для labels
+            Labels::setValue(round($lightstat->current,1).'lx', 'current', $lightstat->idObject);
         }
 
         //Отдаем значение визуальному компоненту
@@ -228,7 +228,7 @@ class Lightstats extends Objects
         elseif (($lux < $lightstat->min_threshold) || ($lux > $lightstat->max_threshold))
         {
             System::addLog('error', 
-                'Гигростат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
+                'Светостат "'.$lightstat->name.'" (ID '.$lightstat->idObject.
                 '). Значение '.$lux.' выходит за пределы измерения.',
                 'sensor');
             return $error = true;
@@ -263,7 +263,7 @@ class Lightstats extends Objects
      */
     function set_light($idObject, $value)
     {
-        //Заносим значение термостата в БД
+        //Заносим значение датчика в БД
         parent::$db->query("UPDATE lightstats SET `optimal` = $value WHERE id_object='$idObject'");
     }
 }

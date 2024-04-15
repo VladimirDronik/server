@@ -178,7 +178,11 @@ class Hygrostats extends Objects
             }
 
             //Отправка значения для labels
+<<<<<<< HEAD
             Labels::setValue(round($hygrostat->current,1).'%', "current", $hygrostat->idObject);
+=======
+            Labels::setValue(round($hygrostat->current,1).'%', 'current', $hygrostat->idObject);
+>>>>>>> de82d51 (Исправлена работа с labels)
         }
 
         //Отдаем значение визуальному компоненту

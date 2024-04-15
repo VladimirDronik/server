@@ -30,16 +30,16 @@ class Usensors extends Objects
 
         switch ($sensor->sensor_type)
         {
-            case 'bh1750' :
+            case 'bh1750':
                 $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bh1750');
                 break;
 
-            case 'htu21d' :
+            case 'htu21d':
                 $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d');
                 $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'htu21d', 1);
                 break;
 
-            case 'bme280' :
+            case 'bme280':
                 $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280', 2);
                 $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280', 1);
                 $atm_pressure = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280');
@@ -51,19 +51,26 @@ class Usensors extends Objects
                 $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bh1750');
                 break;
 
-            case 'outdoorv3' :
+            case 'outdoorv3':
                 $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280', 2);
                 $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280', 1);
                 $atm_pressure = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bmx280');
                 $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bh1750');
                 break;
 
-            case 'scd40' :
-            case 'scd41' :
-                $co2 = Megad::status($sensor->SDA, 'get', $sensor->device_id, 0);
-                $temperature = Megad::status($sensor->SDA, 'get', $sensor->device_id, 1);
-                $humidity = Megad::status($sensor->SDA, 'get', $sensor->device_id, 2);
+            case 'scd40':
+            case 'scd41':
+                $co2 = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 1);
+                $temperature = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 2);
+                $humidity = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'scd4x', 3);
                 break;
+
+            case 'ptsensor':
+                // Отправка запроса на измерение давления 
+                Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'ptsensor', 1);
+                sleep (1);
+                // Получение данных
+                $pressure = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'ptsensor', 2);
         }
 
         //Проверка на наличие значения
@@ -75,6 +82,8 @@ class Usensors extends Objects
         if(preg_match("/[a-z]/i", $lux)) $lux='NULL';
         if (!isset($atm_pressure)) $atm_pressure='NULL';
         if(preg_match("/[a-z]/i", $atm_pressure)) $atm_pressure='NULL';
+        if (!isset($pressure)) $pressure='NULL';
+        if(preg_match("/[a-z]/i", $pressure)) $pressure='NULL';
         if (!isset($co2)) $co2='NULL';
         if(preg_match("/[a-z]/i", $co2)) $co2='NULL';
         
@@ -84,9 +93,10 @@ class Usensors extends Objects
                                `hum` = $humidity,
                                `lux` = $lux,
                                `atm_pressure` = $atm_pressure,
+                               `pressure` = $pressure,
                                `co2` = $co2
                            WHERE `id_object` = $idObject");
 
-        return ['temp' => $temperature, 'hum' => $humidity, 'lux' => $lux, 'atm_pressure' => $atm_pressure, 'co2' => $co2];
+        return ['temp' => $temperature, 'hum' => $humidity, 'lux' => $lux, 'atm_pressure' => $atm_pressure, 'pressure' => $pressure, 'co2' => $co2];
     }
 }

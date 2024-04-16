@@ -1424,19 +1424,19 @@ class Views extends System
      */
     public function getConditioner($idConditionerView)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`temperature` AS 'temp_range',
-                                       `conditioners_types`.`mode` AS 'modes',
-                                       `conditioners_types`.`fan` AS 'fans',
-                                       `conditioners_types`.`vdir` AS 'vdirs',
-                                       `conditioners_types`.`hdir` AS 'hdirs',
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`temperature` AS 'temp_range',
+                                       `conditioner_types`.`mode` AS 'modes',
+                                       `conditioner_types`.`fan` AS 'fans',
+                                       `conditioner_types`.`vdir` AS 'vdirs',
+                                       `conditioner_types`.`hdir` AS 'hdirs',
                                        `objects`.`status` AS 'state',
                                        `conditioners`.`temperature`,
                                        `conditioners`.`mode`,
                                        `conditioners`.`fan`,
                                        `conditioners`.`vdir`,
                                        `conditioners`.`hdir`
-                                FROM `conditioners_types`
-                                INNER JOIN `conditioners` ON `conditioners`.`type` = `conditioners_types`.`id`
+                                FROM `conditioner_types`
+                                INNER JOIN `conditioners` ON `conditioners`.`type` = `conditioner_types`.`id`
                                 INNER JOIN `objects` ON `objects`.`id` = `conditioners`.`id_object`
                                 INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id` 
                                 WHERE `view_items`.`id` = $idConditionerView");

@@ -373,7 +373,7 @@ class Modbus extends System {
         $sql = parent::$db->query(" SELECT `id` FROM `modbus_registers` 
                                     WHERE `slaver_id` = $slaverId
                                     AND `alias` = '$alias'");
-        return $sql->fetch(PDO::FETCH_OBJ)->id;
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ)->id;
     }
 
     /**

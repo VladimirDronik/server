@@ -47,7 +47,7 @@ class Conditioner extends Device
         if ($state == 'on') $cmd = 1;
         if ($state == 'off') $cmd = 0;
             
-        Modbus::putTaskIntoQueue($registerId, 'write', 5, $cmd);
+        if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $cmd);
 
         $object = new Objects();
         $object->select($this->ac->id_object);
@@ -67,8 +67,8 @@ class Conditioner extends Device
         if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
         {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
-            Modbus::putTaskIntoQueue($registerId, 'write', 5, $temperature);
-    
+            if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $temperature);
+                
             $object = new Objects();
             $object->select($this->ac->id_object);
             $object->setStatus('on', true, false);
@@ -91,7 +91,7 @@ class Conditioner extends Device
         if (array_key_exists($mode, $acModes))
         {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
-            Modbus::putTaskIntoQueue($registerId, 'write', 5, $acModes[$mode]);
+            if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acModes[$mode]);
                 
             $object = new Objects();
             $object->select($this->ac->id_object);
@@ -115,7 +115,7 @@ class Conditioner extends Device
         if (array_key_exists($speed, $acFanSpeeds))
         {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
-            Modbus::putTaskIntoQueue($registerId, 'write', 5, $acFanSpeeds[$speed]);
+            if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acFanSpeeds[$speed]);
 
             $object = new Objects();
             $object->select($this->ac->id_object);
@@ -143,7 +143,7 @@ class Conditioner extends Device
             if (array_key_exists($vDir, $acVDirs))
             {
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_vdir');
-                Modbus::putTaskIntoQueue($registerId, 'write', 5, $acVDirs[$vDir]);
+                if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acVDirs[$vDir]);
                     
                 $object = new Objects();
                 $object->select($this->ac->id_object);
@@ -172,7 +172,7 @@ class Conditioner extends Device
             if (array_key_exists($hDir, $acHDirs))
             {
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_hdir');
-                Modbus::putTaskIntoQueue($registerId, 'write', 5, $acHDirs[$hDir]);
+                if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acHDirs[$hDir]);
                 
                 $object = new Objects();
                 $object->select($this->ac->id_object);

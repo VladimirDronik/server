@@ -56,10 +56,10 @@ class Conditioner extends Device
 
     public function setAcTemperature (int $temperature)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`temperature`
-                                    FROM `conditioners_types`
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`temperature`
+                                    FROM `conditioner_types`
                                     INNER JOIN `conditioners`
-                                    ON `conditioners_types`.`id` = `conditioners`.`type`
+                                    ON `conditioner_types`.`id` = `conditioners`.`type`
                                     WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
                                     AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acTemperatureRange = json_decode($sql->fetch(PDO::FETCH_OBJ)->temperature, true);
@@ -80,10 +80,10 @@ class Conditioner extends Device
     
     public function setAcMode (string $mode)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`mode`
-                                    FROM `conditioners_types`
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`mode`
+                                    FROM `conditioner_types`
                                     INNER JOIN `conditioners`
-                                    ON `conditioners_types`.`id` = `conditioners`.`type`
+                                    ON `conditioner_types`.`id` = `conditioners`.`type`
                                     WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
                                     AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acModes = json_decode($sql->fetch(PDO::FETCH_OBJ)->mode, true);
@@ -104,10 +104,10 @@ class Conditioner extends Device
 
     public function setAcFanSpeed (string $speed)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`fan`
-                                    FROM `conditioners_types`
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`fan`
+                                    FROM `conditioner_types`
                                     INNER JOIN `conditioners`
-                                    ON `conditioners_types`.`id` = `conditioners`.`type`
+                                    ON `conditioner_types`.`id` = `conditioners`.`type`
                                     WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
                                     AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $acFanSpeeds = json_decode($sql->fetch(PDO::FETCH_OBJ)->fan, true);
@@ -128,10 +128,10 @@ class Conditioner extends Device
 
     public function setAcVDir (string $vDir)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`vdir`
-                                    FROM `conditioners_types`
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`vdir`
+                                    FROM `conditioner_types`
                                     INNER JOIN `conditioners`
-                                    ON `conditioners_types`.`id` = `conditioners`.`type`
+                                    ON `conditioner_types`.`id` = `conditioners`.`type`
                                     WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
                                     AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $queryResult = $sql->fetch(PDO::FETCH_OBJ);
@@ -157,10 +157,10 @@ class Conditioner extends Device
 
     public function setAcHDir (string $hDir)
     {
-        $sql = parent::$db->query(" SELECT `conditioners_types`.`hdir`
-                                    FROM `conditioners_types`
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`hdir`
+                                    FROM `conditioner_types`
                                     INNER JOIN `conditioners`
-                                    ON `conditioners_types`.`id` = `conditioners`.`type`
+                                    ON `conditioner_types`.`id` = `conditioners`.`type`
                                     WHERE `conditioners`.`modbus_slaver_id` = " . $this->ac->modbus_slaver_id . "
                                     AND `conditioners`.`id_object` = " . $this->ac->id_object);
         $queryResult = $sql->fetch(PDO::FETCH_OBJ);

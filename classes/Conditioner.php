@@ -69,9 +69,6 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
             if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $temperature);
                 
-            $object = new Objects();
-            $object->select($this->ac->id_object);
-            $object->setStatus('on', true, false);
             parent::$db->query("UPDATE `conditioners`
                                 SET `temperature` = $temperature
                                 WHERE id_object =" . $this->ac->id_object);
@@ -92,10 +89,7 @@ class Conditioner extends Device
         {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
             if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acModes[$mode]);
-                
-            $object = new Objects();
-            $object->select($this->ac->id_object);
-            $object->setStatus('on', true, false);
+
             parent::$db->query("UPDATE `conditioners`
                                 SET `mode` = '$mode'
                                 WHERE id_object =" . $this->ac->id_object);
@@ -117,9 +111,6 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
             if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acFanSpeeds[$speed]);
 
-            $object = new Objects();
-            $object->select($this->ac->id_object);
-            $object->setStatus('on', true, false);
             parent::$db->query("UPDATE `conditioners`
                                 SET `fan` = '$speed'
                                 WHERE id_object =" . $this->ac->id_object);
@@ -144,10 +135,7 @@ class Conditioner extends Device
             {
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_vdir');
                 if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acVDirs[$vDir]);
-                    
-                $object = new Objects();
-                $object->select($this->ac->id_object);
-                $object->setStatus('on', true, false);
+
                 parent::$db->query("UPDATE `conditioners`
                                     SET `vdir` = '$vDir'
                                     WHERE id_object =" . $this->ac->id_object);
@@ -173,10 +161,7 @@ class Conditioner extends Device
             {
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_hdir');
                 if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $acHDirs[$hDir]);
-                
-                $object = new Objects();
-                $object->select($this->ac->id_object);
-                $object->setStatus('on', true, false);
+
                 parent::$db->query("UPDATE `conditioners`
                                     SET `hdir` = '$hDir'
                                     WHERE id_object =" . $this->ac->id_object);

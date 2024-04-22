@@ -292,12 +292,18 @@ class Modbus extends System {
                         {
                             $registerId = array_search($value, $diff);
                             exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
-                            if ($output)
+                            $queryString = "SELECT `modbus_slavers`.`active`
+                                            FROM `modbus_slavers`
+                                            JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                            WHERE `modbus_registers`.`id`= $registerId";
+                            $sql = parent::$db->query($queryString);
+                            $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
+
+                            if ($output && $isSlaverActive)
                             {
-                                echo (new datetime())->format('Y-m-d H:i:s.v') . "   Polling register id " . $registerId . " is sent to the queue" . PHP_EOL;
-                                $logString = "[Modbus polling]  Register ID $registerId is sent to the queue" . PHP_EOL;
-                                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
-                                System::addStringToLogFile($logString);
+                                echo (new datetime())->format('Y-m-d H:i:s.v') .
+                                    "   Polling register id " .
+                                    $registerId . " is sent to the queue" . PHP_EOL;
                                 self::putTaskIntoQueue($registerId, 'read', 100);
                             }
                         }

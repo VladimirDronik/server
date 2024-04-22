@@ -88,22 +88,12 @@ class ModbusQueue extends System {
             if ($task->mode == 'modbus_rtu')
             {
                 $packet = modbusFunction($task);
-
-                $slaverId = "Slaver ID: " . $task->slave_address . " (0x" . dechex($task->slave_address).")";
-                $registerAddress = "Register: " . $task->starting_address . " (0x" . dechex($task->starting_address).")";
-                $functionCode = "Function code: " . "0x" . dechex($task->function_code);
                 
-                
-                $logString = "[Modbus queue]    Register ID $task->register_id. Task: $slaverId, $registerAddress, $functionCode";
-                if (in_array($task->function_code, $writeFunctionCodesArray)) 
-                {
-                    $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
-                    $logString .= ", " . $value;
-                }
-                $logString .= PHP_EOL;
-    
-                $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
-                System::addStringToLogFile($logString);
+                // if (in_array($task->function_code, $writeFunctionCodesArray)) 
+                // {
+                //     $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
+                //     $logString .= ", " . $value;
+                // }
                 
                 $binaryData = self::$modbus->send($packet);
     
@@ -117,7 +107,7 @@ class ModbusQueue extends System {
                     $activity = 0;
                     $response = null;
                 }
-    
+                
                 Modbus::setValue($task->register_id, $response);
                 Modbus::setSlaverActivity($task->slaver_id, $activity);
             }

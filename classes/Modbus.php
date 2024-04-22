@@ -100,7 +100,7 @@ class Modbus extends System {
             if ($action == 'read')
             {
                 if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
-                if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
+                if ($modbusRegister->register_type == 'input_discrete') $modbusFunction = 2;
                 if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
                 if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
             }
@@ -384,5 +384,21 @@ class Modbus extends System {
                                     WHERE `slaver_id` = $slaverId
                                     AND `alias` = '$alias'");
         return $sql->fetch(PDO::FETCH_OBJ)->id;
+    }
+
+    /**
+     *  Проверка доступности устройства
+     */
+    public static function checkModbusAvailible(int $modbusSlaverId = null)
+    {
+        $certainModbusSlaver = '';
+        if (isset($modbusSlaverId)) $certainModbusSlaver = "WHERE slaver_id = $modbusSlaverId";
+        $sql = parent::$db->query(" SELECT `id`
+                                    FROM `modbus_registers`
+                                    $certainModbusSlaver
+                                    GROUP BY slaver_id");
+        if($sql->rowCount() > 0)
+            while ($register = $sql->fetch(PDO::FETCH_OBJ))
+                self::putTaskIntoQueue($register->id, 'read', 0);
     }
 }

@@ -23,7 +23,13 @@ foreach ($modbusRtuBuses AS $bus_id)
         {
             if ($registerId) 
             {
-                Modbus::putTaskIntoQueue($registerId, 'read', 99);
+                $queryString = "SELECT `modbus_slavers`.`active`
+                                FROM `modbus_slavers`
+                                JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                WHERE `modbus_registers`.`id`= $registerId";
+                $sql = parent::$db->query($queryString);
+                $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
+                if ($isSlaverActive) Modbus::putTaskIntoQueue($registerId, 'read', 99);
             }
         }
     }

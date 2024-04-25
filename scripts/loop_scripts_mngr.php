@@ -145,4 +145,7 @@ function deleteFromSupervisorConfig(string $subject, int $subjectId)
     $contents = preg_replace("/(?s)(\[program:${subject}_id${subjectId}]).*?((?=\[)|(?=$))/", '', $contents);
     $contents = preg_replace("/([\r\n]{4,}|[\n]{2,}|[\r]{2,})/", "\n\n", $contents);
     file_put_contents($configFile, $contents);
+
+    exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.err.log");
+    exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.out.log");
 }

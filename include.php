@@ -21,7 +21,6 @@ $dbname = getenv('MYSQL_DATABASE');
 $dbuser = getenv('MYSQL_USER');
 $dbpass = getenv('MYSQL_PASSWORD');
 
-
 require_once __DIR__. '/classes/System.php';
 require_once __DIR__. '/classes/Device.php';
 require_once __DIR__. '/classes/Objects.php';

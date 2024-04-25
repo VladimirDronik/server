@@ -135,13 +135,6 @@ class Modbus extends System {
             
             $beanstalk->put($priority, 0, 5, json_encode($task));
         }
-        else
-        {
-            $logString = "[Modbus Error]    Register doesn't exist in DB" . PHP_EOL;
-            $logString  = (new datetime())->format('Y-m-d H:i:s.v') . "  " . $logString;
-            System::addStringToLogFile($logString);
-        }
-
     }
 
     /**

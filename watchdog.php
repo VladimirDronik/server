@@ -83,6 +83,7 @@ if ($restart)
     passthru("(php -f server.php restart " . $options . "& ) >> /dev/null 2>&1");
 }
 
+chdir ('scripts');
+exec ('php loop_scripts_mngr.php');
+
 return true;
-
-

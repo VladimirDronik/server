@@ -289,8 +289,11 @@ class Curtain extends Device
      */
     public function putPercentToDb(int $value)
     {
-        //Заносим процент открытия в БД
-        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
+        if (isset($this->curtain->id_object))
+        {
+            //Заносим процент открытия в БД
+            parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
+        }
     }
 
     /**

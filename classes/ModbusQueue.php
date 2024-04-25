@@ -82,18 +82,18 @@ class ModbusQueue extends System {
         $writeFunctionCodesArray = [5, 6, 15, 16];
         while (true)
         {
+            if (!$beanstalk->statsTube(self::$idBus))
+            {
+                self::$beanstalk->disconnect();
+                exit (1);
+            }
+
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
 
             if ($task->mode == 'modbus_rtu')
             {
                 $packet = modbusFunction($task);
-                
-                // if (in_array($task->function_code, $writeFunctionCodesArray)) 
-                // {
-                //     $value = "Value: " . $task->value . "(0x" . dechex($task->value).")";
-                //     $logString .= ", " . $value;
-                // }
                 
                 $binaryData = self::$modbus->send($packet);
     
@@ -118,11 +118,12 @@ class ModbusQueue extends System {
                 {
                     $activity = 1;
                     $bytesArray = unpack('C*', $binaryData);
-                    $curtain = new Curtain ($task->object_id);
+                    
                     
                     if ($task->command == 'setPercent' || $task->command == 'getPercent')
                     {   
                         $percent = $bytesArray[6];
+                        $curtain = new Curtain ($task->object_id);
                         $curtain->putPercentToDb($percent);
                         if ($task->command == 'setPercent')
                         {

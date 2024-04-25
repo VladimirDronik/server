@@ -83,10 +83,6 @@ if ($restart)
     passthru("(php -f server.php restart " . $options . "& ) >> /dev/null 2>&1");
 }
 
-chdir ('scripts');
-exec ('php polling_loops_ctl.php start');
-
-
 return true;
 
 

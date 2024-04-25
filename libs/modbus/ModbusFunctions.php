@@ -115,11 +115,14 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
 
         if ($task->scale) $result = $result * $task->scale;
 
-        if (is_null($result))  $result = 0;
-
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
-        echo PHP_EOL;
-        return strval($result);
+        if (isset($result)) 
+        {
+            if (is_null($result)) $result = 0;
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+            echo PHP_EOL;
+            return strval($result);
+        }
+        else return null;
     }
 
     /**

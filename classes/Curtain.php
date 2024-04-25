@@ -368,4 +368,45 @@ class Curtain extends Device
         
         return $rsMotors;  
     }
+
+    /**
+     * Установка флага активности для привода с RS485
+     */
+    public static function setRsMotorActivity(int $rsMotorId, int $activity)
+    {
+        parent::$db->exec("UPDATE `curtains` SET `active` = $activity WHERE `id_object` = $rsMotorId");
+    }
+
+    /**
+     * Получение флага активности для привода с RS485
+     */
+    public static function getRsMotorActivity(int $rsMotorId)
+    {
+        $sql = parent::$db->query("SELECT `active` FROM `curtains` WHERE `id_object` = $rsMotorId");
+        $activity = $sql->fetch(PDO::FETCH_OBJ);
+        return $activity->active;
+    }
+
+    /**
+     *  Проверка доступности привода с RS485
+     */
+    public static function checkRsMotorAvailible(int $rsMotorId = null)
+    {
+        if (isset($rsMotorId)) $additionalCondition = "AND `id_object` = $rsMotorId";
+        else $additionalCondition = "AND `active` = 0";
+        
+        $sql = parent::$db->query(" SELECT `id_object`
+                                    FROM `curtains`
+                                    WHERE `place` = 'rs485'
+                                    $additionalCondition");
+        if($sql->rowCount() > 0)
+        {
+            while ($rsMotor = $sql->fetch(PDO::FETCH_OBJ))
+            {
+                $curtain = new Curtain ($rsMotor->id_object);
+                $curtain->getInfo();
+            }
+        }
+    }
+
 }

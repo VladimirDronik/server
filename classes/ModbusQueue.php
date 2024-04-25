@@ -116,6 +116,7 @@ class ModbusQueue extends System {
             {
                 if ($binaryData = self::$modbus->send(base64_decode($task->raw_data)))
                 {
+                    $activity = 1;
                     $bytesArray = unpack('C*', $binaryData);
                     $curtain = new Curtain ($task->object_id);
                     
@@ -145,6 +146,8 @@ class ModbusQueue extends System {
                         var_dump ($bytesArray[6]);
                     }
                 }  
+                else $activity = 0;
+                Curtain::setRsMotorActivity($task->object_id, $activity);
             }
 
             $beanstalk->delete($job['id']);

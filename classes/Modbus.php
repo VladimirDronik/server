@@ -391,14 +391,18 @@ class Modbus extends System {
      */
     public static function checkModbusAvailible(int $modbusSlaverId = null)
     {
-        $certainModbusSlaver = '';
-        if (isset($modbusSlaverId)) $certainModbusSlaver = "WHERE slaver_id = $modbusSlaverId";
-        $sql = parent::$db->query(" SELECT `id`
+        if (isset($modbusSlaverId)) $additionalCondition = "WHERE `slaver_id` = $modbusSlaverId";
+        else $additionalCondition = "JOIN `modbus_slavers` ". 
+            "ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id` " .
+            "WHERE `modbus_slavers`.`active` = 0";
+        
+        $sql = parent::$db->query(" SELECT `modbus_registers`.`id`
                                     FROM `modbus_registers`
-                                    $certainModbusSlaver
-                                    GROUP BY slaver_id");
+                                    $additionalCondition
+                                    GROUP BY `slaver_id`");
+
         if($sql->rowCount() > 0)
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
-                self::putTaskIntoQueue($register->id, 'read', 0);
+                self::putTaskIntoQueue($register->id, 'read', 5);
     }
 }

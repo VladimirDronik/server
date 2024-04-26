@@ -116,6 +116,7 @@ function addToSupervisorConfig(string $subject, int $subjectId)
         command = php $scriptName $subjectId -DFOREGROUND
         directory = %(ENV_WORK_DIR)s/server/scripts
         autostart = true
+        autorestart = true
         stderr_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.err.log
         stdout_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.out.log
 

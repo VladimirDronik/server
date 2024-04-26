@@ -135,20 +135,16 @@ class ModbusQueue extends System {
                         
                     }
     
-                    if ($task->command == 'getInfo')
-                    {
-                        $motorState = $bytesArray[6];
-                        parent::setVariable("rsMotor_$task->object_id", $motorState);
-                        // var_dump ($motorState);
-                    }
-
-                    if ($task->command == 'getMotorType')
-                    {
-                        var_dump ($bytesArray[6]);
-                    }
+                    // if ($task->command == 'getInfo')
+                    // {
+                    //     $motorState = $bytesArray[6];
+                    //     parent::setVariable("rsMotor_$task->object_id", $motorState);
+                    //     // var_dump ($motorState);
+                    // }
                 }  
                 else $activity = 0;
-                Curtain::setRsMotorActivity($task->object_id, $activity);
+
+                if (isset($task->object_id)) Curtain::setRsMotorActivity($task->object_id, $activity);
             }
 
             $beanstalk->delete($job['id']);

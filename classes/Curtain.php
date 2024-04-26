@@ -14,18 +14,14 @@ use Beanstalk\Client;
 
 class Curtain extends Device
 {
-    private $curtain;
+    private $curtain = null;
 
-    public function __construct($idObject, $busId = null)
-    {
-        $this->initCurtain($idObject, $busId);
-    }
-
-    private function initCurtain($idObject, $busId = null)
+    public function __construct($idObject = null)
     {
         if (isset($idObject))
         {
-            $sql = parent::$db->query(" SELECT `curtains`.`port_open` AS 'openPort',
+            $sql = parent::$db->query(" SELECT `curtains`.`id_object`,
+                                               `curtains`.`port_open` AS 'openPort',
                                                `curtains`.`port_close` AS 'closePort',
                                                `curtains`.`time`,
                                                `curtains`.`place`,
@@ -38,23 +34,20 @@ class Curtain extends Device
                                         LEFT JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
                                         WHERE `curtains`.`id_object` = $idObject");
 
-            if ($this->curtain = $sql->fetch(PDO::FETCH_OBJ))
-            {
-                $this->curtain->id_object = $idObject;
-            }
+            if($sql->rowCount() > 0) $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
         }
-        else
+    }
+    
+    private function initBus($busId)
+    {
+        $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id',
+                                           `modbus_buses`.`type` AS 'bus_type'
+                                    FROM `modbus_buses`
+                                    WHERE `modbus_buses`.`id` = $busId");
+        if($sql->rowCount() > 0) 
         {
-            if (isset($busId))
-            {
-                $sql = parent::$db->query(" SELECT `modbus_buses`.`type` AS 'bus_type'
-                                            FROM `modbus_buses`
-                                            WHERE `modbus_buses`.`id` = $busId");
-
-                $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-                $this->curtain->bus_id = $busId;
-                $this->curtain->id_object = null;
-            }
+            $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+            $this->curtain->id_object = null;
         }
     }
 
@@ -301,9 +294,9 @@ class Curtain extends Device
      */
     public function getMotorType()
     {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xF0, 0x01]); 
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xF0, 0x01]); 
             // 01F001 - в ответ 17(0x11) - рулонка, ???17(0x11)??? - жалюзи
-        $response = $this->sendCmd($packet, 'getMotorType');
+        $this->sendCmd($packet, 'getMotorType');
         // return $response;
     }
 
@@ -324,27 +317,30 @@ class Curtain extends Device
     {
         // 020301 - команда сброса выставленных пределов
         // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], [$direction]);
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], [$direction]);
         $this->sendCmd($packet);
     }
 
     /**
      * Смена адреса (для штор с RS485)
      */
-    public function changeAddress(int $newAddress, int $newGroup)
+    public function changeAddress(int $busId, int $newAddress, int $newGroup)
     {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
         $this->sendCmd($packet);
     }
 
     /**
      * Назначение адреса (для штор с RS485)
-     * Для установки адреса после сброса
+     * Метод для приводов рулонных штор:
+     * - сброс привода (удерживать кнопку на приводе до второго звукового сигнала)
+     * - отправка команды по адресу по-умолчанию
      */
-    public function setAddress(int $newAddress, int $newGroup)
+    public function setAddress(int $busId, int $newAddress, int $newGroup)
     {
-        $packet = $this->packetAssembling(0xFE, 0xFE, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
-        $this->sendCmd($packet);
+        $packet = self::packetAssembling(0xFE, 0xFE, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
+        $this->initBus($busId);
+        $this->sendCmd($packet, 'setAddress');
     }
 
     /**

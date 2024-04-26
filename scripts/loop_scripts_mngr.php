@@ -73,10 +73,7 @@ function getIdArrayFromDb(string $subject)
     if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Modbus::getModbusRtuBuses();
     if ($subject == 'dali_polling') $idArrayFromDb = Dali::getDaliBuses();
     if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
-    // $table = 'modbus_buses';
 
-    // $sql = System::$db->query("SELECT `id` FROM `$table`");
-    // if($sql->rowCount() > 0) while($row = $sql->fetch(PDO::FETCH_OBJ)) $idArrayFromDb[] = $row->id;
     return $idArrayFromDb;
 }
 

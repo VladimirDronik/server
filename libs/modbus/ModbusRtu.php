@@ -157,8 +157,11 @@ class ModbusRtu
         return $this->fd;
     }
 
-    public function send($rtuPacket)
+    public function send($rtuPacket, string $slaverType = null)
     {
+        if ($slaverType == 'beg-311-w') $delay = 500000;
+        else $delay = 100000;
+
         echo 'RTU Binary to sent (in hex):   ' . unpack('H*', $rtuPacket)[1] . PHP_EOL;
         fwrite($this->fd, $rtuPacket);
         fflush($this->fd);
@@ -169,7 +172,7 @@ class ModbusRtu
             // Give a modbus device time to respond. 
             // This is crucial for some serial devices and delay needs to be even longer (100ms) 
             //or you will experience read errors or invalid CRCs
-            usleep(250000);
+            usleep($delay);
             $binaryData = fread($this->fd, 255);
         } while ($binaryData === '' && (microtime(true) - $start) < 3);
         $end = (microtime(true) - $start) * 1000;

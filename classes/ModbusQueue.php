@@ -94,8 +94,8 @@ class ModbusQueue extends System {
             if ($task->mode == 'modbus_rtu')
             {
                 $packet = modbusFunction($task);
-                
-                $binaryData = self::$modbus->send($packet);
+
+                $binaryData = self::$modbus->send($packet, $task->slaver_type);
     
                 if ($binaryData) 
                 {

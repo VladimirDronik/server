@@ -6,7 +6,9 @@
 class Boiler extends System
 {
 
-    private $boiler;
+    private $boiler = null;
+    private $values = [];
+    private $params = [];
     public $debug = false;
 
     function __construct($idObject)
@@ -14,6 +16,22 @@ class Boiler extends System
         $sql = parent::$db->query("SELECT * FROM boilers WHERE `id_object` = $idObject");
         $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
         
+        $sql = parent::$db->query(" SELECT *
+                                    FROM `boilers_params_flags`
+                                    WHERE `boiler_id` = " . $this->boiler->id);
+        $params = $sql->fetch(PDO::FETCH_OBJ);
+
+        $params = (array)$params;
+        unset($params['id'], $params['boiler_id']);
+        $this->params = array_keys($params, 1);
+
+        $columns = implode(",", $this->params);
+
+        $sql = parent::$db->query(" SELECT $columns
+                                    FROM `boilers_params`
+                                    WHERE `boiler_id` = " . $this->boiler->id);
+        $values = $sql->fetch(PDO::FETCH_OBJ);
+        $this->values = (array)$values;
     }
 
     private function getValueFromDbByAlias(string $alias)
@@ -22,70 +40,7 @@ class Boiler extends System
         return Modbus::getRegisterValueFromDB($registerId);
     }
 
-    public function getChCurrentTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $chCurrentTemp = (int)$this->getValueFromDbByAlias('ch_current_temp');
-        }
-        return $chCurrentTemp;
-    }
-
-    public function getChSetpointTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $chSetpointTemp = (int)$this->getValueFromDbByAlias('ch_setpoint_temp');
-        }
-        return $chSetpointTemp;
-    }
-
-    public function getDhwCurrentTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $dhwCurrentTemp = (int)$this->getValueFromDbByAlias('dhw_current_temp');
-        }
-        return $dhwCurrentTemp;
-    }
-
-    public function getDhwSetpointTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $dhwSetpointTemp = (int)$this->getValueFromDbByAlias('dhw_setpoint_temp');
-        }
-        return $dhwSetpointTemp;
-    }
-
-    public function getWaterTankTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $waterTankTemp = (int)$this->getValueFromDbByAlias('water_tank_temp');
-        }
-        return $waterTankTemp;
-    }
-
-    public function getReturnTemp()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $returnTemp = (int)$this->getValueFromDbByAlias('return_temp');
-        }
-        return $returnTemp;
-    }
-
-    public function getErrorCode()
-    {
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $errorCode = (int)$this->getValueFromDbByAlias('error_code');
-        }
-        return $errorCode;
-    }
-
-    public function getParam(string $paramName)
+    private function getParam(string $paramName)
     {
         switch ($paramName)
         {
@@ -99,11 +54,6 @@ class Boiler extends System
                                             ON `boilers`.`$columnName` = `termostats`.`id_object`
                                             WHERE `boilers`.`id` = " . $this->boiler->id);
                 $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
-                break;
-            
-            case 'ch_setpoint_temp':
-            case 'dhw_setpoint_temp':
-                
                 break;
                 
             default:
@@ -120,21 +70,64 @@ class Boiler extends System
         parent::$db->query("UPDATE `boilers_params`
                             SET `$paramName` = $paramValue
                             WHERE `boiler_id` = " . $this->boiler->id);
+        
         if ($this->debug) echo "$paramName: $paramValue" . PHP_EOL;
+
+        return $paramValue;
     }
     
+    private function implementParamValue(string $paramName, mixed $paramValue)
+    {
+        switch ($paramName)
+        {
+            case 'outdoor_temp':
+                $sql = parent::$db->query(" SELECT `t_water`
+                                            FROM `boiler_auto`
+                                            WHERE `id_object` = {$this->boiler->id_object}
+                                            AND `t_out` <= '$paramValue'
+                                            OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
+                                            ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
+                $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
+
+                if ($newSetpoint != $this->values['ch_setpoint_temp'])
+                {
+                    $this->setParam('ch_setpoint_temp', $newSetpoint);
+                    if ($this->debug) echo "Исходя из значения температуры, " . 
+                                        "необходимо изменить уставку. " .
+                                        "Новое значение ch_setpoint_temp: $newSetpoint" . PHP_EOL;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Функция установки необходимого значения параметра
+     */
+    public function setParam(string $paramName, mixed $paramValue)
+    {
+        if ($this->boiler->gateway_type == 'modbus') 
+            {
+                $registerId = Modbus::getRegisterIdByAlias ($this->boiler->gateway_id, $paramName);
+                if (isset($registerId))
+                {
+                    Modbus::putTaskIntoQueue($registerId, 'write', 5, $paramValue);
+                    parent::$db->query("UPDATE `boilers_params`
+                                        SET `$paramName` = $paramValue
+                                        WHERE `boiler_id` = " . $this->boiler->id);
+                }
+                
+            }
+        
+    }
+
     public function checkBoiler()
     {
-        $sql = parent::$db->query(" SELECT *
-                                    FROM `boilers_params_flags`
-                                    WHERE `boiler_id` = " . $this->boiler->id);
-        $params = $sql->fetch(PDO::FETCH_OBJ);
-        $params = (array)$params;
-        unset($params['id'], $params['boiler_id']);
+        if ($this->debug) echo PHP_EOL;
 
-        foreach ($params as $paramName => $flag)
+        foreach ($this->params as $paramName)
         {
-            if ($flag == 1) $this->getParam($paramName);
+            $this->implementParamValue($paramName, $this->getParam($paramName));
+            if ($this->debug) echo PHP_EOL;
         }
 
     }

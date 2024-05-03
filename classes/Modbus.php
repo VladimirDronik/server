@@ -273,6 +273,7 @@ class Modbus extends System {
 
             while (true)
             {
+                $diff = [];
                 usleep(500000);
                 $registersUpdatedArray = self::getRegistersToPoll($polling_cycle, $busId);
                 if ($registersUpdatedArray)
@@ -284,6 +285,7 @@ class Modbus extends System {
                         foreach ($diff as $value)
                         {
                             $registerId = array_search($value, $diff);
+                            $output = [];
                             exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
                             $queryString = "SELECT `modbus_slavers`.`active`
                                             FROM `modbus_slavers`

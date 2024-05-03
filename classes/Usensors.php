@@ -31,7 +31,8 @@ class Usensors extends Objects
         switch ($sensor->sensor_type)
         {
             case 'bh1750':
-                $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, 'bh1750');
+            case 'max44009':
+                $lux = Megad::getI2C($sensor->device_id, $sensor->SDA, $sensor->SCL, $sensor->sensor_type);
                 break;
 
             case 'htu21d':

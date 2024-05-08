@@ -13,7 +13,7 @@ class Conditioner extends Device
         if ($idObject)
         {
             $sql = parent::$db->query(" SELECT `objects`.`status` as 'state',
-                                               `conditioners`.`temperature`,
+                                               `conditioners`.`temp`,
                                                `conditioners`.`type`,
                                                `conditioners`.`mode`,
                                                `conditioners`.`fan`,
@@ -70,7 +70,7 @@ class Conditioner extends Device
             if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $temperature);
                 
             parent::$db->query("UPDATE `conditioners`
-                                SET `temperature` = $temperature
+                                SET `temp` = $temperature
                                 WHERE id_object =" . $this->ac->id_object);
         }
     }

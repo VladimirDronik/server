@@ -702,12 +702,21 @@ class Views extends System
 
                     case  'conditioner':
 
-                        $temperature = $data_array->items[0]->temp;
-                        $mode = $data_array->items[0]->mode;
-                        $fan = $data_array->items[0]->fan;
-    
+                        if (isset($data_array->items[0]->temp)) $temperature = $data_array->items[0]->temp;
+                        if (isset($data_array->items[0]->mode)) $mode = $data_array->items[0]->mode;
+                        if (isset($data_array->items[0]->fan)) $fan = $data_array->items[0]->fan;
+                        if (isset($data_array->items[0]->vdir)) $vdir = $data_array->items[0]->vdir;
+                        if (isset($data_array->items[0]->hdir)) $hdir = $data_array->items[0]->hdir;
+                        
                         $conditioner = new Conditioner($idObject);
-                        $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
+                        if (isset($itemStatus)) $conditioner->setAcPower (strtolower($itemStatus));
+                        if (isset($temperature)) $conditioner->setAcTemperature ($temperature);
+                        if (isset($mode)) $conditioner->setAcMode ($mode);
+                        if (isset($fan)) $conditioner->setAcFanSpeed ($fan);
+                        if (isset($vdir)) $conditioner->setAcVDir ($vdir);
+                        if (isset($hdir)) $conditioner->setAcHDir ($hdir);
+
+                        // $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
 
                         break;
 
@@ -738,33 +747,6 @@ class Views extends System
 
                         break;
 
-                    // case 'tape':
-                        
-                    //     $tape = new Tape($idObject);
-                    //     $color = 0;
-                    //     $shade = 0;
-                    //     $bright = 0;
-                    //     $wbright = 0;
-    
-                    //     $status = $itemStatus;
-    
-                    //      //Если значение ленты установлено, то значит либо включили либо выключили её без установки параметров
-                    //      if ($itemValue->v != null)  {
-                    //         //пришло конкретное значение для ленты
-                    //         if ($itemValue->type == 'RGB' || $itemValue->type == 'RGBW') { 
-                    //             $color = $itemValue->h;
-                    //             $shade = $itemValue->s;
-                    //             $bright = $itemValue->v;
-                    //         }
-                    //         if ($itemValue->type == 'RGBW' || $itemValue->type == 'W') {
-                    //             $wbright = $itemValue->w;
-                    //         }
-                    //      }
-    
-                    //      $tape->setStatus($color, $shade, $bright, $wbright, $status);
-                    //      $newObject->setStatus($status, true, false);
-
-                    // break;
                     
                     case 'customizable_light':
                         
@@ -1437,43 +1419,82 @@ class Views extends System
     }
 
 
-/** Функция отдает параметры выбранного кондицинера
+    /** Функция отдает параметры выбранного кондицинера
      *
      */
-    public function getConditioner($idConditioner) {
+    public function getConditioner($idConditionerView)
+    {
+        $sql = parent::$db->query(" SELECT `conditioner_types`.`temperature` AS 'temp_range',
+                                       `conditioner_types`.`mode` AS 'modes',
+                                       `conditioner_types`.`fan` AS 'fans',
+                                       `conditioner_types`.`vdir` AS 'vdirs',
+                                       `conditioner_types`.`hdir` AS 'hdirs',
+                                       `objects`.`status` AS 'state',
+                                       `conditioners`.`temperature`,
+                                       `conditioners`.`mode`,
+                                       `conditioners`.`fan`,
+                                       `conditioners`.`vdir`,
+                                       `conditioners`.`hdir`
+                                FROM `conditioner_types`
+                                INNER JOIN `conditioners` ON `conditioners`.`type` = `conditioner_types`.`id`
+                                INNER JOIN `objects` ON `objects`.`id` = `conditioners`.`id_object`
+                                INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id` 
+                                WHERE `view_items`.`id` = $idConditionerView");
 
-   $sql = parent::$db->query("SELECT min, max, operationModes, fanModes, conditioner_kinds.precision AS prec, conditioners.state AS state, conditioners.temp AS temp, conditioners.operation AS operation, conditioners.fan AS fan    
-                               FROM `conditioner_kinds` 
-                               INNER JOIN conditioner_models ON conditioner_models.kind = conditioner_kinds.id 
-                               INNER JOIN conditioners ON conditioner_models.id = conditioners.model 
-                               INNER JOIN objects ON objects.id = conditioners.id_object 
-                               INNER JOIN view_items ON view_items.id_object = objects.id 
-                               WHERE view_items.id = $idConditioner");
-
-        if($sql->rowCount() > 0) {
-
+        if($sql->rowCount() > 0)
+        {
             $conditioner = $sql->fetch(PDO::FETCH_OBJ);
 
-            $operationModes = json_decode($conditioner->operationModes);
-            $fanModes = json_decode($conditioner->fanModes);
+            $operationModes = json_decode($conditioner->modes);
+            $operationModes = get_object_vars($operationModes);
+            $operationModes = array_keys($operationModes);
 
-            $items = array('id' => $idConditioner,
+            $fanModes = json_decode($conditioner->fans);
+            $fanModes = get_object_vars($fanModes);
+            $fanModes = array_keys($fanModes);
+            $fanModes = array_map('strval', $fanModes);
+
+            $temperatureRange = json_decode($conditioner->temp_range);
+
+            $items = [
+                'id' => $idConditionerView,
                 'type' => 'conditioner',
                 'state' => $conditioner->state,
-                'temp' => $conditioner->temp,
-                'operation' => $conditioner->operation,
-                'fan' => $conditioner->fan,
-                'precision' => $conditioner->prec,
-                'operation_modes' => $operationModes->{'modes'},
-                'fan_modes' => $fanModes->{'modes'},
-                'min' => $conditioner->min,
-                'max' => $conditioner->max
-          );
+                'min' => $temperatureRange->min,
+                'max' => $temperatureRange->max,
+                'temp' => $conditioner->temperature,
+                'operation_modes' => $operationModes,
+                'operation' => $conditioner->mode,
+                'fan_modes' => $fanModes,
+                'fan' => $conditioner->fan
+            ];
 
-         return  $json = json_encode(array('status' => 'conditionerLoad', 'entity'=> $items));
 
-        }  else System::addlog('error','Данные для отображения"'.$idConditioner.'"" не найдены', 'conditioner');
+            if (isset($conditioner->vdirs))
+            {
+                $vdir_modes = json_decode($conditioner->vdirs);
+                $vdir_modes = get_object_vars($vdir_modes);
+                $vdir_modes = array_keys($vdir_modes);
+                $items += [
+                    'vdir_modes' => $vdir_modes,
+                    'vdir' => $conditioner->vdir
+                ];
+            }
 
+            if (isset($conditioner->hdirs))
+            {
+                $hdir_modes = json_decode($conditioner->hdirs);
+                $hdir_modes = get_object_vars($hdir_modes);
+                $hdir_modes = array_keys($hdir_modes);
+                $items += [
+                    'hdir_modes' => $hdir_modes,
+                    'hdir' => $conditioner->hdir
+                ];
+            }
+            
+            return  $json = json_encode(array('status' => 'conditionerLoad', 'entity'=> $items));
+
+        } else System::addlog('error','Данные для отображения"'.$idConditionerView.'"" не найдены', 'conditioner');
     }
 
     /**

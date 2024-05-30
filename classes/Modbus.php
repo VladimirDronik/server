@@ -344,11 +344,7 @@ class Modbus extends System {
         }
         while ($currentTimemark === $referenceTimemark && (time()*1000-$start) < 5000);
 
-        if ($currentTimemark === $referenceTimemark) 
-        {
-            echo "Значение в БД не обновилось. Скорее всего нет ответа от modbus устройства" . PHP_EOL;
-            return false;
-        }
+        if ($currentTimemark === $referenceTimemark) exit ("[Error] Нет ответа от modbus устройства");
         else
         {
             $sql = parent::$db->query(" SELECT `last_value`, `data_format`
@@ -358,14 +354,13 @@ class Modbus extends System {
             {
                 case 'bool':
                     $result = filter_var($value->last_value, FILTER_VALIDATE_BOOLEAN);
-                break;
+                    break;
                 case 'string':
                     $result = $value->last_value;
-                break;
+                    break;
                 default:
                     $result = filter_var($value->last_value, FILTER_VALIDATE_INT);
             }
-            // var_dump ($result);
             return $result;
         }
     }
@@ -378,7 +373,7 @@ class Modbus extends System {
         $sql = parent::$db->query(" SELECT `id` FROM `modbus_registers` 
                                     WHERE `slaver_id` = $slaverId
                                     AND `alias` = '$alias'");
-        return $sql->fetch(PDO::FETCH_OBJ)->id;
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ)->id;
     }
 
     /**

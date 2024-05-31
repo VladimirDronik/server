@@ -6,7 +6,7 @@ cookies.txt
 /userscripts
 /sounds
 /speakers
-/logs
+/logs/*
 /vendor
 server.code-workspace
 /ROOT_DIR

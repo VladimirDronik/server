@@ -151,6 +151,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
             if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
             // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+            if ($task->scale) $result = $result * $task->scale;
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
             echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
             echo PHP_EOL;
@@ -194,10 +195,10 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
         if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
         // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
-        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
-
         if ($task->scale) $result = $result * $task->scale;
 
+        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
+        
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
         echo PHP_EOL;
         return strval($result);
@@ -231,6 +232,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function writeSingleRegisterRequest($task)
     {
+        if ($task->scale) $task->value = $task->value / $task->scale;
         $tcpPacket = new WriteSingleRegisterRequest($task->starting_address, $task->value, $task->slave_address);
         $rtuPacket = RtuConverter::toRtu($tcpPacket);
         return $rtuPacket;

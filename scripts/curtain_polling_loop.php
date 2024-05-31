@@ -10,5 +10,5 @@ while (true)
     
     if (Curtain::getRsMotorActivity($argv[1])) $curtain->getPercent();
     
-    sleep (6);
+    sleep (60);
 }

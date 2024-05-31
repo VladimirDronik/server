@@ -8,7 +8,7 @@ class Conditioner extends Device
 {
     private $ac = null; // id объекта кондиционера 
 
-    function __construct ($idObject)
+    function __construct($idObject)
     {
         if ($idObject)
         {
@@ -40,7 +40,7 @@ class Conditioner extends Device
         }
     }
 
-    public function setAcPower (string $state)
+    public function setAcPower(string $state)
     {
         $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_power');
 
@@ -54,7 +54,7 @@ class Conditioner extends Device
         $object->setStatus($state, true, false);   
     }
 
-    public function setAcTemperature (int $temperature)
+    public function setAcTemperature(int $temperature)
     {
         $sql = parent::$db->query(" SELECT `conditioner_types`.`temperature`
                                     FROM `conditioner_types`
@@ -75,7 +75,7 @@ class Conditioner extends Device
         }
     }
     
-    public function setAcMode (string $mode)
+    public function setAcMode(string $mode)
     {
         $sql = parent::$db->query(" SELECT `conditioner_types`.`mode`
                                     FROM `conditioner_types`
@@ -96,7 +96,7 @@ class Conditioner extends Device
         }
     }
 
-    public function setAcFanSpeed (string $speed)
+    public function setAcFanSpeed(string $speed)
     {
         $sql = parent::$db->query(" SELECT `conditioner_types`.`fan`
                                     FROM `conditioner_types`
@@ -117,7 +117,7 @@ class Conditioner extends Device
         }
     }
 
-    public function setAcVDir (string $vDir)
+    public function setAcVDir(string $vDir)
     {
         $sql = parent::$db->query(" SELECT `conditioner_types`.`vdir`
                                     FROM `conditioner_types`
@@ -143,7 +143,7 @@ class Conditioner extends Device
         }
     }
 
-    public function setAcHDir (string $hDir)
+    public function setAcHDir(string $hDir)
     {
         $sql = parent::$db->query(" SELECT `conditioner_types`.`hdir`
                                     FROM `conditioner_types`
@@ -169,42 +169,54 @@ class Conditioner extends Device
         }
     }
 
-    
-    //
-    public function setValue($temperature, $state, $oper, $fan)
+    public function updateAcParams()
     {
+        $acParamsQuery = parent::$db->query("   SELECT `last_value`, `alias`
+                                                FROM `modbus_registers`
+                                                WHERE `slaver_id` = {$this->ac->modbus_slaver_id}");
+        
+        while ($param = $acParamsQuery->fetch(PDO::FETCH_OBJ))
+        {
 
-        $object = new Objects();
-        $object->select(self::$idObject);
+            $paramName = str_replace('ac_', '', $param->alias);
+            switch($paramName)
+            {
+                case 'power':
+                    if ($param->last_value == 'true') $state = 'on';
+                    else $state = 'off';
+                    $object = new Objects();
+                    $object->select($this->ac->id_object);
+                    $object->setStatus($state, true, false);
+                    break;
+                
+                case 'temp':
+                    $value = $param->last_value;
+                    break;
 
+                default:
+                    // if ($paramName == 'temp') $paramName = 'temperature';
+                    $acParamJsonQuery = parent::$db->query(
+                        "   SELECT `conditioner_types`.`$paramName`
+                            FROM `conditioner_types`
+                            INNER JOIN `conditioners`
+                            ON `conditioner_types`.`id` = `conditioners`.`type`
+                            WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
+                            AND `conditioners`.`id_object` = {$this->ac->id_object}"
+                    );
 
-        if ($state == 'ON' ) {
-            $object->setStatus('ON', true, false);
-            $query = 'SELECT `code`, conditioners.wb_mir AS modbus_addr, devices.ip_address AS ip_addr FROM `conditioner_codes` INNER JOIN `conditioner_models` ON conditioner_codes.kind = conditioner_models.kind INNER JOIN `conditioners` ON conditioners.model = conditioner_models.id  
-                INNER JOIN devices ON devices.id = conditioners.device_id
-                WHERE conditioner_codes.temperature = '.$temperature.' AND conditioner_codes.operationMode = "'.$oper.'" AND conditioner_codes.fanMode = "'.$fan.'" AND conditioners.id_object = '.self::$idObject;
-         } else {
-            $object->setStatus('OFF', true, false);
-            $query = 'SELECT `code`, conditioners.wb_mir AS modbus_addr, devices.ip_address AS ip_addr FROM `conditioner_codes` INNER JOIN `conditioner_models` ON conditioner_codes.kind = conditioner_models.kind INNER JOIN `conditioners` ON conditioners.model = conditioner_models.id  
-                INNER JOIN devices ON devices.id = conditioners.device_id
-                WHERE conditioner_codes.status = "'.$state.'" AND conditioners.id_object = '.self::$idObject;
-
-         }
-
-        //Ищем в таблице нужный код для команды
-        $sql = parent::$db->query($query);
-
-
-        $conditioner = $sql->fetch(PDO::FETCH_OBJ);
-
-        //Заносим текущее состояние кондиционера в таблицу
-            parent::$db->query("UPDATE conditioners SET 
-                                `temp` = $temperature, `state` = \"$state\", `operation` = \"$oper\", `fan` = \"$fan\"   
-                                WHERE id_object =".self::$idObject);
-
-
-        //Отправляем команду скрипту кондиционера
-        exec('rs_control ir_raw -d wb-mir --ip ' .$conditioner->ip_addr. ' -u ' .$conditioner->modbus_addr. ' --ir_json \'{"signal": [' .$conditioner->code. ']}\'');
+                    $acParamJson = $acParamJsonQuery->fetch(PDO::FETCH_OBJ)->$paramName;
+                    $value = (string)array_search($param->last_value, json_decode($acParamJson, true));
+                    break;
+            }
+            
+            if (isset($value) && $paramName != 'power') 
+                parent::$db->query(
+                    "   UPDATE `conditioners`
+                        SET `$paramName` = '$value'
+                        WHERE id_object = {$this->ac->id_object}"
+                );
+        }
     }
+
 }
 

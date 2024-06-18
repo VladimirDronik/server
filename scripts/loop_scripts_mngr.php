@@ -6,7 +6,7 @@ $configFile = getenv('WORK_DIR') . '/configs/supervisord.conf';
 checkSupervisorCfg ('modbus');
 checkSupervisorCfg ('modbus_polling');
 checkSupervisorCfg ('dali_polling');
-checkSupervisorCfg ('curtain_polling');
+// checkSupervisorCfg ('curtain_polling');
 
 
 //* FUNCTIONS */
@@ -72,7 +72,7 @@ function getIdArrayFromDb(string $subject)
     $idArrayFromDb = [];
     if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Modbus::getModbusRtuBuses();
     if ($subject == 'dali_polling') $idArrayFromDb = Dali::getDaliBuses();
-    if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
+    // if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
 
     return $idArrayFromDb;
 }
@@ -103,7 +103,7 @@ function addToSupervisorConfig(string $subject, int $subjectId)
     if ($subject == 'modbus') $scriptName = 'modbus_queue.php';
     if ($subject == 'modbus_polling') $scriptName = 'modbus_polling_loop.php';
     if ($subject == 'dali_polling') $scriptName = 'dali_polling_loop.php';
-    if ($subject == 'curtain_polling') $scriptName = 'curtain_polling_loop.php';
+    // if ($subject == 'curtain_polling') $scriptName = 'curtain_polling_loop.php';
 
     
     $query = 'grep ' . escapeshellarg("\[program:${subject}_id${subjectId}\]") . ' ' .  $configFile;

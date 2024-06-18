@@ -1475,6 +1475,7 @@ class Views extends System
                 $vdir_modes = json_decode($conditioner->vdirs);
                 $vdir_modes = get_object_vars($vdir_modes);
                 $vdir_modes = array_keys($vdir_modes);
+                $vdir_modes = array_map('strval', $vdir_modes);
                 $items += [
                     'vdir_modes' => $vdir_modes,
                     'vdir' => $conditioner->vdir
@@ -1486,6 +1487,7 @@ class Views extends System
                 $hdir_modes = json_decode($conditioner->hdirs);
                 $hdir_modes = get_object_vars($hdir_modes);
                 $hdir_modes = array_keys($hdir_modes);
+                $hdir_modes = array_map('strval', $hdir_modes);
                 $items += [
                     'hdir_modes' => $hdir_modes,
                     'hdir' => $conditioner->hdir

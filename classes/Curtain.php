@@ -21,6 +21,7 @@ class Curtain extends Device
         if (isset($idObject))
         {
             $sql = parent::$db->query(" SELECT `curtains`.`id_object`,
+                                               `curtains`.`type`,
                                                `curtains`.`port_open` AS 'openPort',
                                                `curtains`.`port_close` AS 'closePort',
                                                `curtains`.`time`,
@@ -312,12 +313,14 @@ class Curtain extends Device
 
     /**
      * Изменение направления привода (для штор с RS485)
+     * Для некоторых приводов срабатывает команда 01 03 01, меняет значение на противоположное 
      */
-    public function changeDirection(int $direction) // 0 - мотор слева, 1 - мотор справа
+    public function changeDirection(int $direction = null) // 0 - мотор слева, 1 - мотор справа
     {
         // 020301 - команда сброса выставленных пределов
         // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], [$direction]);
+        if (isset($direction)) $direction = [$direction];
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], $direction);
         $this->sendCmd($packet);
     }
 
@@ -334,13 +337,24 @@ class Curtain extends Device
      * Назначение адреса (для штор с RS485)
      * Метод для приводов рулонных штор:
      * - сброс привода (удерживать кнопку на приводе до второго звукового сигнала)
-     * - отправка команды по адресу по-умолчанию
+     * - отправка команды по адресу 0xFE 0xFE
+     * Метод для приводов раздвижных штор:
+     * - удерживать кнопку сброса до двух миганий либо непрерывного мигания светодиода (~5 сек)
+     * - отправка команды по адресу 0x00 0x00
      */
-    public function setAddress(int $busId, int $newAddress, int $newGroup)
+    public function setAddress()
     {
-        $packet = self::packetAssembling(0xFE, 0xFE, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
-        $this->initBus($busId);
-        $this->sendCmd($packet, 'setAddress');
+        if ($this->curtain->type == 'roller') $addr = [0xFE, 0xFE];
+        if ($this->curtain->type == 'curtain') $addr = [0x00, 0x00];
+
+        $start = time()*1000;
+        do
+        {
+            $packet = self::packetAssembling($addr[0], $addr[1], [0x02, 0x00, 0x02], [$this->curtain->address, $this->curtain->group]);
+            $this->sendCmd($packet, 'setAddress');
+            sleep(4);
+        }
+        while ((time()*1000-$start) < 30000);
     }
 
     /**
@@ -407,5 +421,4 @@ class Curtain extends Device
             }
         }
     }
-
 }

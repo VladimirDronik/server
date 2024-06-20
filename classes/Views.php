@@ -852,7 +852,12 @@ class Views extends System
                             if ($itemStatus == "on") $curtain->open();
                             if ($itemStatus == "off") $curtain->close();
                         }
-                        else $curtain->setPercent($set_value);
+                        else 
+                        {
+                            if ($set_value == 100) $curtain->open();
+                            elseif ($set_value == 0) $curtain->close();
+                            else $curtain->setPercent($set_value);
+                        }
 
                     break;
                 }
@@ -1678,14 +1683,18 @@ class Views extends System
         
         $sql = parent::$db->query(" SELECT `curtains`.`place`,
                                            `curtains`.`percent`,
-                                           `objects`.`status`
+                                           `objects`.`status`,
+                                           `view_items`.`title`
                                     FROM `curtains`
                                     INNER JOIN `objects` ON `objects`.`id` = `curtains`.`id_object`
                                     INNER JOIN `view_items` ON `view_items`.`id_object` = `objects`.`id`
                                     WHERE `view_items`.`id` = $curtainViewId");
         if ($curtain = $sql->fetch(PDO::FETCH_OBJ))
         {
-            $items += ['type' => $curtain->place];
+            $items += [
+                'type' => $curtain->place,
+                'title' => $curtain->title,
+            ];
             if ($curtain->place == 'rs485') $items += ['openRate' => $curtain->percent];
             return json_encode(array('status' => 'curtainLoad', 'entity'=> $items));
         }      

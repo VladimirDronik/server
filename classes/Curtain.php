@@ -150,10 +150,10 @@ class Curtain extends Device
         if($this->curtain->place == 'rs485')
         {
             // 0301 - команда открытия
-            // $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x01]);
-            // $this->sendCmd($packet);
-            // $this->percent_db(100);
-            $this->setPercent(100);
+            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x01]);
+            $this->sendCmd($packet);
+            $this->putPercentToDb(100);
+            // $this->setPercent(100);
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -201,9 +201,9 @@ class Curtain extends Device
         if($this->curtain->place == 'rs485')
         {
             // 0302 - команда закрытия
-            // $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x02]);
-            // $this->sendCmd($packet);
-            // $this->percent_db(0);
+            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x02]);
+            $this->sendCmd($packet);
+            $this->putPercentToDb(0);
             $this->setPercent(0);
         }
         elseif ($this->curtain->place == 'port')
@@ -295,7 +295,7 @@ class Curtain extends Device
      */
     public function getMotorType()
     {
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xF0, 0x01]); 
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xFE, 0x01]); 
             // 01F001 - в ответ 17(0x11) - рулонка, ???17(0x11)??? - жалюзи
         $this->sendCmd($packet, 'getMotorType');
         // return $response;

@@ -4,7 +4,8 @@
 use Beanstalk\Client;
 use PhpMqtt\Client\MqttClient;
 
-class Modbus extends System {
+class Modbus extends System
+{
     
     private static $response = null;
     public static $_busConnection = null;

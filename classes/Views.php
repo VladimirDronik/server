@@ -1223,150 +1223,312 @@ class Views extends System
 
     public function getPage($link)
     {
-        //Запрашиваем данные о нужных страницах
-        $sql = "SELECT id, name, type FROM pages WHERE link = '$link' ORDER BY sort";
-
-        $queryPage = parent::$db->query($sql);
-        while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
-
+        // Запрашиваем данные о нужных страницах
+        $queryPage = parent::$db->query("   SELECT `id`, `name`, `type`
+                                            FROM `pages`
+                                            WHERE `link` = '$link'
+                                            ORDER BY `sort`");
+        
+        while ($page = $queryPage->fetch(PDO::FETCH_OBJ))
+        {
             unset($elements);
 
             //Запрашиваем данные для компонентов страницы
-            $sql = "SELECT `id`, `name`, `type`, `image`, `value`, `position`, `handle` FROM elements WHERE page = {$page->id} AND active = 1 AND parent = 0 ORDER BY position, sort";
+            $queryElement = parent::$db->query("SELECT `id`, `name`, `type`, `image`,
+                                                       `status`, `units`, `position`,
+                                                       `handle`, `settings`, `wh_color`, `bl_color`
+                                                FROM `elements`
+                                                WHERE `page` = {$page->id}
+                                                AND active = 1 AND parent = 0
+                                                ORDER BY position, sort");
+            if($queryElement->rowCount() > 0)
+            {
+                while ($element = $queryElement->fetch(PDO::FETCH_OBJ))
+                {
+                    $image = explode('.', $element->image)[0];
 
-            $queryElements = parent::$db->query($sql);
-            if($queryElements->rowCount() > 0) {
-            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
+                    //Если тип - аккордеон, то ищем еще дочерние элементы
+                //     if($element->type == 'accordeon')
+                //     {
+                //         $queryChildElement = parent::$db->query("  SELECT `id`, `name`, `type`, `image`,
+                //                                                           `status`, `units`, `position`,
+                //                                                           `handle`, `settings`, `wh_color`, `bl_color`
+                //                                                     FROM `elements`
+                //                                                     WHERE `active` = 1
+                //                                                     AND `parent` = {$element->id}
+                //                                                     ORDER BY `sort`");
 
-                $image = explode('.', $element->image)[0];
+                //         while ($childElement = $queryChildElement->fetch(PDO::FETCH_OBJ))
+                //         {
+                //             $imageChild = explode('.', $childElement->image)[0];
+                            
+                //             if ($element->settings == 0) $element->settings = 'false';
+                //             else $element->settings = 'true';
 
-                //Если тип - аккордеон, то ищем еще дочерние элементы
-                if($element->type == 'accordeon') {
-                    $sqlChildElements = "SELECT id, name, type, image, value, `handle` FROM elements WHERE active = 1 AND parent = {$element->id} ORDER BY sort";
-                    $queryChildElements = parent::$db->query($sqlChildElements);
-                    while ($childElement = $queryChildElements->fetch(PDO::FETCH_OBJ)) {
+                //             $value = [
+                //                 'status'    => "$element->status $element->units",
+                //                 'settings'  => $element->settings,
+                //             ];
+                //             if ($element->wh_color) $value['wh_color'] = $element->wh_color;
+                //             if ($element->bl_color) $value['bl_color'] = $element->wh_color;
 
-                        $imageChild = explode('.', $childElement->image)[0];
+                //             $element->value = json_encode($value);
 
-                        $value[] = array('id' => $childElement->id, 'image' => $imageChild, 'title' => $childElement->name, 'type' => $childElement->type,
-                            'handle' => $childElement->handle, 'value' => json_decode($childElement->value));
-                    }
+
+                //             $value[] = [
+                //                 'id'        => $childElement->id,
+                //                 'image'     => $imageChild,
+                //                 'title'     => $childElement->name,
+                //                 'type'      => $childElement->type,
+                //                 'handle'    => $childElement->handle,
+                //                 'value'     => [json_decode($element->value)],
+                //             ];
+                //         }
+
+                //         $element->value = json_encode($value);
+
+                //         $elements[] = [
+                //             'id'        => (string)$element->id,
+                //             'image'     => $image,
+                //             'title'     => $element->name,
+                //             'type'      => $element->type,
+                //             'position'  => (string)$element->position,
+                //             'handle'    => $element->handle,
+                //             'elements'  => [json_decode($element->value)],
+                //         ];
+                // }
+                // else
+                // {
+                    
+                    if ($element->settings == 0) $element->settings = 'false';
+                    else $element->settings = 'true';
+                    $status = "$element->status";
+                    if ($element->units) $status .= " $element->units";
+                    $value = [
+                        'status'    => $status,
+                        'settings'  => $element->settings,
+                    ];
+                    if ($element->wh_color) $value['wh_color'] = $element->wh_color;
+                    if ($element->bl_color) $value['bl_color'] = $element->wh_color;
+
                     $element->value = json_encode($value);
 
-                    $elements[] = array('id' => (string)$element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => (string)$element->position, 'handle' => $element->handle, 'elements'=>json_decode($element->value));
-                }else
-                    $elements[] = array('id' => (string)$element->id, 'image'=>$image, 'title'=>$element->name, 'type'=>$element->type,
-                        'position' => (string)$element->position, 'handle' => $element->handle, 'value'=>json_decode($element->value));
+                    $elements[] = [
+                        'id'        => (string)$element->id,
+                        'image'     => $image,
+                        'title'     => $element->name,
+                        'type'      => $element->type,
+                        'position'  => (string)$element->position,
+                        'handle'    => $element->handle,
+                        'value'     => [json_decode($element->value)],
+                    ];
+                // }
+                }
 
+                $pages[] = [
+                    'id'        => (string)$page->id,
+                    'name'      => $page->name,
+                    'elements'  => $elements,
+                ];
             }
 
-            $pages[] = array('id' => (string)$page->id, 'name' => $page->name, 'elements' => $elements);
-            }
+            return  $json = json_encode(['status'=>'pageLoad', 'pages' => $pages]);
         }
-
-        return  $json = json_encode(array('status'=>'pageLoad', 'pages' => $pages));
     }
-
 
     /**
      * Получение внутренней страницы для выбранного элемента
      */
     public function getInternalPage($idElement)
     {
-
         //Запрашиваем данные о нужных внутренних страницах
-        $sql = "SELECT internalPages.id AS intpage, elements.type, elements.page AS idpage, 
-                elements.handle AS handle, elements.id_object AS idObject
-                FROM internalPages 
-                INNER JOIN elements ON internalPages.idelement = elements.id     
-                WHERE idelement = $idElement ORDER BY sort";
-
-
-        $queryPage = parent::$db->query($sql);
-        while ($page = $queryPage->fetch(PDO::FETCH_OBJ)) {
-
-
-            $elementsSQL = "SELECT id, name, type, value FROM elements WHERE page = {$page->idpage}
-                                AND position=1 ORDER BY sort";
+        $queryPage = parent::$db->query("   SELECT `internalPages`.`id` AS 'intpage',
+                                                   `elements`.`type`,
+                                                   `elements`.`page` AS 'idpage', 
+                                                   `elements`.`handle` AS 'handle',
+                                                   `elements`.`id_object` AS 'idObject'
+                                            FROM `internalPages` 
+                                            INNER JOIN `elements` ON `internalPages`.`idelement` = `elements`.`id`
+                                            WHERE `idelement` = $idElement ORDER BY `sort`");
+        while ($page = $queryPage->fetch(PDO::FETCH_OBJ))
+        {
+            $elementsSQL = "SELECT `id`, `name`, `type`, `value` 
+                            FROM `elements` WHERE `page` = {$page->idpage}
+                            AND `position` = 1 ORDER BY `sort`";
 
             $queryElements = parent::$db->query($elementsSQL);
-            while ($element = $queryElements->fetch(PDO::FETCH_OBJ)) {
-
-                $elements[] = array('id' => (string)$element->id, 'title'=>$element->name, 'type'=>$element->type,
-                    'position' => "1", 'value'=>json_decode($element->value));
-            }
-
-
-            if ($page->handle == 'automode') {
-
-                // Извлекаем значения температуры для котла
-                $valuesSQL = "SELECT id, t_out, t_water FROM boiler_auto WHERE id_object = {$page->idObject}
-                                ORDER BY `t_out`";
-                $queryValues = parent::$db->query($valuesSQL);
-
-                while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
-
-                    $values[] = array('id' => (string)$element->id, 't_out' => (string)$element->t_out, 't_water' => (string)$element->t_water);
-                }
-                    $items[] = array('elements' => $elements, 'values' => $values);
-
-                      $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                          'idPage' => (string)$page->intpage, 'pages' => $items));
-                echo $json;
-                return $json;
-
-            } elseif($page->handle == 'manualmode') {
-
-                $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
-                                    INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
-                                    WHERE boiler_manual.id_object = {$page->idObject}";
-                $queryManValue = parent::$db->query($manualValueSQL);
-
-                if ($queryManValue->rowCount() != 0) {
-                    $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
-
-                    $cur_value = round($manualValue->feed_heat_temp);
-                    $set_value = round($manualValue->set_value);
-
-                    $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
-                        'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
-
-
-                    $items[] = array('elements' => $elements, 'valuesManual' => $values);
-
-                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
-                        'idPage' => (string)$page->intpage, 'pages' => $items));
-
-                    echo $json;
-                    return $json;
-                }
-            } else {
-
-                $waterValueSQL = "SELECT set_value, min_value, max_value, water_temp, target_water_temp FROM boiler_water 
-                                    INNER JOIN boiler ON boiler.id_object = boiler_water .id_object 
-                                    WHERE boiler_water.id_object = {$page->idObject}";
-                $queryWaterValue = parent::$db->query($waterValueSQL);
-
-                if ($queryWaterValue->rowCount() != 0) {
-                    $manualValue = $queryWaterValue->fetch(PDO::FETCH_OBJ);
-
-                    $cur_value = round($manualValue->water_temp);
-                    $set_value = round($manualValue->target_water_temp);
-
-                    $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
-                        'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
-
-
-                    $items[] = array('elements' => (string)$elements, 'valuesManual' => (string)$values);
-
-                    $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
-                        'idPage' => (string)$page->intpage, 'pages' => (string)$items));
-
-                    echo $json;
-                    return $json;
+            if($queryElements->rowCount() > 0)
+            {
+                while ($element = $queryElements->fetch(PDO::FETCH_OBJ))
+                {
+                    $elements[] = [
+                        'id' => (string)$element->id,
+                        'title'=>$element->name,
+                        'type'=>$element->type,
+                        'position' => "1",
+                        'value'=>json_decode($element->value)
+                    ];
                 }
             }
+            else $elements = null;
+            
+
+            if ($page->handle == 'ch_setpoint_temp')
+            {
+                $boilerHeatingModeSql = "   SELECT `heating_mode` FROM `boilers`
+                                            JOIN `elements` ON `elements`.`id_object` = `boilers`.`id_object`
+                                            WHERE `elements`.`id` = $idElement";
+                $queryBoilerHeatingMode = parent::$db->query($boilerHeatingModeSql);
+                if($queryBoilerHeatingMode->rowCount() > 0)
+                {
+                    $boilerHeatingMode = $queryBoilerHeatingMode->fetch(PDO::FETCH_OBJ)->heating_mode;
+                    
+                    if ($boilerHeatingMode == 'manual')
+                    {
+                        $manualValueSQL = " SELECT `ch_current_temp`, `ch_setpoint_temp` 
+                                            FROM `boilers_params` 
+                                            JOIN `boilers` ON `boilers`.`id` = `boilers_params`.`boiler_id`
+                                            WHERE `boilers`.`id_object` = {$page->idObject}";
+                        $queryManValue = parent::$db->query($manualValueSQL);
+
+                        if ($queryManValue->rowCount() > 0)
+                        {
+                            $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
+
+                            $cur_value = round($manualValue->ch_current_temp);
+                            $set_value = round($manualValue->ch_setpoint_temp);
+
+                            $values[] = [
+                                'cur_value' => (string)$cur_value,
+                                'set_value' => (string)$set_value,
+                                'min' => '20',
+                                'max' => '80'
+                            ];
+
+                            $items[] = [
+                                'elements' => $elements,
+                                'valuesManual' => $values
+                            ];
+
+                            $json = json_encode([
+                                'status' => 'internalPage',
+                                'type' => 'BoilerManual',
+                                'idPage' => (string)$page->intpage,
+                                'pages' => $items
+                            ]);
+
+                            // echo $json;
+                            return $json;   
+                        }
+                    }
+
+                    if ($boilerHeatingMode == 'auto')
+                    {
+                        // Извлекаем значения температуры для котла
+                        $valuesSQL = "  SELECT `id`, `t_out`, `t_water`
+                                        FROM `boiler_auto` WHERE `id_object` = {$page->idObject}
+                                        ORDER BY `t_out`";
+                        $queryValues = parent::$db->query($valuesSQL);
+                        
+                        if ($queryValues->rowCount() > 0)
+                        {
+                            while ($element = $queryValues->fetch(PDO::FETCH_OBJ))
+                            {
+                                $values[] = [
+                                    'id' => (string)$element->id,
+                                    't_out' => (string)$element->t_out,
+                                    't_water' => (string)$element->t_water
+                                ];
+                            }
+                            
+                            $items[] = [
+                                'elements' => $elements,
+                                'values' => $values
+                            ];
+        
+                            $json = json_encode([
+                                'status'=>'internalPage',
+                                'type' => 'BoilerAuto',
+                                'idPage' => (string)$page->intpage,
+                                'pages' => $items
+                            ]);
+                            // echo $json;
+                            return $json;
+                        }
+                    }
+                }
+
+                // if ($boilerHeatingMode == 'auto')
+                // {
+                //     // Извлекаем значения температуры для котла
+                //     $valuesSQL = "SELECT id, t_out, t_water FROM boiler_auto WHERE id_object = {$page->idObject}
+                //     ORDER BY `t_out`";
+                //     $queryValues = parent::$db->query($valuesSQL);
+
+                //     while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
+
+                //     $values[] = array('id' => (string)$element->id, 't_out' => (string)$element->t_out, 't_water' => (string)$element->t_water);
+                //     }
+                //     $items[] = array('elements' => $elements, 'values' => $values);
+
+                //     $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
+                //     'idPage' => (string)$page->intpage, 'pages' => $items));
+                //     echo $json;
+                //     return $json;
+                // }
+                
+            }
+            // } elseif($page->handle == 'ch_setpoint_temp') {
+
+            //     $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
+            //                         INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
+            //                         WHERE boiler_manual.id_object = {$page->idObject}";
+            //     $queryManValue = parent::$db->query($manualValueSQL);
+
+            //     if ($queryManValue->rowCount() != 0) {
+            //         $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
+
+            //         $cur_value = round($manualValue->feed_heat_temp);
+            //         $set_value = round($manualValue->set_value);
+
+            //         $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
+            //             'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
+
+
+            //         $items[] = array('elements' => $elements, 'valuesManual' => $values);
+
+            //         $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
+            //             'idPage' => (string)$page->intpage, 'pages' => $items));
+
+            //         echo $json;
+            //         return $json;
+            //     }
+            // } else {
+
+            //     $waterValueSQL = "SELECT set_value, min_value, max_value, water_temp, target_water_temp FROM boiler_water 
+            //                         INNER JOIN boiler ON boiler.id_object = boiler_water .id_object 
+            //                         WHERE boiler_water.id_object = {$page->idObject}";
+            //     $queryWaterValue = parent::$db->query($waterValueSQL);
+
+            //     if ($queryWaterValue->rowCount() != 0) {
+            //         $manualValue = $queryWaterValue->fetch(PDO::FETCH_OBJ);
+
+            //         $cur_value = round($manualValue->water_temp);
+            //         $set_value = round($manualValue->target_water_temp);
+
+            //         $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
+            //             'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
+
+
+            //         $items[] = array('elements' => (string)$elements, 'valuesManual' => (string)$values);
+
+            //         $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
+            //             'idPage' => (string)$page->intpage, 'pages' => (string)$items));
+
+            //         echo $json;
+            //         return $json;
+            //     }
+            // }
         }
     }
 

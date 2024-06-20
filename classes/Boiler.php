@@ -7,31 +7,75 @@ class Boiler extends System
 {
 
     private $boiler = null;
-    private $values = [];
-    private $params = [];
+    // private $values = [];
+    private $prevParams = [];
+    private $currentParams = [];
     public $debug = false;
 
     function __construct($idObject)
     {
         $sql = parent::$db->query("SELECT * FROM boilers WHERE `id_object` = $idObject");
-        $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
-        
+        if($sql->rowCount() > 0)
+        {
+            $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
+            $this->prevParams = $this->getPrevParams();
+            $this->currentParams = $this->getCurrentParams();
+        }
+        else echo "Котел с ID объекта $idObject не найден" . PHP_EOL;
+        var_dump ($this->boiler);
+    }
+
+
+    private function getPrevParams()
+    {
         $sql = parent::$db->query(" SELECT *
                                     FROM `boilers_params_flags`
-                                    WHERE `boiler_id` = " . $this->boiler->id);
-        $params = $sql->fetch(PDO::FETCH_OBJ);
-
-        $params = (array)$params;
-        unset($params['id'], $params['boiler_id']);
-        $this->params = array_keys($params, 1);
-
-        $columns = implode(",", $this->params);
-
+                                    WHERE `boiler_id` = {$this->boiler->id}");
+        $flags = $sql->fetch(PDO::FETCH_OBJ);
+        $flags = (array)$flags;
+        unset($flags['id'], $flags['boiler_id']);
+        $flags = array_keys($flags, 1);
+        $columns = implode(",", $flags);
+        
         $sql = parent::$db->query(" SELECT $columns
                                     FROM `boilers_params`
-                                    WHERE `boiler_id` = " . $this->boiler->id);
-        $values = $sql->fetch(PDO::FETCH_OBJ);
-        $this->values = (array)$values;
+                                    WHERE `boiler_id` = {$this->boiler->id}");
+        $prevParams = $sql->fetch(PDO::FETCH_OBJ);
+
+        return (array)$prevParams;
+    }
+
+    private function getCurrentParams()
+    {
+        foreach (array_keys($this->prevParams) as $paramName)
+        {
+            switch ($paramName)
+            {
+                case 'outdoor_temp':
+                case 'indoor_temp':
+                    if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
+                    else $columnName = 'indoor_sensor';
+                    $sql = parent::$db->query(" SELECT `termostats`.`current`
+                                                FROM `termostats`
+                                                INNER JOIN `boilers`
+                                                ON `boilers`.`$columnName` = `termostats`.`id_object`
+                                                WHERE `boilers`.`id` = " . $this->boiler->id);
+                    $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
+                    break;
+                    
+                default:
+                    if ($this->boiler->gateway_type == 'modbus') 
+                    {
+                        $paramValue = (int)$this->getValueFromDbByAlias($paramName);
+                    }
+                    break;
+            }
+
+            if (!isset($paramValue)) $paramValue = 'NULL';
+            $currentParams[$paramName] = $paramValue;
+        }
+
+        return $currentParams;
     }
 
     private function getValueFromDbByAlias(string $alias)
@@ -40,188 +84,249 @@ class Boiler extends System
         return Modbus::getRegisterValueFromDB($registerId);
     }
 
-    private function getParam(string $paramName)
-    {
-        switch ($paramName)
-        {
-            case 'outdoor_temp':
-            case 'indoor_temp':
-                if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
-                else $columnName = 'indoor_sensor';
-                $sql = parent::$db->query(" SELECT `termostats`.`current`
-                                            FROM `termostats`
-                                            INNER JOIN `boilers`
-                                            ON `boilers`.`$columnName` = `termostats`.`id_object`
-                                            WHERE `boilers`.`id` = " . $this->boiler->id);
-                $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
-                break;
-                
-            default:
-                if ($this->boiler->gateway_type == 'modbus') 
-                {
-                    $paramValue = (int)$this->getValueFromDbByAlias($paramName);
-                }
-                break;
-        }
+    // public function checkBoiler()
+    // {
+    //     foreach ($this->prevParams as $paramName => $paramValue)
+    //     {
+    //         $this->implementParamValue($paramName, $this->getCurrentParamValue($paramName));
+    //     }
+    // }
 
-        // Если значение не получено, пишем БД NULL
-        if (!isset($paramValue)) $paramValue = 'NULL';
-        // Заносим значение параметра в БД
-        parent::$db->query("UPDATE `boilers_params`
-                            SET `$paramName` = $paramValue
-                            WHERE `boiler_id` = " . $this->boiler->id);
-        
-        if ($this->debug) echo "$paramName: $paramValue" . PHP_EOL;
-
-        return $paramValue;
-    }
     
-    private function implementParamValue(string $paramName, mixed $paramValue)
+    
+    
+    
+   
+    /**
+     * Функция обработки нового значения параметра (если требуется)
+     */
+    public function checkBoiler()
     {
-        switch ($paramName)
+        foreach ($this->currentParams as $paramName => $paramValue)
         {
-            case 'outdoor_temp':
-                $sql = parent::$db->query(" SELECT `t_water`
-                                            FROM `boiler_auto`
-                                            WHERE `id_object` = {$this->boiler->id_object}
-                                            AND `t_out` <= '$paramValue'
-                                            OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
-                                            ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
-                $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
-
-                if ($newSetpoint != $this->values['ch_setpoint_temp'])
-                {
-                    $this->setParam('ch_setpoint_temp', $newSetpoint);
-                    if ($this->debug) echo "Исходя из значения температуры, " . 
-                                        "необходимо изменить уставку. " .
-                                        "Новое значение ch_setpoint_temp: $newSetpoint" . PHP_EOL;
-                }
-                break;
+            switch ($paramName)
+            {
+                case 'outdoor_temp':
+                    if ($this->boiler->heating_mode == 'auto')
+                    {
+                        $sql = parent::$db->query(" SELECT `t_water`
+                                                    FROM `boiler_auto`
+                                                    WHERE `id_object` = {$this->boiler->id_object}
+                                                    AND `t_out` <= '$paramValue'
+                                                    OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
+                                                    ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
+                        $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
+                        $this->currentParams['ch_setpoint_temp'] = $newSetpoint;
+                        $this->putParam('ch_setpoint_temp');
+                        if ($this->debug) echo "Исходя из значения уличной температуры температуры, " .
+                                            "значение уставки: $newSetpoint" . PHP_EOL;
+                    }
+                    break;
+            }
         }
+        
+        $this->fillElements();
     }
 
     /**
-     * Функция установки необходимого значения параметра
+     * Функция отправки нового значения параметра на устройство
      */
-    public function setParam(string $paramName, mixed $paramValue)
+    private function putParam(string $paramName)
     {
         if ($this->boiler->gateway_type == 'modbus') 
-            {
-                $registerId = Modbus::getRegisterIdByAlias ($this->boiler->gateway_id, $paramName);
-                if (isset($registerId))
-                {
-                    Modbus::putTaskIntoQueue($registerId, 'write', 5, $paramValue);
-                    parent::$db->query("UPDATE `boilers_params`
-                                        SET `$paramName` = $paramValue
-                                        WHERE `boiler_id` = " . $this->boiler->id);
-                }
-                
-            }
-        
-    }
-
-    public function checkBoiler()
-    {
-        if ($this->debug) echo PHP_EOL;
-
-        foreach ($this->params as $paramName)
         {
-            $this->implementParamValue($paramName, $this->getParam($paramName));
-            if ($this->debug) echo PHP_EOL;
+            $registerId = Modbus::getRegisterIdByAlias ($this->boiler->gateway_id, $paramName);
+            if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $this->currentParams[$paramName]);
         }
-
     }
-
-
-
-
-
-
 
     /**
      * Функция заполнения данными таблицы с элементами
      */
     private function fillElements()
     {
+        $setString = '';
 
-        //Обновление значения подачи для всех элементов с таким типом
-        $cooliantSupply = '[{"status":"'.$this->boiler->feed_heat_temp.'°С"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$cooliantSupply' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'csupply'");
-        Labels::setValue($this->boiler->feed_heat_temp.'°С', "csupply", $this->boiler->idObject);
+        foreach ($this->currentParams as $column => $value)
+        {
+            $setString .= "$column=$value, ";
 
+            parent::$db->exec(" UPDATE elements
+                                SET `status` = '$value'
+                                WHERE `id_object` = {$this->boiler->id_object}
+                                AND handle = '$column'");
 
-        //Обновление значения обратки для всех элементов с таким типом
-        $cooliantReturn = '[{"status":"'.$this->boiler->back_heat_temp.'°С"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$cooliantReturn' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
-        Labels::setValue($this->boiler->back_heat_temp.'°С', "creturn", $this->boiler->idObject);
-
-        //TODO:: добавить температуру контура ГВС по аналогии с cooliantSupply
-        //TODO:: сделать Labels::setValue для контура ГВС, название для опции gvssupply
-
-        //Обновление состояния давления теплоносителя
-        $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
-        Labels::setValue($this->boiler->pressure.'b', "pressure", $this->boiler->idObject);        
-
-
-        //Обновление целевой температуры котла
-        $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'°С"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$target_heat_temp' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'heat_temp'");
-
-        //Обновление целевой температуры контура воды
-        $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С", "settings": "true"}]';
-        parent::$db->exec("UPDATE elements SET `value` = '$water_temp' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'water_temp'");
-
-        //Обновление уличной температуры
-        $outdoor_temp = '[{"status":"'.$this->boiler->outdoor_temp.'°С"]';
-        parent::$db->exec("UPDATE elements SET `value` = '$outdoor_temp' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'outdoor_temp'");
-
-        //Обновление кода ошибки
-        $error_code = '[{"status":"'.$this->boiler->error_code.'"]';
-            parent::$db->exec("UPDATE elements SET `value` = '$error_code' 
-                                       WHERE `id_object` = {$this->boiler->id_object} AND handle = 'error_code'");
-        Labels::setValue($this->boiler->error_code, "код ошибки", $this->boiler->idObject); 
-
-        //Описание расширенной ошибки, если есть
-        $ext_error = '[{"status":"'.$this->boiler->ext_error.'"]';
-            parent::$db->exec("UPDATE elements SET `value` = '$ext_error' 
-                                       WHERE `id_object` = {$this->boiler->id_object} AND handle = 'ext_error'");
-        //TODO:: сделать вставку в Label текста о расшифрованной ошибке (данные должны вставляться в поле message ячейки params в таблице view_item)
-        // Это нужно для того, чтобы при длительном нажатии на кнопку с кодом ошибки еще можно было показать её расшифровку, если котел это выдает
-        // Функцию вставки в params нужно сделать в классе Labels
-
-        //Обновление значения статуса котла для всех элементов с таким типом
-        if($this->boiler->boiler == 1)
-        $state = '[{"status":"on"}]';
-        else
-            $state = '[{"status":"off"}]';
-
-        parent::$db->exec("UPDATE elements SET `value` = '$state' 
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'state'");
-
-
-
-
-        //Обновление режима работы котла (авто или ручной)
-        if($this->boiler->mode == 'auto') {
-            $auto = '[{"status": "on", "settings": "true"}]';
-            $manual = '[{"status": "off", "settings": "true"}]';
-        } else {
-            $auto = '[{"status": "off", "settings": "true"}]';
-            $manual = '[{"status": "on", "settings": "true"}]';
+            // Labels::setValue($this->boiler->feed_heat_temp.'°С', "csupply", $this->boiler->idObject);
         }
+        
+        $setString = rtrim($setString, ', ');
+        parent::$db->query("UPDATE `boilers_params`
+                            SET $setString
+                            WHERE `boiler_id` = {$this->boiler->id}");
+    }
 
-        parent::$db->exec("UPDATE elements SET `value` = '$auto'
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'automode'");
+    /**
+     * Функция установки значения параметра
+     */
+    public function setParam(string $paramName, mixed $value)
+    {
 
-        parent::$db->exec("UPDATE elements SET `value` = '$manual'
-                                   WHERE `id_object` = {$this->boiler->id_object} AND handle = 'manualmode'");
+        if ($this->boiler->gateway_type == 'modbus') 
+        {
+            $this->currentParams[$paramName] = $value;
+            var_dump($this->currentParams);
+            $this->putParam($paramName);
+            $this->fillElements();
+        }
+    }
+
+
+    /**
+     * Установить режим работы отопления котла auto или manual
+     * В зависимости от этого режима котел будет работат следующим образом:
+     * auto - ПЗА: будет оцениваться температура с внешнего датчика id_outside_thermostat и сравниваться
+     * с значениями в таблице boiler_auto. В зависимости от этого будет выставляться температура
+     * теплоносителя.
+     * manual - ручная установка температуры теплоносителя
+     */
+    public function setHeatingMode($mode)
+    {
+        parent::$db->exec("UPDATE `boilers` SET `heating_mode` = '$mode'  WHERE `id_object` = {$this->boiler->id_object}");
+        $this->boiler->heating_mode = $mode;
+        $this->checkBoiler();
+    }
+
+
+
+    //  /**
+    //  * Функция получения нового значения параметра
+    //  */
+    // private function getCurrentParamValue(string $paramName)
+    // {
+    //     switch ($paramName)
+    //     {
+    //         case 'outdoor_temp':
+    //         case 'indoor_temp':
+    //             if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
+    //             else $columnName = 'indoor_sensor';
+    //             $sql = parent::$db->query(" SELECT `termostats`.`current`
+    //                                         FROM `termostats`
+    //                                         INNER JOIN `boilers`
+    //                                         ON `boilers`.`$columnName` = `termostats`.`id_object`
+    //                                         WHERE `boilers`.`id` = " . $this->boiler->id);
+    //             $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
+    //             break;
+                
+    //         default:
+    //             if ($this->boiler->gateway_type == 'modbus') 
+    //             {
+    //                 $paramValue = (int)$this->getValueFromDbByAlias($paramName);
+    //             }
+    //             break;
+    //     }
+
+    //     // Если значение не получено, пишем в массив NULL
+    //     if (!isset($paramValue)) $paramValue = 'NULL';
+    //     // Заносим значение параметра в БД
+    //     // parent::$db->query("UPDATE `boilers_params`
+    //     //                     SET `$paramName` = $paramValue
+    //     //                     WHERE `boiler_id` = " . $this->boiler->id);
+
+    //     $currentParams[$paramName] = $paramValue;
+
+    //     if ($this->debug) echo "$paramName: $paramValue" . PHP_EOL;
+
+    //     // $this->fillElements($paramName, $paramValue);
+
+    //     return $paramValue;
+    // }
+
+
+
+    /**
+     * Функция заполнения данными таблицы с элементами
+     */
+    // private function fillElements()
+    // {
+
+    //     //Обновление значения подачи для всех элементов с таким типом
+    //     $cooliantSupply = '[{"status":"'.$this->boiler->feed_heat_temp.'°С"}]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$cooliantSupply' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'csupply'");
+    //     Labels::setValue($this->boiler->feed_heat_temp.'°С', "csupply", $this->boiler->idObject);
+
+
+    //     //Обновление значения обратки для всех элементов с таким типом
+    //     $cooliantReturn = '[{"status":"'.$this->boiler->back_heat_temp.'°С"}]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$cooliantReturn' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'creturn'");
+    //     Labels::setValue($this->boiler->back_heat_temp.'°С', "creturn", $this->boiler->idObject);
+
+    //     //TODO:: добавить температуру контура ГВС по аналогии с cooliantSupply
+    //     //TODO:: сделать Labels::setValue для контура ГВС, название для опции gvssupply
+
+    //     //Обновление состояния давления теплоносителя
+    //     $pressure = '[{"status":"'.$this->boiler->pressure.'"}]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$pressure' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'pressure'");
+    //     Labels::setValue($this->boiler->pressure.'b', "pressure", $this->boiler->idObject);        
+
+
+    //     //Обновление целевой температуры котла
+    //     $target_heat_temp = '[{"status":"'.$this->boiler->target_heat_temp.'°С"}]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$target_heat_temp' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'heat_temp'");
+
+    //     //Обновление целевой температуры контура воды
+    //     $water_temp = '[{"status":"'.$this->boiler->water_temp.'°С", "settings": "true"}]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$water_temp' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'water_temp'");
+
+    //     //Обновление уличной температуры
+    //     $outdoor_temp = '[{"status":"'.$this->boiler->outdoor_temp.'°С"]';
+    //     parent::$db->exec("UPDATE elements SET `value` = '$outdoor_temp' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'outdoor_temp'");
+
+    //     //Обновление кода ошибки
+    //     $error_code = '[{"status":"'.$this->boiler->error_code.'"]';
+    //         parent::$db->exec("UPDATE elements SET `value` = '$error_code' 
+    //                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'error_code'");
+    //     Labels::setValue($this->boiler->error_code, "код ошибки", $this->boiler->idObject); 
+
+    //     //Описание расширенной ошибки, если есть
+    //     $ext_error = '[{"status":"'.$this->boiler->ext_error.'"]';
+    //         parent::$db->exec("UPDATE elements SET `value` = '$ext_error' 
+    //                                    WHERE `id_object` = {$this->boiler->id_object} AND handle = 'ext_error'");
+    //     //TODO:: сделать вставку в Label текста о расшифрованной ошибке (данные должны вставляться в поле message ячейки params в таблице view_item)
+    //     // Это нужно для того, чтобы при длительном нажатии на кнопку с кодом ошибки еще можно было показать её расшифровку, если котел это выдает
+    //     // Функцию вставки в params нужно сделать в классе Labels
+
+    //     //Обновление значения статуса котла для всех элементов с таким типом
+    //     if($this->boiler->boiler == 1)
+    //     $state = '[{"status":"on"}]';
+    //     else
+    //         $state = '[{"status":"off"}]';
+
+    //     parent::$db->exec("UPDATE elements SET `value` = '$state' 
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'state'");
+
+
+
+
+    //     //Обновление режима работы котла (авто или ручной)
+    //     if($this->boiler->mode == 'auto') {
+    //         $auto = '[{"status": "on", "settings": "true"}]';
+    //         $manual = '[{"status": "off", "settings": "true"}]';
+    //     } else {
+    //         $auto = '[{"status": "off", "settings": "true"}]';
+    //         $manual = '[{"status": "on", "settings": "true"}]';
+    //     }
+
+    //     parent::$db->exec("UPDATE elements SET `value` = '$auto'
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'automode'");
+
+    //     parent::$db->exec("UPDATE elements SET `value` = '$manual'
+    //                                WHERE `id_object` = {$this->boiler->id_object} AND handle = 'manualmode'");
 
 
 
@@ -271,7 +376,7 @@ class Boiler extends System
 
 
 
-    }
+    // }
 
 
     /**
@@ -417,21 +522,7 @@ class Boiler extends System
 
     }
 
-    /**
-     * Установить режим работы котла auto или manual
-     * В зависимости от этого режима котел будет работат следующим образом:
-     * auto - будет оцениваться температура с внешнего датчика id_outside_thermostat и сравниваться
-     * с значениями в таблице boiler_auto. В зависимости от этого будет выставляться температура
-     * теплоносителя.
-     * manual - будет выставляться температура теплоносителя в зависимости от значений, которые указаны в
-     * boiler_manual
-     */
-    static public function setMode($id_object, $mode) {
-
-        //меняем режим котла на auto
-        parent::$db->exec("UPDATE boiler SET `mode` = '".$mode."'
-                                       WHERE `id_object` = $id_object");
-    }
+    
 
 
 

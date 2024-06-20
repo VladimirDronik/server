@@ -3,14 +3,14 @@
 
 class Page extends System {
 
-    public function setIntPages($fulldata) {
-
+    public function setIntPages($fulldata)
+    {
         $data_array = json_decode($fulldata);
 
-        $type = $data_array->items[0]->type;
-        $mode = $data_array->items[0]->mode;
-        $value = $data_array->items[0]->value;
-        $idPage = $data_array->items[0]->idPage;
+        if (isset($data_array->items[0]->type)) $type = $data_array->items[0]->type;
+        if (isset($data_array->items[0]->mode)) $mode = $data_array->items[0]->mode;
+        if (isset($data_array->items[0]->value)) $value = $data_array->items[0]->value;
+        if (isset($data_array->items[0]->idPage)) $idPage = $data_array->items[0]->idPage;
         $idObject = 0;
 
         //Определяем id объекта для страницы
@@ -19,68 +19,60 @@ class Page extends System {
 
         $queryElements = parent::$db->query($sql);
 
-        if ($queryElements->rowCount() != 0) {
+        if ($queryElements->rowCount() != 0)
+        {
             $element = $queryElements->fetch(PDO::FETCH_OBJ);
             $idObject = $element->id_object;
         }
 
-        if ($type == 'BoilerAuto') {
-            if ($mode == 'add') {
-
+        if ($type == 'BoilerAuto') 
+        {
+            if ($mode == 'add') 
+            {
                 $temperatures = explode(":",$value);
-
                 parent::$db->query("INSERT INTO boiler_auto (`id`, `t_out`, `t_water`, `id_object`)
                                           VALUES (null,  $temperatures[0], $temperatures[1], $idObject)");
-
-
-            } elseif ($mode == 'del') {
-
+            } 
+            elseif ($mode == 'del')
+            {
                 parent::$db->query("DELETE FROM boiler_auto WHERE id_object = $idObject AND t_out = $value");
-
-
             }
-        } elseif ($type == 'BoilerManual') { //Если manual выбрано
+        }
+        // else 
+        // {
+        //     parent::$db->exec("UPDATE boiler SET `target_water_temp` = $value WHERE `id_object` = $idObject");
+        // }
 
-            parent::$db->exec("UPDATE boiler_manual SET `set_value` = $value
-                                       WHERE `id_object` = $idObject");
-
-        } else {
-            parent::$db->exec("UPDATE boiler SET `target_water_temp` = $value
-                                       WHERE `id_object` = $idObject");
+        if ($type == 'BoilerManual')
+        {
+            $boiler = new Boiler($idObject);
+            $boiler->setParam('ch_setpoint_temp', $value);
         }
 
     }
 
 
     //Если пользователь изменил что-то на страницах меню
-    public function changePageItem($idElement, $elementStatus){
-
-        //TODO: убрать это, когда в приложении сделают нормальную передачу id нажатого элемента
-        //$idElement = $idElement-1;
-
+    public function changePageItem($idElement, $elementStatus)
+    {
         //Находим элемент страницы в таблице элементов
-        $sql = "SELECT * FROM elements
-                WHERE id = $idElement";
-
-
+        $sql = "SELECT * FROM `elements` WHERE `id` = $idElement";
         $queryElements = parent::$db->query($sql);
 
-        if ($queryElements->rowCount() > 0) {
+        if ($queryElements->rowCount() > 0)
+        {
             $element = $queryElements->fetch(PDO::FETCH_OBJ);
 
-	    if	($element->id_object != null)
-	    {
-		    //Определяем тип объекта по id
-		    $object = new Objects();
-		    $object->select($element->id_object);
+	        if	($element->id_object != null)
+	        {
+		        //Определяем тип объекта по id
+		        $object = new Objects();
+		        $object->select($element->id_object);
 
-		    if ($element->type == 'switch') {
-
-		        if($object->type == 'boiler') {
-		          $this->setModeBoiler($element, $elementStatus);
+		        if ($element->type == 'switch')
+                {
+		            if($object->type == 'boiler') $this->setModeBoiler($element, $elementStatus);
 		        }
-
-		    }
             }
         }
     }
@@ -90,54 +82,24 @@ class Page extends System {
      * @param $element
      * @param $elementStatus
      */
-    private function setModeBoiler($element, $elementStatus) {
-
+    private function setModeBoiler($element, $elementStatus)
+    {
         // Для реализации смены режимов работы котла
         // определяем хэндл элемента, его состояние и меняем состояние у объекта.
         // Также находим связанный хэндл (если есть) для того, чтобы поменять его
-        if ($element->handle == 'automode') {
-
-            $reverseHandle = 'manualmode';
-
-            if ($elementStatus == 'on')
-            {
-                $mode = 'auto';
-                $reverseStatus = 'off';
-            }
-            else {
-                $mode = 'manual';
-                $reverseStatus = 'on';
-            }
-
-
-        } elseif ($element->handle == 'manualmode') {
-
-            $reverseHandle = 'automode';
-
-            if ($elementStatus == 'on')
-            {
-                $mode = 'manual';
-                $reverseStatus = 'off';
-            }
-            else {
-                $mode = 'auto';
-                $reverseStatus = 'on';
-            }
-
+        if ($element->handle == 'auto_mode')
+        {
+            if ($elementStatus == 'on') $mode = 'auto';
+            else $mode = 'manual';
+            $boiler = new Boiler($element->id_object);
+            $boiler->setHeatingMode($mode);
         }
-
-        Boiler::setMode($element->id_object, $mode);
 
         //Меняем состояние элемента
         $this->setElementStatus($element, $elementStatus);
 
-        //Ищем реверсный элемент и меняем у него состояние
-        $reverseElement = $this->findElementByHandle($element->page, $element->id_object, $reverseHandle);
-        $this->setElementStatus($reverseElement, $reverseStatus);
-
         //Перезагружаем страницу
         $view = new Views();
-
         $view->sendPage($element->page);
     }
 
@@ -148,36 +110,29 @@ class Page extends System {
      * @param $handle string - хендл элемента, у которого будем менять статус
      * @param $status string - новый статус для элемента
      */
-    public function setElementStatus($element, $status) {
-
+    public function setElementStatus($element, $status)
+    {
         //Устанавливаем статус для элемента, если хендл у него automode или manualmode (элемент котла)
-        if (($element->handle == 'automode') || ($element->handle == 'manualmode')) {
-
-            $objjson = json_decode($element->value);
-            $settings = $objjson[0]->{'settings'};
-
-            $newValue = json_encode( array("status" => $status, "settings" => $settings));
-
-            parent::$db->exec("UPDATE elements SET `value` = '[".$newValue."]'
-                                       WHERE `id` = $element->id");
+        if ($element->handle == 'auto_mode')
+        {
+            parent::$db->exec("UPDATE `elements` SET `status` = '$status' WHERE `id` = $element->id");
         }
-
     }
 
     /**
      * Ищем элемент по его хендлу
      */
-    private function findElementByHandle($page, $idObject, $hanle) {
-
-        $sql = "SELECT * FROM elements
-                WHERE handle = '$hanle' AND id_object = $idObject AND page = $page";
-
+    private function findElementByHandle($page, $idObject, $hanle)
+    {
+        $sql = "SELECT * FROM `elements` 
+                WHERE `handle` = '$hanle'
+                AND `id_object` = $idObject
+                AND `page` = $page";
         $queryElements = parent::$db->query($sql);
 
-        if ($queryElements->rowCount() != 0) {
+        if ($queryElements->rowCount() != 0)
+        {
             return $queryElements->fetch(PDO::FETCH_OBJ);
-
         }
     }
-
 }

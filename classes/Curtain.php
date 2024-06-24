@@ -14,7 +14,7 @@ use Beanstalk\Client;
 
 class Curtain extends Device
 {
-    private $curtain = null;
+    public $curtain = null;
 
     public function __construct($idObject = null)
     {
@@ -30,6 +30,7 @@ class Curtain extends Device
                                                `curtains`.`group`,
                                                `curtains`.`percent`,
                                                `curtains`.`bus_id`,
+                                               `curtains`.`is_inverse`,
                                                `modbus_buses`.`type` AS 'bus_type'
                                         FROM `curtains`
                                         LEFT JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
@@ -262,6 +263,8 @@ class Curtain extends Device
     {
         if ($percent >= 0 && $percent <= 100)
         {
+            if ($this->curtain->is_inverse) $percent = 100 - $percent;
+            var_dump ($percent);
             // 0304 - команда установки процента открытия
             $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x04], [$percent]);
             $this->sendCmd($packet, 'setPercent');
@@ -285,6 +288,7 @@ class Curtain extends Device
     {
         if (isset($this->curtain->id_object))
         {
+            if ($this->curtain->is_inverse) $value = 100 - $value;
             //Заносим процент открытия в БД
             parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
         }

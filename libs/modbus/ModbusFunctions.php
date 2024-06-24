@@ -247,6 +247,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
         // return $response;
+        return $task->value;
     }
 
     /**

@@ -12,23 +12,23 @@ class ModbusRtu
         $this->device = $device;
         if (!$this->confBaudrate($baudrate)) {
             echo 'Error: Invalid baudrate' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
         if (!$this->confParity($parity)) {
             echo 'Error: Invalid parity' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
         if (!$this->confCharacterLength($char)) {
             echo 'Error: Invalid number of data bits' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
         if (!$this->confStopBits($sbits)) {
             echo 'Error: Invalid number of stop bits' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
         if (!$this->confFlowControl($flow)) {
             echo 'Error: Invalid flow control' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
 
         $this->confOtherSettings();
@@ -37,7 +37,7 @@ class ModbusRtu
         $sttyResult = exec("stty -F $device $modes");
         if ($sttyResult === false) {
             echo 'stty command failed' . PHP_EOL;
-            exit(1);
+            // exit(1);
         }
     }
 

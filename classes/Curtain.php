@@ -56,7 +56,7 @@ class Curtain extends Device
     /**
      * Функция расчета CRC суммы (для штор с RS485)
      */
-    private static function crc16($data)
+    static function crc16($data)
 	{
 		$crc = 0xFFFF;
 		for ($i = 0; $i < strlen($data); $i++)

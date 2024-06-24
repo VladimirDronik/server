@@ -1,6 +1,8 @@
 <?php
 
 use Beanstalk\Client;
+// use PhpMqtt\Client\MqttClient;
+
 
 class ModbusQueue extends System {
 
@@ -78,6 +80,13 @@ class ModbusQueue extends System {
      */
     private static function jobProcess()
     {
+        function arrayFormat($item)
+        {
+            $result = dechex($item);
+            if (strlen($result) < 2) $result = '0' . $result;
+            return $result;
+        }
+
         $beanstalk = self::$beanstalk;
         $writeFunctionCodesArray = [5, 6, 15, 16];
         while (true)
@@ -91,61 +100,80 @@ class ModbusQueue extends System {
             $job = $beanstalk->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
 
-            if ($task->mode == 'modbus_rtu')
+            
+            if ($task->raw)
             {
-                $packet = modbusFunction($task);
-                
-                $binaryData = self::$modbus->send($packet);
-    
-                if ($binaryData) 
+                $binRequest = base64_decode($task->raw_data);
+                $request = array_map('arrayFormat', unpack('C*', $binRequest));
+                $request = implode(" ", $request);
+
+                if ($binaryData = self::$modbus->send($binRequest))
                 {
-                    $activity = 1;
-                    $response = modbusFunction($task, true, $binaryData);
+                    $response = unpack('C*', $binaryData);
+                    $response  = array_map('arrayFormat', unpack('C*', $binaryData));
+                    $response  = implode(" ", $response);
                 }
-                else
-                {
-                    $activity = 0;
-                    $response = null;
-                }
-                
-                Modbus::setValue($task->register_id, $response);
-                Modbus::setSlaverActivity($task->slaver_id, $activity);
+                else $response = null;
+
+
             }
 
-            if ($task->mode == 'rs485_curtains')
-            {
-                if ($binaryData = self::$modbus->send(base64_decode($task->raw_data)))
-                {
-                    $activity = 1;
-                    $bytesArray = unpack('C*', $binaryData);
-                    
-                    
-                    if ($task->command == 'setPercent' || $task->command == 'getPercent')
-                    {   
-                        $percent = $bytesArray[6];
-                        $curtain = new Curtain ($task->object_id);
-                        $curtain->putPercentToDb($percent);
-                        if ($task->command == 'setPercent')
-                        {
-                            $object = new Objects();
-                            $object->select($task->object_id);
-                            if ($percent > 0) $object->setStatus('open', true, false);
-                            else $object->setStatus('close', true, false);
-                        }
-                        
-                    }
+            // if ($task->mode == 'modbus_rtu')
+            // {
+            //     $packet = modbusFunction($task);
+                
+            //     $binaryData = self::$modbus->send($packet);
     
-                    // if ($task->command == 'getInfo')
-                    // {
-                    //     $motorState = $bytesArray[6];
-                    //     parent::setVariable("rsMotor_$task->object_id", $motorState);
-                    //     // var_dump ($motorState);
-                    // }
-                }  
-                else $activity = 0;
+            //     if ($binaryData) 
+            //     {
+            //         $activity = 1;
+            //         $response = modbusFunction($task, true, $binaryData);
+            //     }
+            //     else
+            //     {
+            //         $activity = 0;
+            //         $response = null;
+            //     }
+                
+            //     Modbus::setValue($task->register_id, $response);
+            //     Modbus::setSlaverActivity($task->slaver_id, $activity);
+            // }
 
-                if (isset($task->object_id)) Curtain::setRsMotorActivity($task->object_id, $activity);
-            }
+            // if ($task->mode == 'rs485_curtains')
+            // {
+            //     if ($binaryData = self::$modbus->send(base64_decode($task->raw_data)))
+            //     {
+            //         $activity = 1;
+            //         $bytesArray = unpack('C*', $binaryData);
+                    
+                    
+            //         if ($task->command == 'setPercent' || $task->command == 'getPercent')
+            //         {   
+            //             $percent = $bytesArray[6];
+            //             $curtain = new Curtain ($task->object_id);
+            //             $curtain->putPercentToDb($percent);
+            //             if ($task->command == 'setPercent')
+            //             {
+            //                 $object = new Objects();
+            //                 $object->select($task->object_id);
+            //                 if ($percent > 0) $object->setStatus('open', true, false);
+            //                 else $object->setStatus('close', true, false);
+            //             }       
+            //         }
+            //     }  
+            //     else $activity = 0;
+
+                // if (isset($task->object_id)) Curtain::setRsMotorActivity($task->object_id, $activity);
+            // }
+
+            $topic = "modbus/".self::$idBus."/response";
+            $payload = [
+                'uid' => $task->uid,
+                'raw' => $task->raw,
+                'request' => $request,
+                'response' => $response,
+            ];
+            Mqtt::publish($topic, $payload);
 
             $beanstalk->delete($job['id']);
         }

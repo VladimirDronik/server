@@ -2,9 +2,12 @@
 
 // require_once '../vendor/autoload.php';
 use Beanstalk\Client;
+use PhpMqtt\Client\MqttClient;
 
 class Modbus extends System {
     
+    private static $response = null;
+    public static $_busConnection = null;
     /**
      * Создание модбас устройства, на основе данных из БД по id
      */
@@ -71,7 +74,7 @@ class Modbus extends System {
     /**
      * Получение настроек шины из БД
      */
-    public static function getModbusBusSettings($idBus)
+    public static function getModbusBusSettings(int $idBus)
     {
         $sql = parent::$db->query("SELECT `modbus_buses`.`device` AS busdevice,
                                           `modbus_buses`.`type` AS bustype,
@@ -84,19 +87,21 @@ class Modbus extends System {
                                      FROM `modbus_buses`
                                     WHERE `modbus_buses`.`id`= $idBus");
         
-        $bus = $sql->fetch(PDO::FETCH_OBJ);
-        return $bus;
+        if ($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+        else return false;
     }
 
     /**
      * Постановка задания на чтение/запись регистра(ов) в очередь
      */
-    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, mixed $value = null)
+    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, mixed $value = null, string $uid = null)
     {
-        // var_dump ($value);
+        if (!isset($uid)) $uid = uniqid();
+
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         if ($modbusRegister)
         {
+            var_dump($modbusRegister);
             if ($action == 'read')
             {
                 if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
@@ -130,7 +135,8 @@ class Modbus extends System {
                 'format' => $modbusRegister->data_format,                   // Формат считываемых данных
                 'title' => $modbusRegister->register_name,                  // Название регистра
                 'units' => $modbusRegister->units,                          // Единицы имерения
-                'scale' => $modbusRegister->scale_unit                      // Множитель значения
+                'scale' => $modbusRegister->scale_unit,                     // Множитель значения
+                'uid' => $uid,
             );
             
             $beanstalk->put($priority, 0, 5, json_encode($task));
@@ -365,6 +371,9 @@ class Modbus extends System {
         }
     }
 
+    
+
+
     /**
      *  Получение id регистра по его alias
      */
@@ -394,5 +403,111 @@ class Modbus extends System {
         if($sql->rowCount() > 0)
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
                 self::putTaskIntoQueue($register->id, 'read', 5);
+    }
+
+    private static function crc16($data)
+	{
+		$crc = 0xFFFF;
+		for ($i = 0; $i < strlen($data); $i++)
+		{
+			$crc ^=ord($data[$i]);
+     		for ($j = 8; $j !=0; $j--)
+			{
+				if (($crc & 0x0001) !=0)
+				{
+					$crc >>= 1;
+					$crc ^= 0xA001;
+				}
+				else $crc >>= 1;
+			}		
+		}
+		$highCrc=floor($crc/256);
+		$lowCrc=($crc-$highCrc*256);
+		return chr($lowCrc).chr($highCrc);
+	}
+
+    public static function modbusRaw(string $cmd, int $busId)
+    {
+        $uid = uniqid();
+        $rawData = pack ('c*', ...array_map('hexdec', str_split(str_replace(' ', '', $cmd), 2)));
+        $rawData .= self::crc16($rawData);
+
+        $task = [
+            'uid' => $uid,
+            'raw' => true,
+            'raw_data' => base64_encode($rawData),
+        ];
+
+        BeanstalkQueue::putTask($busId, $task, 5);
+        $response = Mqtt::subscribe("modbus/$busId/response", $uid);
+
+        return $response;
+    }
+
+    public static function queue(int $busId)
+    {
+        function arrayFormat($item)
+        {
+            $result = dechex($item);
+            if (strlen($result) < 2) $result = '0' . $result;
+            return $result;
+        }
+
+        $queue = BeanstalkQueue::startQueue($busId);
+        $bus = self::busConnection($busId);
+        
+        // var_dump ($queue, $bus);
+
+        $writeFunctionCodesArray = [5, 6, 15, 16];
+
+        while (true)
+        {
+            $job = $queue->reserve(); // Block until job is available.
+            $task = json_decode($job['body']);
+
+            if ($task->raw)
+            {
+                $binRequest = base64_decode($task->raw_data);
+                $request = array_map('arrayFormat', unpack('C*', $binRequest));
+                $request = implode(" ", $request);
+
+                if ($binaryData = $bus->send($binRequest))
+                {
+                    $response = unpack('C*', $binaryData);
+                    $response  = array_map('arrayFormat', unpack('C*', $binaryData));
+                    $response  = implode(" ", $response);
+                }
+                else $response = null;
+
+
+            }
+
+
+            $topic = "modbus/$busId/response";
+            $payload = [
+                'uid' => $task->uid,
+                'raw' => $task->raw,
+                'request' => $request,
+                'response' => $response,
+            ];
+            Mqtt::publish($topic, $payload);
+
+            $queue->delete($job['id']);
+        }
+    }
+
+    public static function busConnection(int $busId)
+    {
+            $bus = Modbus::getModbusBusSettings($busId);
+            if ($bus)
+            {
+                $modbus = new ModbusRtu ();
+                $modbus->deviceInit($bus->busdevice, $bus->baudrate, $bus->parity,
+                                    $bus->length, $bus->stopbits, 'none');
+                $modbus->deviceOpen();
+                $modbus->debug = true;
+                return $modbus;
+            }
+            else return false;
     }
 }

@@ -18,7 +18,6 @@ function getSupervisorProcs()
 
     // Список системных процессов
     $systemProcs = [
-        'mysql',
         'nginx',
         'phpfpm',
         'cron',

@@ -117,8 +117,8 @@ function addToSupervisorConfig(string $subject, int $subjectId)
         directory = %(ENV_WORK_DIR)s/server/scripts
         autostart = true
         autorestart = true
-        stderr_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.err.log
-        stdout_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.out.log
+        // stderr_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.err.log
+        // stdout_logfile = %(ENV_WORK_DIR)s/server/logs/${subject}_id${subjectId}.out.log
 
         EOD;
 
@@ -144,6 +144,6 @@ function deleteFromSupervisorConfig(string $subject, int $subjectId)
     $contents = preg_replace("/([\r\n]{4,}|[\n]{2,}|[\r]{2,})/", "\n\n", $contents);
     file_put_contents($configFile, $contents);
 
-    exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.err.log");
-    exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.out.log");
+    // exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.err.log");
+    // exec ("rm " . getenv('WORK_DIR') . "/server/logs/${subject}_id${subjectId}.out.log");
 }

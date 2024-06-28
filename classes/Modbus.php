@@ -91,57 +91,7 @@ class Modbus extends System {
         else return false;
     }
 
-    /**
-     * Постановка задания на чтение/запись регистра(ов) в очередь
-     */
-    public static function putTaskIntoQueue(int $modbusRegisterId, string $action, int $priority, mixed $value = null, string $uid = null)
-    {
-        if (!isset($uid)) $uid = uniqid();
-
-        $modbusRegister = self::getModbusRegister($modbusRegisterId);
-        if ($modbusRegister)
-        {
-            var_dump($modbusRegister);
-            if ($action == 'read')
-            {
-                if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
-                if ($modbusRegister->register_type == 'input_discrete') $modbusFunction = 2;
-                if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
-                if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
-            }
     
-            if ($action == 'write')
-            {
-                $priority = 0;
-                if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
-                elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
-                elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
-                else $modbusFunction = 6;
-            }
-            
-            $beanstalk = new Client();
-            $beanstalk->connect();
-            $beanstalk->useTube($modbusRegister->bus_id);
-    
-            $task = array (
-                'mode' => 'modbus_rtu',
-                'register_id' => $modbusRegisterId,                         // ID регистра
-                'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
-                'function_code' => $modbusFunction,                         // Функция Modbus
-                'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
-                'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
-                'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
-                'value' => (int)$value,                                     // Данные для операций записи
-                'format' => $modbusRegister->data_format,                   // Формат считываемых данных
-                'title' => $modbusRegister->register_name,                  // Название регистра
-                'units' => $modbusRegister->units,                          // Единицы имерения
-                'scale' => $modbusRegister->scale_unit,                     // Множитель значения
-                'uid' => $uid,
-            );
-            
-            $beanstalk->put($priority, 0, 5, json_encode($task));
-        }
-    }
 
     /**
      * Получение последнего значения регистра из БД
@@ -434,7 +384,7 @@ class Modbus extends System {
 
         $task = [
             'uid' => $uid,
-            'raw' => true,
+            'protocol' => 'raw',
             'raw_data' => base64_encode($rawData),
         ];
 
@@ -442,6 +392,62 @@ class Modbus extends System {
         $response = Mqtt::subscribe("modbus/$busId/response", $uid);
 
         return $response;
+    }
+
+    /**
+     * Постановка задания на чтение/запись регистра(ов) в очередь
+     */
+    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, string $uid = null)
+    {
+        // if (!isset($uid)) $uid = uniqid();
+        $uid = uniqid();
+
+        $modbusRegister = self::getModbusRegister($modbusRegisterId);
+        if ($modbusRegister)
+        {
+            // var_dump($modbusRegister);
+            if ($action == 'read')
+            {
+                if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
+                if ($modbusRegister->register_type == 'input_discrete') $modbusFunction = 2;
+                if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
+                if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
+            }
+    
+            if ($action == 'write')
+            {
+                $priority = 0;
+                if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
+                elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
+                elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
+                else $modbusFunction = 6;
+            }
+            
+            // $beanstalk = new Client();
+            // $beanstalk->connect();
+            // $beanstalk->useTube($modbusRegister->bus_id);
+    
+            $task = array (
+                'protocol' => 'rtu',
+                'register_id' => $modbusRegisterId,                         // ID регистра
+                'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
+                'function_code' => $modbusFunction,                         // Функция Modbus
+                'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
+                'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
+                'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
+                'value' => (int)$value,                                     // Данные для операций записи
+                'format' => $modbusRegister->data_format,                   // Формат считываемых данных
+                'title' => $modbusRegister->register_name,                  // Название регистра
+                'units' => $modbusRegister->units,                          // Единицы имерения
+                'scale' => $modbusRegister->scale_unit,                     // Множитель значения
+                'uid' => $uid,
+            );
+            
+            // $beanstalk->put($priority, 0, 5, json_encode($task));
+            BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
+            $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
+            return $response;
+        }
     }
 
     public static function queue(int $busId)
@@ -456,7 +462,7 @@ class Modbus extends System {
         $queue = BeanstalkQueue::startQueue($busId);
         $bus = self::busConnection($busId);
         
-        // var_dump ($queue, $bus);
+        
 
         $writeFunctionCodesArray = [5, 6, 15, 16];
 
@@ -464,32 +470,45 @@ class Modbus extends System {
         {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
+            // var_dump ($task);
+            
+            if ($task->protocol == 'raw') $binRequest = base64_decode($task->raw_data);
+            if ($task->protocol == 'rtu') $binRequest = modbusFunction($task);
 
-            if ($task->raw)
+            $request = array_map('arrayFormat', unpack('C*', $binRequest));
+            $request = implode(" ", $request);
+
+            if ($binaryData = $bus->send($binRequest))
             {
-                $binRequest = base64_decode($task->raw_data);
-                $request = array_map('arrayFormat', unpack('C*', $binRequest));
-                $request = implode(" ", $request);
-
-                if ($binaryData = $bus->send($binRequest))
-                {
-                    $response = unpack('C*', $binaryData);
-                    $response  = array_map('arrayFormat', unpack('C*', $binaryData));
-                    $response  = implode(" ", $response);
-                }
-                else $response = null;
-
-
+                $rawResponse = unpack('C*', $binaryData);
+                $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
+                $rawResponse = implode(" ", $rawResponse);
+                $error = false;
+                if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
+            }
+            else 
+            {
+                $rawResponse = null;
+                $response = null;
+                $error = true;
+                $errorCode = "No response from device";
             }
 
+                // var_dump ($response);
+                // Modbus::setValue($task->register_id, $response);
+                // Modbus::setSlaverActivity($task->slaver_id, $activity);
+            // }
 
             $topic = "modbus/$busId/response";
             $payload = [
                 'uid' => $task->uid,
-                'raw' => $task->raw,
+                'error' => $error,
+                'protocol' => $task->protocol,
                 'request' => $request,
-                'response' => $response,
+                'raw_response' => $rawResponse,
             ];
+            if (isset($response)) $payload += ['response' => $response,];
+            if ($error) $payload += ['error_code' => $errorCode,];
             Mqtt::publish($topic, $payload);
 
             $queue->delete($job['id']);

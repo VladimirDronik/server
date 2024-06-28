@@ -4,7 +4,7 @@ use Beanstalk\Client;
 
 class BeanstalkQueue extends System
 {
-    public function putTask(string $tubeName, array $task, int $priority = 5)
+    public static function putTask(string $tubeName, array $task, int $priority = 5)
     {
         $beanstalk = new Client();
         $beanstalk->connect();

@@ -482,7 +482,7 @@ class Modbus extends System {
             {
                 $rawResponse = unpack('C*', $binaryData);
                 $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
-                $rawResponse = implode(" ", $rawResponse);
+                // $rawResponse = implode(" ", $rawResponse);
                 $error = false;
                 if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
             }

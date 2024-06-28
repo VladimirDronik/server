@@ -1,6 +1,6 @@
 <?php
 /**
- * Скрипт открытия шторы
+ * Скрипт закрытия шторы
  */
 require_once '../include.php';
 $curtain = new Curtain($argv[1]);

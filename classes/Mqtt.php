@@ -75,10 +75,13 @@ class Mqtt extends System {
 
         $client->connect(null, true);
 
-        $client->subscribe($topic, function ($topic, $message) use ($client) {
+        $client->subscribe($topic, function ($topic, $message) use ($client, $uid) {
             // echo sprintf("Received message on topic [%s]: %s\n", $topic, $message);
-            self::$response = json_decode($message, true);
-            $client->interrupt();
+            if (json_decode($message, true)['uid'] == $uid)
+            {
+                self::$response = json_decode($message, true);
+                $client->interrupt();
+            }
         }, MqttClient::QOS_AT_MOST_ONCE);
         $client->loop(true);
 

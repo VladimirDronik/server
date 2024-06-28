@@ -10,7 +10,7 @@
  * Для унификации методов повторный вызов метода open или close останавливает привод.
  */
 
-use Beanstalk\Client;
+// use Beanstalk\Client;
 
 class Curtain extends Device
 {
@@ -37,56 +37,43 @@ class Curtain extends Device
                                         WHERE `curtains`.`id_object` = $idObject");
 
             if($sql->rowCount() > 0) $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+            else 
+            {
+                echo "Объект не найден" . PHP_EOL;
+                exit;
+            }
         }
     }
     
-    private function initBus($busId)
-    {
-        $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id',
-                                           `modbus_buses`.`type` AS 'bus_type'
-                                    FROM `modbus_buses`
-                                    WHERE `modbus_buses`.`id` = $busId");
-        if($sql->rowCount() > 0) 
-        {
-            $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-            $this->curtain->id_object = null;
-        }
-    }
-
-    /**
-     * Функция расчета CRC суммы (для штор с RS485)
-     */
-    static function crc16($data)
-	{
-		$crc = 0xFFFF;
-		for ($i = 0; $i < strlen($data); $i++)
-		{
-			$crc ^=ord($data[$i]);
-     		for ($j = 8; $j !=0; $j--)
-			{
-				if (($crc & 0x0001) !=0)
-				{
-					$crc >>= 1;
-					$crc ^= 0xA001;
-				}
-				else $crc >>= 1;
-			}		
-		}
-		$highCrc=floor($crc/256);
-		$lowCrc=($crc-$highCrc*256);
-		return chr($lowCrc).chr($highCrc);
-	}
+    // private function initBus($busId)
+    // {
+    //     $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id',
+    //                                        `modbus_buses`.`type` AS 'bus_type'
+    //                                 FROM `modbus_buses`
+    //                                 WHERE `modbus_buses`.`id` = $busId");
+    //     if($sql->rowCount() > 0) 
+    //     {
+    //         $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+    //         $this->curtain->id_object = null;
+    //     }
+    // }
 
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private static function packetAssembling (int $address, int $group, array $cmd, array $params=null)
+    private function packetAssembling (mixed $address, mixed $group, string $cmd, mixed $param1=null, mixed $param2=null)
     {
-        $packet = array_merge([0x55, $address, $group], $cmd);
-        $packet = pack ('c*', ...$packet);
-        if (isset($params)) $packet .= pack ("c*", ...$params);
-        $packet .= self::crc16($packet);
+        $packet = '55' . $this->format($address) . $this->format($group) . $cmd;
+        if (isset($param1)) $packet .= $this->format($param1);
+        if (isset($param2)) $packet .= $this->format($param2);
         return $packet;
+    }
+
+    private function format($param)
+    {
+        $param = dechex($param);
+        if (strlen($param) < 2) return '0' . $param;
+        else return $param;
     }
 
     /**
@@ -112,32 +99,25 @@ class Curtain extends Device
         
         if ($this->curtain->bus_type == "rtu")
         {
-            $beanstalk = new Client();
-            $beanstalk->connect();
-            $beanstalk->useTube($this->curtain->bus_id);
-            $task = [
-                'mode' => 'rs485_curtains',
-                'object_id' => $this->curtain->id_object,
-                'raw_data' => base64_encode($packet),
-                'command' => $cmd
-            ];
-            $beanstalk->put(5, 0, 5, json_encode($task));
+            $response = Modbus::modbusRaw($packet, $this->curtain->bus_id);
+            return $response;
         }
 	}
     
     /**
      * Считывание текущего состояния двигателя (для штор с RS485)
+     *  010501 - команда считывания текущего состояния привода
+     * Возможные ответы 01 01 XX
+     * 00 - остановлен
+     * 01 - открывается
+     * 02 - закрывается
+     * 03 - режим настройки
      */
     public function getInfo()
     {
-        // 010501 - команда считывания текущего состояния привода
-        // Возможные ответы
-        // 0 - остановлен
-        // 1 - открывается
-        // 2 - закрывается
-        // 3 - режим настройки
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x05, 0x01]);
-        $this->sendCmd($packet, 'getInfo');
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010501');
+        $response = $this->sendCmd($packet);
+        return $response;
     }
 
     /**
@@ -151,10 +131,9 @@ class Curtain extends Device
         if($this->curtain->place == 'rs485')
         {
             // 0301 - команда открытия
-            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x01]);
-            $this->sendCmd($packet);
-            $this->putPercentToDb(100);
-            // $this->setPercent(100);
+            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0301');
+            $response = $this->sendCmd($packet);
+            if (!$response['error']) $this->putPercentToDb(100);
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -202,10 +181,9 @@ class Curtain extends Device
         if($this->curtain->place == 'rs485')
         {
             // 0302 - команда закрытия
-            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x02]);
-            $this->sendCmd($packet);
-            $this->putPercentToDb(0);
-            $this->setPercent(0);
+            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0302');
+            $response = $this->sendCmd($packet);
+            if (!$response['error']) $this->putPercentToDb(0);
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -250,9 +228,9 @@ class Curtain extends Device
         if($this->curtain->place == 'rs485')
         {
             // 0303 - команда остановки
-            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x03]);
-            $this->sendCmd($packet);
-            $this->getPercent();
+            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0303');
+            $response = $this->sendCmd($packet);
+            if (!$response['error']) $this->getPercent();
         }
     }
 
@@ -266,19 +244,22 @@ class Curtain extends Device
             if ($this->curtain->is_inverse) $percent = 100 - $percent;
             var_dump ($percent);
             // 0304 - команда установки процента открытия
-            $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x04], [$percent]);
-            $this->sendCmd($packet, 'setPercent');
+            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0304', $percent);
+            $response = $this->sendCmd($packet);
+            if (!$response['error']) $this->putPercentToDb($percent);
         }
     }
 
     /**
      * Получение процента открытия шторы (для штор с RS485)
+     * 010201 - команда считывания текущего процента открытия
+     * Ответ 01 01 XX
      */
     public function getPercent()
     {
-        // 010201 - команда считывания текущего процента открытия
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0x02, 0x01]);
-        $this->sendCmd($packet, 'getPercent');
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010201');
+        $response = $this->sendCmd($packet);
+        if (!$response['error']) $this->putPercentToDb(hexdec($response['raw_response'][6]));
     }
 
     /**
@@ -286,55 +267,40 @@ class Curtain extends Device
      */
     public function putPercentToDb(int $value)
     {
-        if (isset($this->curtain->id_object))
-        {
-            if ($this->curtain->is_inverse) $value = 100 - $value;
-            //Заносим процент открытия в БД
-            parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
-        }
-    }
-
-    /**
-     * Считывание типа двигателя (для штор с RS485)
-     */
-    public function getMotorType()
-    {
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x01, 0xFE, 0x01]); 
-            // 01F001 - в ответ 17(0x11) - рулонка, ???17(0x11)??? - жалюзи
-        $this->sendCmd($packet, 'getMotorType');
-        // return $response;
+        parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
     }
 
     /**
      * Сброс конечных положений (для штор с RS485)
+     * 0307 - команда сброса выставленных пределов
      */
     public static function resetLimits()
     {
-        // 0307 - команда сброса выставленных пределов
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x07]); 
-        $this->sendCmd($packet);
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0307');
+        $response = $this->sendCmd($packet);
     }
 
     /**
      * Изменение направления привода (для штор с RS485)
+     * 02 03 01 XX
+     * 00 - мотор слева
+     * 01 - мотор справа
      * Для некоторых приводов срабатывает команда 01 03 01, меняет значение на противоположное 
      */
     public function changeDirection(int $direction = null) // 0 - мотор слева, 1 - мотор справа
     {
-        // 020301 - команда сброса выставленных пределов
-        // $direction = 0 - левый мотор или $direction = 1 - правый мотор
-        if (isset($direction)) $direction = [$direction];
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x03, 0x01], $direction);
-        $this->sendCmd($packet);
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
+        $response = $this->sendCmd($packet);
     }
 
     /**
      * Смена адреса (для штор с RS485)
      */
-    public function changeAddress(int $busId, int $newAddress, int $newGroup)
+    public function changeAddress(int $newAddress, int $newGroup)
     {
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x02, 0x00, 0x02], [$newAddress, $newGroup]);
-        $this->sendCmd($packet);
+        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020002', $newAddress, $newGroup);
+        $response = $this->sendCmd($packet);
+        var_dump($response);
     }
 
     /**
@@ -348,15 +314,29 @@ class Curtain extends Device
      */
     public function setAddress()
     {
-        if ($this->curtain->type == 'roller') $addr = [0xFE, 0xFE];
-        if ($this->curtain->type == 'curtain') $addr = [0x00, 0x00];
+        if ($this->curtain->type == 'roller')
+        {
+            $address = 'FE';
+            $group = 'FE';
+        }
+        if ($this->curtain->type == 'curtain')
+        {
+            $address = '00';
+            $group = '00';
+        }
 
         $start = time()*1000;
         do
         {
-            $packet = self::packetAssembling($addr[0], $addr[1], [0x02, 0x00, 0x02], [$this->curtain->address, $this->curtain->group]);
-            $this->sendCmd($packet, 'setAddress');
-            sleep(4);
+            $packet = $this->packetAssembling($address, $group, '020002', $this->curtain->address, $this->curtain->group);
+            var_dump($packet);
+            $response = $this->sendCmd($packet);
+            var_dump($response['error']);
+            if (!$response['error'])
+            {
+                echo "Адрес {$this->curtain->address} и группа {$this->curtain->group} установлены" . PHP_EOL;
+                break;
+            }
         }
         while ((time()*1000-$start) < 30000);
     }

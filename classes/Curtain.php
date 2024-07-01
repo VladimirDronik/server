@@ -10,8 +10,6 @@
  * Для унификации методов повторный вызов метода open или close останавливает привод.
  */
 
-// use Beanstalk\Client;
-
 class Curtain extends Device
 {
     public $curtain = null;
@@ -45,18 +43,6 @@ class Curtain extends Device
         }
     }
     
-    // private function initBus($busId)
-    // {
-    //     $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id',
-    //                                        `modbus_buses`.`type` AS 'bus_type'
-    //                                 FROM `modbus_buses`
-    //                                 WHERE `modbus_buses`.`id` = $busId");
-    //     if($sql->rowCount() > 0) 
-    //     {
-    //         $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-    //         $this->curtain->id_object = null;
-    //     }
-    // }
 
     /**
      * Сборка пакета для отправки (для штор с RS485)
@@ -134,6 +120,7 @@ class Curtain extends Device
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0301');
             $response = $this->sendCmd($packet);
             if (!$response['error']) $this->putPercentToDb(100);
+            $this->responseProcessing($response);
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -184,6 +171,7 @@ class Curtain extends Device
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0302');
             $response = $this->sendCmd($packet);
             if (!$response['error']) $this->putPercentToDb(0);
+            $this->responseProcessing($response);
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -231,6 +219,7 @@ class Curtain extends Device
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0303');
             $response = $this->sendCmd($packet);
             if (!$response['error']) $this->getPercent();
+            $this->responseProcessing($response);
         }
     }
 
@@ -247,6 +236,7 @@ class Curtain extends Device
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0304', $percent);
             $response = $this->sendCmd($packet);
             if (!$response['error']) $this->putPercentToDb($percent);
+            $this->responseProcessing($response);
         }
     }
 
@@ -260,6 +250,7 @@ class Curtain extends Device
         $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010201');
         $response = $this->sendCmd($packet);
         if (!$response['error']) $this->putPercentToDb(hexdec($response['raw_response'][6]));
+        $this->responseProcessing($response);
     }
 
     /**
@@ -278,6 +269,7 @@ class Curtain extends Device
     {
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0307');
         $response = $this->sendCmd($packet);
+        $this->responseProcessing($response);
     }
 
     /**
@@ -291,6 +283,7 @@ class Curtain extends Device
     {
         $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
         $response = $this->sendCmd($packet);
+        $this->responseProcessing($response);
     }
 
     /**
@@ -300,7 +293,7 @@ class Curtain extends Device
     {
         $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020002', $newAddress, $newGroup);
         $response = $this->sendCmd($packet);
-        var_dump($response);
+        $this->responseProcessing($response);
     }
 
     /**
@@ -325,20 +318,32 @@ class Curtain extends Device
             $group = '00';
         }
 
-        $start = time()*1000;
-        do
+        for ($i=1; $i<=10; $i++)
         {
             $packet = $this->packetAssembling($address, $group, '020002', $this->curtain->address, $this->curtain->group);
-            var_dump($packet);
             $response = $this->sendCmd($packet);
-            var_dump($response['error']);
-            if (!$response['error'])
+            if ($response['error'])
             {
-                echo "Адрес {$this->curtain->address} и группа {$this->curtain->group} установлены" . PHP_EOL;
-                break;
+                echo "Запрос #$i на установку адреса отправлен, но привод не ответил" . PHP_EOL;
+                if ($i == 10) echo "Адрес и группа не установлены, привод не ответил на запросы" . PHP_EOL;
+            }
+            else
+            {
+                var_dump($response);
+                if ($response['raw_response'][2] == $this->curtain->address && $response['raw_response'][3] == $this->curtain->group)
+                {
+                    echo "Адрес {$this->curtain->address} и группа {$this->curtain->group} установлены" . PHP_EOL;
+                    break;
+                }
+                else
+                {
+                    echo "Адрес и группа не установлены, ответ пришел с неправильного адреса" . PHP_EOL;
+                    echo "Текущие настройки - адрес: " . hexdec($response['raw_response'][2]) . 
+                        ", группа: " . hexdec($response['raw_response'][3]) . PHP_EOL;
+                    break;
+                }
             }
         }
-        while ((time()*1000-$start) < 30000);
     }
 
     /**
@@ -346,8 +351,9 @@ class Curtain extends Device
      */
     public function reset()
     {
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, [0x03, 0x08]);
+        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0308');
         $this->sendCmd($packet);
+        $this->responseProcessing($response);
     }
 
     /**
@@ -369,7 +375,7 @@ class Curtain extends Device
     /**
      * Установка флага активности для привода с RS485
      */
-    public static function setRsMotorActivity(int $rsMotorId, int $activity)
+    private function setRsMotorActivity(int $rsMotorId, int $activity)
     {
         parent::$db->exec("UPDATE `curtains` SET `active` = $activity WHERE `id_object` = $rsMotorId");
     }
@@ -387,22 +393,28 @@ class Curtain extends Device
     /**
      *  Проверка доступности привода с RS485
      */
-    public static function checkRsMotorAvailible(int $rsMotorId = null)
-    {
-        if (isset($rsMotorId)) $additionalCondition = "AND `id_object` = $rsMotorId";
-        else $additionalCondition = "AND `active` = 0";
+    // public static function checkRsMotorAvailible(int $rsMotorId = null)
+    // {
+    //     if (isset($rsMotorId)) $additionalCondition = "AND `id_object` = $rsMotorId";
+    //     else $additionalCondition = "AND `active` = 0";
         
-        $sql = parent::$db->query(" SELECT `id_object`
-                                    FROM `curtains`
-                                    WHERE `place` = 'rs485'
-                                    $additionalCondition");
-        if($sql->rowCount() > 0)
-        {
-            while ($rsMotor = $sql->fetch(PDO::FETCH_OBJ))
-            {
-                $curtain = new Curtain ($rsMotor->id_object);
-                $curtain->getInfo();
-            }
-        }
+    //     $sql = parent::$db->query(" SELECT `id_object`
+    //                                 FROM `curtains`
+    //                                 WHERE `place` = 'rs485'
+    //                                 $additionalCondition");
+    //     if($sql->rowCount() > 0)
+    //     {
+    //         while ($rsMotor = $sql->fetch(PDO::FETCH_OBJ))
+    //         {
+    //             $curtain = new Curtain ($rsMotor->id_object);
+    //             $curtain->getInfo();
+    //         }
+    //     }
+    // }
+
+    private function responseProcessing(array $response)
+    {
+        if ($response['error']) $this->setRsMotorActivity($this->curtain->id_object, 0);
+        else $this->setRsMotorActivity($this->curtain->id_object, 1);
     }
 }

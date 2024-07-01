@@ -8,21 +8,35 @@ class Modbus extends System {
     
     private static $response = null;
     public static $_busConnection = null;
+
     /**
      * Создание модбас устройства, на основе данных из БД по id
      */
-    public static function getModbusDevice($idModbusDevice) {
-
-        $sql = parent::$db->query("SELECT `modbus_slavers`.`id` AS id, `modbus_slavers`.`name` AS name, `modbus_slavers_types`.`type` AS type, 
-        `modbus_slavers`.`address` AS address, `modbus_buses`.`device` AS busdevice, `modbus_buses`.`type` AS bustype,
-        `modbus_buses`.`baudrate` AS baudrate, `modbus_buses`.`parity` AS parity, `modbus_buses`.`stopbits` AS stopbits,
-        `modbus_buses`.`ip` AS ip, `modbus_buses`.`port` AS port 
-          FROM `modbus_slavers`  
-          INNER JOIN `modbus_slavers_types` ON modbus_slavers.type = modbus_slavers_types.id 
-          INNER JOIN `modbus_buses` ON modbus_slavers.bus = modbus_buses.id WHERE `modbus_slavers`.`id`= $idModbusDevice");
-        
-        $device = $sql->fetch(PDO::FETCH_OBJ);
-        return $device;
+    public static function getModbusDevice($idModbusDevice)
+    {
+        $sql = parent::$db->query(" SELECT `modbus_slavers`.`id` AS 'id',
+                                           `modbus_slavers`.`name` AS 'name',
+                                           `modbus_slavers_types`.`type` 'AS type',
+                                           `modbus_slavers`.`address` AS 'address',
+                                           `modbus_buses`.`device` AS 'busdevice',
+                                           `modbus_buses`.`type` AS 'bustype',
+                                           `modbus_buses`.`baudrate` AS 'baudrate',
+                                           `modbus_buses`.`parity` AS 'parity',
+                                           `modbus_buses`.`stopbits` AS 'stopbits',
+                                           `modbus_buses`.`ip` AS 'ip',
+                                           `modbus_buses`.`port` AS 'port' 
+                                    FROM `modbus_slavers`
+                                    INNER JOIN `modbus_slavers_types`
+                                    ON `modbus_slavers`.`type` = `modbus_slavers_types`.`id`
+                                    INNER JOIN `modbus_buses`
+                                    ON `modbus_slavers`.`bus` = `modbus_buses`.`id`
+                                    WHERE `modbus_slavers`.`id`= $idModbusDevice");
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+        else 
+        {
+            echo "Modbus устройств с ID $idModbusDevice не найдено" . PHP_EOL;
+            exit;
+        }
     }
 
     /**
@@ -30,25 +44,30 @@ class Modbus extends System {
      */
     public static function getModbusRegister($modbusRegisterId) {
 
-        $sql = parent::$db->query("SELECT `modbus_registers`.`register_type` AS register_type,
-                                          `modbus_registers`.`starting_register` AS starting_register,
-                                          `modbus_registers`.`name` AS register_name,
-                                          `modbus_registers`.`registers_quantity` AS registers_quantity,
-                                          `modbus_registers`.`data_format` AS data_format,
-                                          `modbus_registers`.`units` AS units,
-                                          `modbus_registers`.`scale_unit` AS scale_unit,
-                                          `modbus_registers`.`access` AS access,
-                                          `modbus_slavers`.`id` AS slaver_id,
-                                          `modbus_slavers`.`address` AS address,
-                                          `modbus_buses`.`id` AS bus_id,
-                                          `modbus_buses`.`device` AS bus_device
-                                     FROM `modbus_registers`  
-                               INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-                               INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
+        $sql = parent::$db->query(" SELECT `modbus_registers`.`register_type` AS 'register_type',
+                                           `modbus_registers`.`starting_register` AS 'starting_register',
+                                           `modbus_registers`.`name` AS 'register_name',
+                                           `modbus_registers`.`registers_quantity` AS 'registers_quantity',
+                                           `modbus_registers`.`data_format` AS 'data_format',
+                                           `modbus_registers`.`units` AS 'units',
+                                           `modbus_registers`.`scale_unit` AS 'scale_unit',
+                                           `modbus_registers`.`access` AS 'access',
+                                           `modbus_slavers`.`id` AS 'slaver_id',
+                                           `modbus_slavers`.`address` AS 'address',
+                                           `modbus_buses`.`id` AS 'bus_id',
+                                           `modbus_buses`.`device` AS 'bus_device'
+                                    FROM `modbus_registers`  
+                                    INNER JOIN `modbus_slavers`
+                                    ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+                                    INNER JOIN `modbus_buses`
+                                    ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
                                     WHERE `modbus_registers`.`id`= $modbusRegisterId");
-        
-        $modbusRegister = $sql->fetch(PDO::FETCH_OBJ);
-        return $modbusRegister;
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+        else 
+        {
+            echo "Modbus регистр с ID $modbusRegisterId не найден" . PHP_EOL;
+            exit;
+        }
     }
 
     /**
@@ -56,12 +75,10 @@ class Modbus extends System {
      */
     public static function getModbusRtuBuses()
     {
-        $sql = parent::$db->query("SELECT `modbus_buses`.`id` AS bus_id
-                                     FROM `modbus_buses`
+        $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id'
+                                    FROM `modbus_buses`
                                     WHERE `modbus_buses`.`type` = 'rtu'");
         
-        
-
         if($sql->rowCount() > 0)
         {
             $modbusRtuBuses = $sql->fetchAll(PDO::FETCH_OBJ);
@@ -76,19 +93,23 @@ class Modbus extends System {
      */
     public static function getModbusBusSettings(int $idBus)
     {
-        $sql = parent::$db->query("SELECT `modbus_buses`.`device` AS busdevice,
-                                          `modbus_buses`.`type` AS bustype,
-                                          `modbus_buses`.`baudrate` AS baudrate,
-                                          `modbus_buses`.`length` AS length,
-                                          `modbus_buses`.`parity` AS parity,
-                                          `modbus_buses`.`stopbits` AS stopbits,
-                                          `modbus_buses`.`ip_address` AS ip,
-                                          `modbus_buses`.`port` AS port
-                                     FROM `modbus_buses`
+        $sql = parent::$db->query(" SELECT `modbus_buses`.`device` AS 'busdevice',
+                                           `modbus_buses`.`type` AS 'bustype',
+                                           `modbus_buses`.`baudrate` AS 'baudrate',
+                                           `modbus_buses`.`length` AS 'length',
+                                           `modbus_buses`.`parity` AS 'parity',
+                                           `modbus_buses`.`stopbits` AS 'stopbits',
+                                           `modbus_buses`.`ip_address` AS 'ip',
+                                           `modbus_buses`.`port` AS 'port'
+                                    FROM `modbus_buses`
                                     WHERE `modbus_buses`.`id`= $idBus");
         
         if ($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
-        else return false;
+        else
+        {
+            echo "Modbus шина с ID $modbusRegisterId не найдена" . PHP_EOL;
+            exit;
+        }
     }
 
     
@@ -116,42 +137,15 @@ class Modbus extends System {
      */
     public static function getAllDevicesOnBus($busId)
     {
-         $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= $busId");
+        $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= $busId");
 
-         if($sql->rowCount() > 0)
-         {
+        if($sql->rowCount() > 0)
+        {
             $devices = $sql->fetchAll(PDO::FETCH_OBJ);
             foreach ($devices AS $device) $modbusArray[$device->id] = $device->address;
             return $modbusArray;
         }
     }
-
-    /**
-     * Опрос всех RO регистров, которые есть у устройства, для занесения данных в БД
-     */
-    public static function checkRegistersOnDevice($idDevice)
-    {
-       //TODO:: здесь нужно реализовать опрос шины выбранного устройства и реализовать запись в БД, например с помощью метода setValue ниже
-    }
-
-    /**
-     * Запуск команды на устройстве modbus по его id
-     */
-    public static function runCommand($idRegister, $value) {
-        //Извлекаем данные из таблицы регистров
-        $sql = parent::$db->query("SELECT * FROM `modbus_registers` WHERE `id`=$idRegister");
-        $register = $sql->fetch(PDO::FETCH_OBJ);
-
-            //Смотрим какой тип регистра, если на запись, то создаем задание в очереди с высоким приоритетом, если на чтение, 
-            //то читаем из таблицы и возвращаем результат
-            if ($register->access == 'ro') {
-                return $register->last_value;
-            } elseif ($register->access == 'rw') { //Запись данных в шину модбас
-    
-                $modbusDevice = self::getModbusDevice($register->slaver_id); //Здесь получаем устройство модбаса, с которым хотим работать со всеми его параметрами
-                //TODO:: здесь нужно сделать запись в очередь с высоким приоритетом
-            }
-        }
 
     /**
      * Запись значения регистра в БД с регистрами при опросе шины
@@ -160,7 +154,6 @@ class Modbus extends System {
     {
         if (is_null ($value)) $value = 'NULL';
         else $value = "'$value'";
-        // var_dump ($value);
         $sql = parent::$db->exec("UPDATE `modbus_registers`
                                      SET `timestamp` = CURRENT_TIMESTAMP(3),
                                          `last_value` = $value
@@ -178,148 +171,177 @@ class Modbus extends System {
     /**
      * Получение текущей временной метки регистра
      */
-    public static function getTimemark(int $registerId)
-    {
-        $sql = parent::$db->query("SELECT `timestamp` FROM `modbus_registers` WHERE `id` = $registerId");
-        $timestamp = $sql->fetch(PDO::FETCH_OBJ)->timestamp;
-        $pieces = explode ('.', $timestamp);
-        $timemark = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
-        return $timemark;
-    }
+    // public static function getTimemark(int $registerId)
+    // {
+    //     $sql = parent::$db->query("SELECT `timestamp` FROM `modbus_registers` WHERE `id` = $registerId");
+    //     $timestamp = $sql->fetch(PDO::FETCH_OBJ)->timestamp;
+    //     $pieces = explode ('.', $timestamp);
+    //     $timemark = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
+    //     return $timemark;
+    // }
 
     /**
      * Получение списка регистров для опроса
      */
-    public static function getRegistersToPoll (int $polling_cycle, int $busId)
-    {
-        $sql = parent::$db->query("SELECT `modbus_registers`.`id` AS register_id,
-                                          `modbus_registers`.`timestamp` AS timestamp,
-                                          `modbus_buses`.`id` AS bus_id
-                                     FROM `modbus_registers`
-                               INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-                               INNER JOIN `modbus_buses` ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
-                                    WHERE `modbus_buses`.`id`= $busId 
-                                      AND `modbus_registers`.`polling` = 1
-                                      AND `modbus_registers`.`polling_cycle` = $polling_cycle");
+    // public static function getRegistersToPoll (int $polling_cycle, int $busId)
+    // {
+    //     $sql = parent::$db->query(" SELECT `modbus_registers`.`id` AS 'register_id',
+    //                                        `modbus_registers`.`timestamp` AS 'timestamp',
+    //                                        `modbus_buses`.`id` AS 'bus_id'
+    //                                 FROM `modbus_registers`
+    //                                 INNER JOIN `modbus_slavers`
+    //                                 ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+    //                                 INNER JOIN `modbus_buses`
+    //                                 ON `modbus_buses`.`id` = `modbus_slavers`.`bus`
+    //                                 WHERE `modbus_buses`.`id`= $busId 
+    //                                 AND `modbus_registers`.`polling` = 1
+    //                                 AND `modbus_registers`.`polling_cycle` = $polling_cycle");
     
-        while ($registers = $sql->fetch(PDO::FETCH_OBJ))
-        {
-            if ($polling_cycle == 0)
-            {
-                $pieces = explode ('.', $registers->timestamp);
-                $timestamp = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
-                $registers_array[(int)$registers->register_id] = $timestamp;
-            }
-            else
-            {
-                $registers_array[] = (int)$registers->register_id;
-            }
-		}
+    //     while ($registers = $sql->fetch(PDO::FETCH_OBJ))
+    //     {
+    //         if ($polling_cycle == 0)
+    //         {
+    //             $pieces = explode ('.', $registers->timestamp);
+    //             $timestamp = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
+    //             $registers_array[(int)$registers->register_id] = $timestamp;
+    //         }
+    //         else
+    //         {
+    //             $registers_array[] = (int)$registers->register_id;
+    //         }
+	// 	}
 
-        if (isset($registers_array)) return $registers_array;
-        else return false;
-    }
+    //     if (isset($registers_array)) return $registers_array;
+    //     else return false;
+    // }
 
     /**
      * Цикл непрерывного опроса регистров устройств на шине $busId
      */
-    public static function pollingLoop (int $polling_cycle, int $busId)
-    {
-        $registersArray = [];
+    // public static function pollingLoop (int $polling_cycle, int $busId)
+    // {
+        // $registersArray = [];
 
-            while (true)
-            {
-                $diff = [];
-                usleep(500000);
-                $registersUpdatedArray = self::getRegistersToPoll($polling_cycle, $busId);
-                if ($registersUpdatedArray)
-                {
-                //Ищем изменения, эти регистры отправить в очередь повторно
-                    $diff = array_diff($registersUpdatedArray, $registersArray);
-                    if ($diff)
-                    {
-                        foreach ($diff as $value)
-                        {
-                            $registerId = array_search($value, $diff);
-                            $output = [];
-                            exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
-                            $queryString = "SELECT `modbus_slavers`.`active`
-                                            FROM `modbus_slavers`
-                                            JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-                                            WHERE `modbus_registers`.`id`= $registerId";
-                            $sql = parent::$db->query($queryString);
-                            $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
+        //     while (true)
+        //     {
+        //         $diff = [];
+        //         usleep(500000);
+        //         $registersUpdatedArray = self::getRegistersToPoll($polling_cycle, $busId);
+        //         if ($registersUpdatedArray)
+        //         {
+        //         //Ищем изменения, эти регистры отправить в очередь повторно
+        //             $diff = array_diff($registersUpdatedArray, $registersArray);
+        //             if ($diff)
+        //             {
+        //                 foreach ($diff as $value)
+        //                 {
+        //                     $registerId = array_search($value, $diff);
+        //                     $output = [];
+        //                     exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
+        //                     $queryString = "SELECT `modbus_slavers`.`active`
+        //                                     FROM `modbus_slavers`
+        //                                     JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+        //                                     WHERE `modbus_registers`.`id`= $registerId";
+        //                     $sql = parent::$db->query($queryString);
+        //                     $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
 
-                            if ($output && $isSlaverActive)
-                            {
-                                echo (new datetime())->format('Y-m-d H:i:s.v') .
-                                    "   Polling register id " .
-                                    $registerId . " is sent to the queue" . PHP_EOL;
-                                self::putTaskIntoQueue($registerId, 'read', 100);
-                            }
-                        }
-                    }
-                    //Обновляем исходный массив
-                    $registersArray = array_replace($registersArray, $diff);
-                }
-                // else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
-            }
-    }
+        //                     if ($output && $isSlaverActive)
+        //                     {
+        //                         echo (new datetime())->format('Y-m-d H:i:s.v') .
+        //                             "   Polling register id " .
+        //                             $registerId . " is sent to the queue" . PHP_EOL;
+        //                         self::putTaskIntoQueue($registerId, 'read', 100);
+        //                     }
+        //                 }
+        //             }
+        //             //Обновляем исходный массив
+        //             $registersArray = array_replace($registersArray, $diff);
+        //         }
+        //         // else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
+        //     }
+
+    //     while (true)
+    //     {
+    //         if ($registersToPoll = self::getRegistersToPoll($polling_cycle, $busId))
+    //         {
+    //             foreach ($registersToPoll as $registerId)
+    //             {
+    //                 $sql = parent::$db->query(" SELECT `modbus_slavers`.`active`
+    //                                             FROM `modbus_slavers`
+    //                                             JOIN `modbus_registers`
+    //                                             ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+    //                                             WHERE `modbus_registers`.`id`= $registerId");
+    //                 $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
+    //                 if ($isSlaverActive)
+    //                 {
+    //                     echo (new datetime())->format('Y-m-d H:i:s.v') .
+    //                         "   Polling register id " .
+    //                         $registerId . " is sent to the queue" . PHP_EOL;
+    //                     $response = self::modbusRtu($registerId, 'read', 100);
+    //                     var_dump($response);
+    //                 }
+    //             }   
+    //         }
+    
+            
+    //     }
+        
+    // }
 
     /**
      *  Управление опросом регистра
      */
-    public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
-    {
-        if ($polling) $polling = 1;
-        else 
-        {
-            $polling = 0;
-            $pollingCycle = 'NULL';
-        }
+    // public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
+    // {
+    //     if ($polling) $polling = 1;
+    //     else 
+    //     {
+    //         $polling = 0;
+    //         $pollingCycle = 'NULL';
+    //     }
 
-        $sql = parent::$db->exec("UPDATE `modbus_registers`
-                                     SET `polling` = $polling,
-                                         `polling_cycle` = $pollingCycle
-                                   WHERE `id` = $registerId");
-    }
+    //     $sql = parent::$db->exec("UPDATE `modbus_registers`
+    //                                  SET `polling` = $polling,
+    //                                      `polling_cycle` = $pollingCycle
+    //                                WHERE `id` = $registerId");
+    // }
 
     /**
      *  Считывание значения из регистра(ов) и возврат результата
      */
-    public static function getRegisterValue (int $registerId, int $priority = null)
-    {
-        $referenceTimemark = self::getTimemark($registerId);
-        if (!isset($priority)) $priority = 5;
-        self::putTaskIntoQueue($registerId, 'read', $priority);
-        $start = time()*1000;
-        do
-        {
-            usleep(500000);
-            $currentTimemark = self::getTimemark($registerId);
-        }
-        while ($currentTimemark === $referenceTimemark && (time()*1000-$start) < 5000);
+    // public static function getRegisterValue (int $registerId, int $priority = null)
+    // {
+    //     $referenceTimemark = self::getTimemark($registerId);
+    //     if (!isset($priority)) $priority = 5;
+    //     self::putTaskIntoQueue($registerId, 'read', $priority);
+    //     $start = time()*1000;
+    //     do
+    //     {
+    //         usleep(500000);
+    //         $currentTimemark = self::getTimemark($registerId);
+    //     }
+    //     while ($currentTimemark === $referenceTimemark && (time()*1000-$start) < 5000);
 
-        if ($currentTimemark === $referenceTimemark) exit ("[Error] Нет ответа от modbus устройства");
-        else
-        {
-            $sql = parent::$db->query(" SELECT `last_value`, `data_format`
-                                        FROM `modbus_registers` WHERE `id` = $registerId");
-            $value = $sql->fetch(PDO::FETCH_OBJ);
-            switch ($value->data_format)
-            {
-                case 'bool':
-                    $result = filter_var($value->last_value, FILTER_VALIDATE_BOOLEAN);
-                    break;
-                case 'string':
-                    $result = $value->last_value;
-                    break;
-                default:
-                    $result = filter_var($value->last_value, FILTER_VALIDATE_INT);
-            }
-            return $result;
-        }
-    }
+    //     if ($currentTimemark === $referenceTimemark) exit ("[Error] Нет ответа от modbus устройства");
+    //     else
+    //     {
+    //         $sql = parent::$db->query(" SELECT `last_value`, `data_format`
+    //                                     FROM `modbus_registers` WHERE `id` = $registerId");
+    //         $value = $sql->fetch(PDO::FETCH_OBJ);
+    //         switch ($value->data_format)
+    //         {
+    //             case 'bool':
+    //                 $result = filter_var($value->last_value, FILTER_VALIDATE_BOOLEAN);
+    //                 break;
+    //             case 'string':
+    //                 $result = $value->last_value;
+    //                 break;
+    //             default:
+    //                 $result = filter_var($value->last_value, FILTER_VALIDATE_INT);
+    //         }
+    //         return $result;
+    //     }
+    // }
 
     
 

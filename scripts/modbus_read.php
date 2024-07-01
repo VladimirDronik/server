@@ -2,6 +2,6 @@
 
 require_once '../include.php';
 
-$value = Modbus::getRegisterValue($argv[1]);
+$value = Modbus::modbusRtu($argv[1], 'read', 5)['response'];
 echo $value . PHP_EOL;
 return $value;

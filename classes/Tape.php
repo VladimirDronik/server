@@ -1,17 +1,7 @@
 <?php
 
 class Tape extends Device
-{
-    // private $idObject;
-    // private $port;
-    // private $address;
-    // private $type;
-    // private $status;
-    // private $h;
-    // private $s;
-    // private $v;
-    // private $w;
-    
+{   
     private $tape = null;
     private $registersIds = [];
     private $object = null;
@@ -156,7 +146,6 @@ class Tape extends Device
             Modbus::modbusRtu($this->registersIds['brightness'], 'write', 5, $brightness);
             if (!$response['error'])
             {
-                // $this->tapeOn();
                 if ($this->tape->type == 'RGB') $column = 'v';
                 else $column = 'w';
                 parent::$db->query("UPDATE `tapes`
@@ -164,6 +153,5 @@ class Tape extends Device
                                     WHERE `id_object` = {$this->object->id}");
             }
         }
-        // else $this->tapeOff();
     }
 }

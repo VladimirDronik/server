@@ -381,7 +381,7 @@ class Curtain extends Device
     /**
      * Установка флага активности для привода с RS485
      */
-    private function setRsMotorActivity(int $rsMotorId, int $activity)
+    private static function setRsMotorActivity(int $rsMotorId, int $activity)
     {
         parent::$db->exec("UPDATE `curtains` SET `active` = $activity WHERE `id_object` = $rsMotorId");
     }

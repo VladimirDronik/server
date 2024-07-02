@@ -367,14 +367,20 @@ class Modbus extends System {
             "ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id` " .
             "WHERE `modbus_slavers`.`active` = 0";
         
-        $sql = parent::$db->query(" SELECT `modbus_registers`.`id`
+        $sql = parent::$db->query(" SELECT `modbus_registers`.`id`, `modbus_registers`.`slaver_id`
                                     FROM `modbus_registers`
                                     $additionalCondition
                                     GROUP BY `slaver_id`");
 
         if($sql->rowCount() > 0)
+        {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
-                self::putTaskIntoQueue($register->id, 'read', 5);
+            {
+                $response = self::modbusRtu($register->id, 'read', 5);
+                if ($response['error']) self::setSlaverActivity($register->slaver_id, 0);
+                else self::setSlaverActivity($register->slaver_id, 1);
+            }
+        }
     }
 
     private static function crc16($data)
@@ -421,13 +427,11 @@ class Modbus extends System {
      */
     public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, string $uid = null)
     {
-        // if (!isset($uid)) $uid = uniqid();
         $uid = uniqid();
 
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         if ($modbusRegister)
         {
-            // var_dump($modbusRegister);
             if ($action == 'read')
             {
                 if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
@@ -444,10 +448,6 @@ class Modbus extends System {
                 elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
                 else $modbusFunction = 6;
             }
-            
-            // $beanstalk = new Client();
-            // $beanstalk->connect();
-            // $beanstalk->useTube($modbusRegister->bus_id);
     
             $task = array (
                 'protocol' => 'rtu',
@@ -465,7 +465,6 @@ class Modbus extends System {
                 'uid' => $uid,
             );
             
-            // $beanstalk->put($priority, 0, 5, json_encode($task));
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
             return $response;
@@ -492,7 +491,6 @@ class Modbus extends System {
         {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
-            // var_dump ($task);
             
             if ($task->protocol == 'raw') $binRequest = base64_decode($task->raw_data);
             if ($task->protocol == 'rtu') $binRequest = modbusFunction($task);
@@ -515,11 +513,6 @@ class Modbus extends System {
                 $error = true;
                 $errorCode = "No response from device";
             }
-
-                // var_dump ($response);
-                // Modbus::setValue($task->register_id, $response);
-                // Modbus::setSlaverActivity($task->slaver_id, $activity);
-            // }
 
             $topic = "modbus/$busId/response";
             $payload = [

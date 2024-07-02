@@ -79,13 +79,13 @@ class Tape extends Device
     public function tapeOn()
     {
         $response = Modbus::modbusRtu($this->registersIds['state'], 'write', 5, 1);
-        if (!$response['error']) $this->object->setStatus('on',true,false);
+        if ($response && !$response['error']) $this->object->setStatus('on',true,false);
     }
 
     public function tapeOff()
     {
         $response = Modbus::modbusRtu($this->registersIds['state'], 'write', 5, 0);
-        if (!$response['error']) $this->object->setStatus('off',true,false);
+        if ($response && !$response['error']) $this->object->setStatus('off',true,false);
     }
 
     public function tapeSw()
@@ -105,13 +105,13 @@ class Tape extends Device
         if ($this->tape->type == 'RGB')
         {
             $response = Modbus::modbusRtu($this->registersIds['h_component'], 'write', 5, $hue);
-            if (!$response['error'])
+            if ($response && !$response['error'])
                 parent::$db->query("UPDATE `tapes`
                                     SET `h` = $hue
                                     WHERE `id_object` = {$this->object->id}");
 
             $response = Modbus::modbusRtu($this->registersIds['s_component'], 'write', 5, $saturation);
-            if (!$response['error'])
+            if ($response && !$response['error'])
                 parent::$db->query("UPDATE `tapes`
                                     SET `s` = $saturation
                                     WHERE `id_object` = {$this->object->id}");
@@ -128,7 +128,7 @@ class Tape extends Device
         if ($this->tape->type == 'CCT')
         {
             $response = Modbus::modbusRtu($this->registersIds['temperature'], 'write', 5, $temperature);
-            if (!$response['error'])
+            if ($response && !$response['error'])
                 parent::$db->query("UPDATE `tapes`
                                     SET `cct` = $temperature
                                     WHERE `id_object` = {$this->object->id}");
@@ -144,7 +144,7 @@ class Tape extends Device
         if ($brightness > 0)
         {
             Modbus::modbusRtu($this->registersIds['brightness'], 'write', 5, $brightness);
-            if (!$response['error'])
+            if ($response && !$response['error'])
             {
                 if ($this->tape->type == 'RGB') $column = 'v';
                 else $column = 'w';

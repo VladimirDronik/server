@@ -169,6 +169,15 @@ class Modbus extends System {
     }
 
     /**
+     * Получение флага активности для устройства на шине ModBus
+     */
+    public static function getSlaverActivity(int $slaver_id)
+    {
+        $sql = parent::$db->query("SELECT `active` FROM `modbus_slavers` WHERE `id` = $slaver_id");
+        if ($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ)->active;
+    }
+
+    /**
      * Получение текущей временной метки регистра
      */
     // public static function getTimemark(int $registerId)
@@ -363,9 +372,8 @@ class Modbus extends System {
     public static function checkModbusAvailible(int $modbusSlaverId = null)
     {
         if (isset($modbusSlaverId)) $additionalCondition = "WHERE `slaver_id` = $modbusSlaverId";
-        else $additionalCondition = "JOIN `modbus_slavers` ". 
-            "ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id` " .
-            "WHERE `modbus_slavers`.`active` = 0";
+        else $additionalCondition = "JOIN `modbus_slavers` " . 
+            "ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id` ";
         
         $sql = parent::$db->query(" SELECT `modbus_registers`.`id`, `modbus_registers`.`slaver_id`
                                     FROM `modbus_registers`
@@ -376,7 +384,7 @@ class Modbus extends System {
         {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
-                $response = self::modbusRtu($register->id, 'read', 5);
+                $response = self::modbusRtu($register->id, 'read', 5, null, true);
                 if ($response['error']) self::setSlaverActivity($register->slaver_id, 0);
                 else self::setSlaverActivity($register->slaver_id, 1);
             }
@@ -425,12 +433,15 @@ class Modbus extends System {
     /**
      * Постановка задания на чтение/запись регистра(ов) в очередь
      */
-    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, string $uid = null)
+    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, bool $force = false)
     {
         $uid = uniqid();
 
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
-        if ($modbusRegister)
+        $isSlaverActive = self::getSlaverActivity($modbusRegister->slaver_id);
+        if ($force) $isSlaverActive = true;
+
+        if ($modbusRegister && $isSlaverActive)
         {
             if ($action == 'read')
             {
@@ -467,6 +478,7 @@ class Modbus extends System {
             
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
+            if ($response['error']) self::checkModbusAvailible($modbusRegister->slaver_id);
             return $response;
         }
     }
@@ -483,8 +495,6 @@ class Modbus extends System {
         $queue = BeanstalkQueue::startQueue($busId);
         $bus = self::busConnection($busId);
         
-        
-
         $writeFunctionCodesArray = [5, 6, 15, 16];
 
         while (true)

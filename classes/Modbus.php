@@ -195,7 +195,6 @@ class Modbus extends System {
     // public static function getRegistersToPoll (int $polling_cycle, int $busId)
     // {
     //     $sql = parent::$db->query(" SELECT `modbus_registers`.`id` AS 'register_id',
-    //                                        `modbus_registers`.`timestamp` AS 'timestamp',
     //                                        `modbus_buses`.`id` AS 'bus_id'
     //                                 FROM `modbus_registers`
     //                                 INNER JOIN `modbus_slavers`
@@ -208,152 +207,55 @@ class Modbus extends System {
     
     //     while ($registers = $sql->fetch(PDO::FETCH_OBJ))
     //     {
-    //         if ($polling_cycle == 0)
-    //         {
-    //             $pieces = explode ('.', $registers->timestamp);
-    //             $timestamp = strtotime($pieces[0]) * 1000 + (int)$pieces[1];
-    //             $registers_array[(int)$registers->register_id] = $timestamp;
-    //         }
-    //         else
-    //         {
-    //             $registers_array[] = (int)$registers->register_id;
-    //         }
+    //         $registers_array[] = (int)$registers->register_id;
 	// 	}
 
     //     if (isset($registers_array)) return $registers_array;
-    //     else return false;
+    //     else return null;
     // }
 
     /**
      * Цикл непрерывного опроса регистров устройств на шине $busId
      */
-    // public static function pollingLoop (int $polling_cycle, int $busId)
+    // public static function pollingLoop (int $busId)
     // {
-        // $registersArray = [];
-
-        //     while (true)
-        //     {
-        //         $diff = [];
-        //         usleep(500000);
-        //         $registersUpdatedArray = self::getRegistersToPoll($polling_cycle, $busId);
-        //         if ($registersUpdatedArray)
-        //         {
-        //         //Ищем изменения, эти регистры отправить в очередь повторно
-        //             $diff = array_diff($registersUpdatedArray, $registersArray);
-        //             if ($diff)
-        //             {
-        //                 foreach ($diff as $value)
-        //                 {
-        //                     $registerId = array_search($value, $diff);
-        //                     $output = [];
-        //                     exec("ps aux | grep '[m]odbus_queue.php $busId'", $output);
-        //                     $queryString = "SELECT `modbus_slavers`.`active`
-        //                                     FROM `modbus_slavers`
-        //                                     JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-        //                                     WHERE `modbus_registers`.`id`= $registerId";
-        //                     $sql = parent::$db->query($queryString);
-        //                     $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
-
-        //                     if ($output && $isSlaverActive)
-        //                     {
-        //                         echo (new datetime())->format('Y-m-d H:i:s.v') .
-        //                             "   Polling register id " .
-        //                             $registerId . " is sent to the queue" . PHP_EOL;
-        //                         self::putTaskIntoQueue($registerId, 'read', 100);
-        //                     }
-        //                 }
-        //             }
-        //             //Обновляем исходный массив
-        //             $registersArray = array_replace($registersArray, $diff);
-        //         }
-        //         // else echo date("Y-m-d H:i:s.u") . "   Registers are not found on " . $busId . " bus" . PHP_EOL;
-        //     }
-
     //     while (true)
     //     {
-    //         if ($registersToPoll = self::getRegistersToPoll($polling_cycle, $busId))
+    //         $registersToPoll = self::getRegistersToPoll(0, $busId);
+    //         if (isset($registersToPoll))
     //         {
-    //             foreach ($registersToPoll as $registerId)
+    //             foreach($registersToPoll as $registerId)
     //             {
-    //                 $sql = parent::$db->query(" SELECT `modbus_slavers`.`active`
-    //                                             FROM `modbus_slavers`
-    //                                             JOIN `modbus_registers`
-    //                                             ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-    //                                             WHERE `modbus_registers`.`id`= $registerId");
-    //                 $isSlaverActive = $sql->fetch(PDO::FETCH_OBJ)->active;
-    //                 if ($isSlaverActive)
+    //                 $response = self::modbusRtu($registerId, 'read', 100);
+    //                 if ($response && !$response['error'])
     //                 {
-    //                     echo (new datetime())->format('Y-m-d H:i:s.v') .
-    //                         "   Polling register id " .
-    //                         $registerId . " is sent to the queue" . PHP_EOL;
-    //                     $response = self::modbusRtu($registerId, 'read', 100);
-    //                     var_dump($response);
+    //                     echo "Polling register ID $registerId... Response: {$response['response']}" . PHP_EOL;
     //                 }
-    //             }   
+    //             }
+    //             $registersToPoll = [];
+                
     //         }
-    
-            
+    //         else echo "No registers to poll on bus ID $busId" . PHP_EOL;
     //     }
-        
     // }
 
     /**
      *  Управление опросом регистра
      */
-    // public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
-    // {
-    //     if ($polling) $polling = 1;
-    //     else 
-    //     {
-    //         $polling = 0;
-    //         $pollingCycle = 'NULL';
-    //     }
+    public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
+    {
+        if ($polling) $polling = 1;
+        else 
+        {
+            $polling = 0;
+            $pollingCycle = 'NULL';
+        }
 
-    //     $sql = parent::$db->exec("UPDATE `modbus_registers`
-    //                                  SET `polling` = $polling,
-    //                                      `polling_cycle` = $pollingCycle
-    //                                WHERE `id` = $registerId");
-    // }
-
-    /**
-     *  Считывание значения из регистра(ов) и возврат результата
-     */
-    // public static function getRegisterValue (int $registerId, int $priority = null)
-    // {
-    //     $referenceTimemark = self::getTimemark($registerId);
-    //     if (!isset($priority)) $priority = 5;
-    //     self::putTaskIntoQueue($registerId, 'read', $priority);
-    //     $start = time()*1000;
-    //     do
-    //     {
-    //         usleep(500000);
-    //         $currentTimemark = self::getTimemark($registerId);
-    //     }
-    //     while ($currentTimemark === $referenceTimemark && (time()*1000-$start) < 5000);
-
-    //     if ($currentTimemark === $referenceTimemark) exit ("[Error] Нет ответа от modbus устройства");
-    //     else
-    //     {
-    //         $sql = parent::$db->query(" SELECT `last_value`, `data_format`
-    //                                     FROM `modbus_registers` WHERE `id` = $registerId");
-    //         $value = $sql->fetch(PDO::FETCH_OBJ);
-    //         switch ($value->data_format)
-    //         {
-    //             case 'bool':
-    //                 $result = filter_var($value->last_value, FILTER_VALIDATE_BOOLEAN);
-    //                 break;
-    //             case 'string':
-    //                 $result = $value->last_value;
-    //                 break;
-    //             default:
-    //                 $result = filter_var($value->last_value, FILTER_VALIDATE_INT);
-    //         }
-    //         return $result;
-    //     }
-    // }
-
-    
-
+        $sql = parent::$db->exec("UPDATE `modbus_registers`
+                                     SET `polling` = $polling,
+                                         `polling_cycle` = $pollingCycle
+                                   WHERE `id` = $registerId");
+    }
 
     /**
      *  Получение id регистра по его alias

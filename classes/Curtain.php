@@ -45,6 +45,11 @@ class Curtain extends Device
                     System::addLog("Error", "Привод штор (ID $motorId) недоступен", "port");
                     exit;
                 }
+                else
+                {
+                    $object = new Objects();
+                    $object->select($this->curtain->id_object);
+                }
             }
             else 
             {
@@ -133,9 +138,6 @@ class Curtain extends Device
      */
     public function open()
     {
-        $object = new Objects();
-        $object->select($this->curtain->id_object);
-
         if($this->curtain->place == 'rs485')
         {
             // 0301 - команда открытия
@@ -184,9 +186,6 @@ class Curtain extends Device
      */
     public function close()
     {
-        $object = new Objects();
-        $object->select($this->curtain->id_object);
-
         if($this->curtain->place == 'rs485')
         {
             // 0302 - команда закрытия
@@ -281,6 +280,8 @@ class Curtain extends Device
     public function putPercentToDb(int $value)
     {
         parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
+        if ($value > 0) $object->setStatus('open', true, false);
+        else $object->setStatus('close', true, false);
     }
 
     /**
@@ -387,9 +388,7 @@ class Curtain extends Device
                                     WHERE `curtains`.`place` = 'rs485'");
         
         $rsMotors = [];
-        while ($motor = $sql->fetch(PDO::FETCH_OBJ))
-            $rsMotors[] = (int)$motor->id_object;
-        
+        while ($motor = $sql->fetch(PDO::FETCH_OBJ)) $rsMotors[] = (int)$motor->id_object;
         return $rsMotors;  
     }
 
@@ -417,7 +416,8 @@ class Curtain extends Device
     public static function checkRsMotorAvailible(int $rsMotorId = null)
     {
         if (isset($rsMotorId)) $additionalCondition = "AND `id_object` = $rsMotorId";
-        else $additionalCondition = "AND `active` = 0";
+        // else $additionalCondition = "AND `active` = 0";
+        else $additionalCondition = null;
         
         $sql = parent::$db->query(" SELECT `id_object`
                                     FROM `curtains`
@@ -428,16 +428,10 @@ class Curtain extends Device
             while ($rsMotor = $sql->fetch(PDO::FETCH_OBJ))
             {
                 $curtain = new Curtain ($rsMotor->id_object);
-                $response = $curtain->getPercent();
+                $response = $curtain->getPercent(true);
                 if ($response['error']) self::setRsMotorActivity($rsMotor->id_object, 0);
                 else self::setRsMotorActivity($rsMotor->id_object, 1);
             }
         }
     }
-
-    // private function responseProcessing(array $response)
-    // {
-    //     if ($response['error']) $this->setRsMotorActivity($this->curtain->id_object, 0);
-    //     else $this->setRsMotorActivity($this->curtain->id_object, 1);
-    // }
 }

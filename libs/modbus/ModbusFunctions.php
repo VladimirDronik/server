@@ -16,7 +16,6 @@ use ModbusTcpClient\Utils\Endian;
  */
 function modbusFunction($task, bool $response = false, $binaryData = null)
 {
-    
     if ($task->function_code == 1)
     {
         if ($response) return readCoilsResponse($task, $binaryData);
@@ -140,8 +139,8 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
 
         $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
         // var_dump ($response);
-        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersResponse'))
-        {
+        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersResponse'))
+        // {
             if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
             if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
             if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
@@ -153,10 +152,10 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
             if ($task->scale) $result = $result * $task->scale;
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
-            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+            // echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
             echo PHP_EOL;
             return strval($result);
-        }
+        // }
 
     }
 
@@ -246,8 +245,9 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
-        // return $response;
-        return $task->value;
+        if ($task->scale) $result = $task->value * $task->scale;
+        else $result = $task->value;
+        return $result;
     }
 
     /**
@@ -277,6 +277,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     {
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
-        echo PHP_EOL;
-        return $response;
+        if ($task->scale) $result = $task->value * $task->scale;
+        else $result = $task->value;
+        return $result;
     }

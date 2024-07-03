@@ -385,9 +385,27 @@ class Modbus extends System {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
                 $response = self::modbusRtu($register->id, 'read', 5, null, true);
-                if ($response['error']) self::setSlaverActivity($register->slaver_id, 0);
-                else self::setSlaverActivity($register->slaver_id, 1);
+                if ($response['error'])
+                {
+                    self::setSlaverActivity($register->slaver_id, 0);
+                    var_dump ($modbusSlaverId);
+                    if (isset($modbusSlaverId))
+                    {
+                        echo 'false';
+                        return false;
+                    }
+                }
+                else
+                {
+                    self::setSlaverActivity($register->slaver_id, 1);
+                    if (isset($modbusSlaverId))
+                    {
+                        echo 'true';
+                        return true;
+                    }
+                }
             }
+            
         }
     }
 
@@ -479,6 +497,7 @@ class Modbus extends System {
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
             if ($response['error']) self::checkModbusAvailible($modbusRegister->slaver_id);
+            else self::setValue($modbusRegisterId, $response['response']);
             return $response;
         }
     }
@@ -515,6 +534,7 @@ class Modbus extends System {
                 // $rawResponse = implode(" ", $rawResponse);
                 $error = false;
                 if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
+                var_dump($response);
             }
             else 
             {

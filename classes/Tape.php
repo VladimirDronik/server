@@ -8,27 +8,45 @@ class Tape extends Device
 
     function __construct($objectId)
     {
-        //Определяем параметры ленты
-        $sql = parent::$db->query(" SELECT `tapes`.`type` AS 'type',
-                                           `tapes`.`h` AS 'hue',
-                                           `tapes`.`s` AS 'saturation',
-                                           `tapes`.`v` AS 'value',
-                                           `tapes`.`w` AS 'brightness',
-                                           `tapes`.`channel` AS 'channel',
-                                           `tapes`.`controller_id` AS 'controller'
-                                    FROM `tapes`
-                                    WHERE `tapes`.`id_object` = $objectId");
+        if (isset($objectId))
+        {
+            //Определяем параметры ленты
+            $sql = parent::$db->query(" SELECT `tapes`.`type` AS 'type',
+                                            `tapes`.`h` AS 'hue',
+                                            `tapes`.`s` AS 'saturation',
+                                            `tapes`.`v` AS 'value',
+                                            `tapes`.`w` AS 'brightness',
+                                            `tapes`.`channel` AS 'channel',
+                                            `tapes`.`controller_id` AS 'controller',
+                                            `modbus_slavers`.`active`
+                                        FROM `tapes`
+                                        INNER JOIN `modbus_slavers`
+                                        ON `modbus_slavers`.`id` = `tapes`.`controller_id`
+                                        WHERE `tapes`.`id_object` = $objectId");
 
-        if($sql->rowCount() > 0)
-        {
-            $this->tape = $sql->fetch(PDO::FETCH_OBJ);
-            $this->registersIds = $this->getRegistersIdByTapeType();
-            $this->object = new Objects();
-            $this->object->select($objectId);
+            if($sql->rowCount() > 0)
+            {
+                $this->tape = $sql->fetch(PDO::FETCH_OBJ);
+                if ($this->tape->active != 1)
+                {
+                    $modbusGw = $this->tape->controller;
+                    echo "[Error] Modbus устройство WB-LED (ID $modbusGw) недоступно" . PHP_EOL;
+                    System::addLog("Error", "Modbus шлюз кондиционера (ID $modbusGw) недоступен", "port");
+                    exit;
+                }
+                $this->registersIds = $this->getRegistersIdByTapeType();
+                $this->object = new Objects();
+                $this->object->select($objectId);
+            }
+            else 
+            {
+                echo "[Error] LED лента с ID $objectId не найдена" . PHP_EOL;
+                exit;
+            }
         }
-        else 
+        else
         {
-            echo "Объект не найден" . PHP_EOL;
+            echo "[Error] Не определен ID LED ленты" . PHP_EOL;
             exit;
         }
     }

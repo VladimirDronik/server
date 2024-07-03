@@ -9,5 +9,10 @@ require_once '../include.php';
 // $argv[2] = 1 - мотор справа
 $id = (isset($argv[1]) ? $argv[1] : null);
 $dir = (isset($argv[2]) ? $argv[2] : null);
-$curtain = new Curtain($id);
-$curtain->changeDirection($dir);
+
+if (isset($curtain))
+{
+    if ($curtain->changeDirection($dir)) exit(0);
+    else exit(1);
+}
+else exit(1);

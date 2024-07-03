@@ -347,7 +347,17 @@ class Curtain extends Device
     {
         $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
         $response = $this->sendCmd($packet);
-        if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
+
+        if ($response && !$response['error'])
+        {
+            echo "Изменено положение привода шторы (ID {$this->curtain->id_object})" . PHP_EOL;
+            return true;
+        }
+        else
+        {
+            self::setRsMotorActivity($this->curtain->id_object, 0);
+            return false;
+        }
     }
 
     /**

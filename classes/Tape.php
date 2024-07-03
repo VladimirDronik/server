@@ -120,21 +120,25 @@ class Tape extends Device
      */
     public function tapeSetColor (int $hue, int $saturation)
     {
-        if ($this->tape->type == 'RGB')
+        if (isset($hue) && isset($saturation))
         {
-            $response = Modbus::modbusRtu($this->registersIds['h_component'], 'write', 5, $hue);
-            if ($response && !$response['error'])
-                parent::$db->query("UPDATE `tapes`
-                                    SET `h` = $hue
-                                    WHERE `id_object` = {$this->object->id}");
+            if ($this->tape->type == 'RGB')
+            {
+                $response = Modbus::modbusRtu($this->registersIds['h_component'], 'write', 5, $hue);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `h` = $hue
+                                        WHERE `id_object` = {$this->object->id}");
 
-            $response = Modbus::modbusRtu($this->registersIds['s_component'], 'write', 5, $saturation);
-            if ($response && !$response['error'])
-                parent::$db->query("UPDATE `tapes`
-                                    SET `s` = $saturation
-                                    WHERE `id_object` = {$this->object->id}");
+                $response = Modbus::modbusRtu($this->registersIds['s_component'], 'write', 5, $saturation);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `s` = $saturation
+                                        WHERE `id_object` = {$this->object->id}");
+            }
+            else echo "[Error] Устройство не поддерживает настройку цвета" . PHP_EOL;
         }
-        else echo "Устройство не поддерживает настройку цвета" . PHP_EOL;
+        else echo "[Error] Не указаны значения оттенка и/или насыщенности" . PHP_EOL;
     }
 
     /**
@@ -143,15 +147,19 @@ class Tape extends Device
      */
     public function tapeSetTemperature (int $temperature)
     {
-        if ($this->tape->type == 'CCT')
+        if (isset($temperature))
         {
-            $response = Modbus::modbusRtu($this->registersIds['temperature'], 'write', 5, $temperature);
-            if ($response && !$response['error'])
-                parent::$db->query("UPDATE `tapes`
-                                    SET `cct` = $temperature
-                                    WHERE `id_object` = {$this->object->id}");
+            if ($this->tape->type == 'CCT')
+            {
+                $response = Modbus::modbusRtu($this->registersIds['temperature'], 'write', 5, $temperature);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `cct` = $temperature
+                                        WHERE `id_object` = {$this->object->id}");
+            }
+            else echo "[Error] Устройство не поддерживает настройку цветовой температуры" . PHP_EOL;
         }
-        else echo "Устройство не поддерживает настройку цветовой температуры" . PHP_EOL;
+        else echo "[Error] Не указано значение цветовой температуры" . PHP_EOL;
     }
 
     /**
@@ -159,17 +167,21 @@ class Tape extends Device
      */
     public function tapeSetBrightness (int $brightness)
     {
-        if ($brightness > 0)
+        if (isset($brightness))
         {
-            Modbus::modbusRtu($this->registersIds['brightness'], 'write', 5, $brightness);
-            if ($response && !$response['error'])
+            if ($brightness > 0)
             {
-                if ($this->tape->type == 'RGB') $column = 'v';
-                else $column = 'w';
-                parent::$db->query("UPDATE `tapes`
-                                    SET `$column` = $brightness
-                                    WHERE `id_object` = {$this->object->id}");
+                Modbus::modbusRtu($this->registersIds['brightness'], 'write', 5, $brightness);
+                if ($response && !$response['error'])
+                {
+                    if ($this->tape->type == 'RGB') $column = 'v';
+                    else $column = 'w';
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `$column` = $brightness
+                                        WHERE `id_object` = {$this->object->id}");
+                }
             }
         }
+        else echo "[Error] Не указано значение яркости" . PHP_EOL;
     }
 }

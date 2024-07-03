@@ -3,5 +3,6 @@
 require_once '../include.php';
 
 // $argv[1] - id объекта
-$ac = new Conditioner ($argv[1]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$ac = new Conditioner ($id);
 $ac->setAcHDir($argv[2]);

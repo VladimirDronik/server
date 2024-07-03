@@ -14,7 +14,7 @@ class Curtain extends Device
 {
     public $curtain = null;
 
-    public function __construct($idObject = null)
+    public function __construct($idObject)
     {
         if (isset($idObject))
         {
@@ -35,12 +35,27 @@ class Curtain extends Device
                                         LEFT JOIN `modbus_buses` ON `modbus_buses`.`id` = `curtains`.`bus_id`
                                         WHERE `curtains`.`id_object` = $idObject");
 
-            if($sql->rowCount() > 0) $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+            if($sql->rowCount() > 0)
+            {
+                $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
+                if ($this->curtain->active != 1)
+                {
+                    $motorId = $this->curtain->id_object;
+                    echo "[Error] Привод с ID $motorId недоступен" . PHP_EOL;
+                    System::addLog("Error", "Привод штор (ID $motorId) недоступен", "port");
+                    exit;
+                }
+            }
             else 
             {
-                echo "Объект не найден" . PHP_EOL;
+                echo "[Error] Привод штоор (ID $idObject) не найден" . PHP_EOL;
                 exit;
             }
+        }
+        else
+        {
+            echo "[Error] Не определен ID привода штор" . PHP_EOL;
+            exit;
         }
     }
     

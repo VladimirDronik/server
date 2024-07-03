@@ -35,7 +35,7 @@ class Conditioner extends Device
                 if ($this->ac->active != 1)
                 {
                     $modbusGw = $this->ac->modbus_slaver_id;
-                    echo "[Error] Modbus шлюз кондиционера недоступен" . PHP_EOL;
+                    echo "[Error] Modbus шлюз кондиционера (ID $modbusGw) недоступен" . PHP_EOL;
                     System::addLog("Error", "Modbus шлюз кондиционера (ID $modbusGw) недоступен", "port");
                     exit;
                 }

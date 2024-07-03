@@ -3,5 +3,6 @@
  * Скрипт закрытия шторы
  */
 require_once '../include.php';
-$curtain = new Curtain($argv[1]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$curtain = new Curtain($id);
 $curtain->close();

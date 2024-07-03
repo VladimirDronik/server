@@ -8,7 +8,7 @@
 
 require_once '../include.php';
 
-
-$boiler = new Boiler($argv[1]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$boiler = new Boiler($id);
 
 $boiler->check();

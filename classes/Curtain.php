@@ -40,12 +40,13 @@ class Curtain extends Device
             if($sql->rowCount() > 0)
             {
                 $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->curtain->active != 1 && !$force)
+                if (!$this->curtain->active && !$force)
                 {
+                    
                     $motorId = $this->curtain->id_object;
                     echo "[Error] Привод с ID $motorId недоступен" . PHP_EOL;
                     System::addLog("Error", "Привод штор (ID $motorId) недоступен", "port");
-                    exit;
+                    exit(1);
                 }
                 else
                 {
@@ -56,13 +57,13 @@ class Curtain extends Device
             else 
             {
                 echo "[Error] Привод штоор (ID $idObject) не найден" . PHP_EOL;
-                exit;
+                exit(1);
             }
         }
         else
         {
             echo "[Error] Не определен ID привода штор" . PHP_EOL;
-            exit;
+            exit(1);
         }
     }
     
@@ -145,8 +146,18 @@ class Curtain extends Device
             // 0301 - команда открытия
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0301');
             $response = $this->sendCmd($packet);
-            if ($response && !$response['error']) $this->putPercentToDb(100);
-            else self::setRsMotorActivity($this->curtain->id_object, 0);
+            if ($response && !$response['error'])
+            {
+                $this->putPercentToDb(100);
+                echo "Штора (ID {$this->curtain->id_object}) открыта" . PHP_EOL;
+                return true;
+            }
+            else
+            {
+                self::setRsMotorActivity($this->curtain->id_object, 0);
+                echo "Привод штор (ID $motorId) недоступен" . PHP_EOL;
+                return false;
+            }
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -193,8 +204,17 @@ class Curtain extends Device
             // 0302 - команда закрытия
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0302');
             $response = $this->sendCmd($packet);
-            if ($response && !$response['error']) $this->putPercentToDb(0);
-            else self::setRsMotorActivity($this->curtain->id_object, 0);
+            if ($response && !$response['error'])
+            {
+                $this->putPercentToDb(0);
+                echo "Штора (ID {$this->curtain->id_object}) закрыта" . PHP_EOL;
+                return true;
+            }
+            else
+            {
+                self::setRsMotorActivity($this->curtain->id_object, 0);
+                return false;
+            }
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -241,8 +261,17 @@ class Curtain extends Device
             // 0303 - команда остановки
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0303');
             $response = $this->sendCmd($packet);
-            if ($response && !$response['error']) $this->getPercent();
-            else self::setRsMotorActivity($this->curtain->id_object, 0);
+            if ($response && !$response['error'])
+            {
+                $this->getPercent();
+                echo "Штора (ID {$this->curtain->id_object}) остановлена" . PHP_EOL;
+                return true;
+            }
+            else
+            {
+                self::setRsMotorActivity($this->curtain->id_object, 0);
+                return false;
+            }
         }
     }
 
@@ -258,8 +287,17 @@ class Curtain extends Device
             // 0304 - команда установки процента открытия
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0304', $percent);
             $response = $this->sendCmd($packet);
-            if ($response && !$response['error']) $this->putPercentToDb($percent);
-            else return $response;
+            if ($response && !$response['error'])
+            {
+                $this->putPercentToDb($percent);
+                echo "Штора (ID {$this->curtain->id_object}) открыта на $percent%" . PHP_EOL;
+                return true;
+            }
+            else
+            {
+                self::setRsMotorActivity($this->curtain->id_object, 0);
+                return false;
+            }
         }
     }
 

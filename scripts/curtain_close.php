@@ -5,4 +5,9 @@
 require_once '../include.php';
 $id = (isset($argv[1]) ? $argv[1] : null);
 $curtain = new Curtain($id);
-$curtain->close();
+if (isset($curtain))
+{
+    if ($curtain->close()) exit(0);
+    else exit(1);
+}
+else exit(1);

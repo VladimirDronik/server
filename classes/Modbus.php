@@ -112,24 +112,22 @@ class Modbus extends System {
         }
     }
 
-    
-
     /**
      * Получение последнего значения регистра из БД
      */
-    public static function getRegisterValueFromDB(int $modbusRegisterId)
-    {
-        $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
-                                          `modbus_registers`.`units` AS units,
-                                          `modbus_slavers`.`active` AS slaver_active
-                                     FROM `modbus_registers`
-                               INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
-                                    WHERE `modbus_registers`.`id` = $modbusRegisterId");
-        $register = $sql->fetch(PDO::FETCH_OBJ);
-        if ((bool)$register->slaver_active) $lastValue = $register->last_value;
-        else $lastValue = null;
-        return $lastValue;
-    }
+    // public static function getRegisterValueFromDB(int $modbusRegisterId)
+    // {
+    //     $sql = parent::$db->query("SELECT `modbus_registers`.`last_value` AS last_value,
+    //                                       `modbus_registers`.`units` AS units,
+    //                                       `modbus_slavers`.`active` AS slaver_active
+    //                                  FROM `modbus_registers`
+    //                            INNER JOIN `modbus_slavers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+    //                                 WHERE `modbus_registers`.`id` = $modbusRegisterId");
+    //     $register = $sql->fetch(PDO::FETCH_OBJ);
+    //     if ((bool)$register->slaver_active) $lastValue = $register->last_value;
+    //     else $lastValue = null;
+    //     return $lastValue;
+    // }
 
     /**
      * Получение всех модбас устройств, которые есть на шине по её номеру
@@ -148,7 +146,7 @@ class Modbus extends System {
     }
 
     /**
-     * Запись значения регистра в БД с регистрами при опросе шины
+     * Запись значения регистра в БД
      */
     public static function setValue(int $id, mixed $value)
     {
@@ -242,20 +240,20 @@ class Modbus extends System {
     /**
      *  Управление опросом регистра
      */
-    public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
-    {
-        if ($polling) $polling = 1;
-        else 
-        {
-            $polling = 0;
-            $pollingCycle = 'NULL';
-        }
+    // public static function pollingCtl (int $registerId, bool $polling, int $pollingCycle = null)
+    // {
+    //     if ($polling) $polling = 1;
+    //     else 
+    //     {
+    //         $polling = 0;
+    //         $pollingCycle = 'NULL';
+    //     }
 
-        $sql = parent::$db->exec("UPDATE `modbus_registers`
-                                     SET `polling` = $polling,
-                                         `polling_cycle` = $pollingCycle
-                                   WHERE `id` = $registerId");
-    }
+    //     $sql = parent::$db->exec("UPDATE `modbus_registers`
+    //                                  SET `polling` = $polling,
+    //                                      `polling_cycle` = $pollingCycle
+    //                                WHERE `id` = $registerId");
+    // }
 
     /**
      *  Получение id регистра по его alias
@@ -290,7 +288,7 @@ class Modbus extends System {
                 if ($response['error'])
                 {
                     self::setSlaverActivity($register->slaver_id, 0);
-                    var_dump ($modbusSlaverId);
+
                     if (isset($modbusSlaverId))
                     {
                         echo 'false';
@@ -352,6 +350,7 @@ class Modbus extends System {
 
     /**
      * Постановка задания на чтение/запись регистра(ов) в очередь
+     * $force=true для принудительного опроса, даже если устройство неактивно
      */
     public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, bool $force = false)
     {

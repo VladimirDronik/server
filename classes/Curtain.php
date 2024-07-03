@@ -15,7 +15,8 @@ class Curtain extends Device
     private $curtain = null;
     private $object = null;
 
-    public function __construct($idObject)
+    // $force=true для принудительного опроса, даже если устройство неактивно
+    public function __construct(int $idObject, bool $force = false) 
     {
         if (isset($idObject))
         {
@@ -39,7 +40,7 @@ class Curtain extends Device
             if($sql->rowCount() > 0)
             {
                 $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->curtain->active != 1)
+                if ($this->curtain->active != 1 && !$force)
                 {
                     $motorId = $this->curtain->id_object;
                     echo "[Error] Привод с ID $motorId недоступен" . PHP_EOL;
@@ -87,7 +88,7 @@ class Curtain extends Device
     /**
      * Отправка команды (для штор с RS485)
      */
-    private function sendCmd (string $packet, string $cmd=null, bool $force = false)
+    private function sendCmd (string $packet, string $cmd=null)
 	{
 	    if ($this->curtain->bus_type == "tcp")
         {
@@ -107,14 +108,14 @@ class Curtain extends Device
         
         if ($this->curtain->bus_type == "rtu")
         {
-            $isRSMotorActive = $this->curtain->active;
-            if ($force) $isRSMotorActive = true;
-
-            if ($isRSMotorActive)
-            {
+            // $isRSMotorActive = $this->curtain->active;
+            // if ($force) $isRSMotorActive = true;
+            // var_dump($force,$isRSMotorActive);
+            // if ($isRSMotorActive)
+            // {
                 $response = Modbus::modbusRaw($packet, $this->curtain->bus_id);
                 return $response;
-            }
+            // }
         }
 	}
     
@@ -270,7 +271,7 @@ class Curtain extends Device
     public function getPercent(bool $force = false)
     {
         $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010201');
-        $response = $this->sendCmd($packet, null, $force);
+        $response = $this->sendCmd($packet);
         if ($response && !$response['error']) $this->putPercentToDb(hexdec($response['raw_response'][6]));
         else self::setRsMotorActivity($this->curtain->id_object, 0);
         return $response;
@@ -429,8 +430,8 @@ class Curtain extends Device
         {
             while ($rsMotor = $sql->fetch(PDO::FETCH_OBJ))
             {
-                $curtain = new Curtain ($rsMotor->id_object);
-                $response = $curtain->getPercent(true);
+                $curtain = new Curtain ($rsMotor->id_object, true);
+                $response = $curtain->getPercent();
                 if ($response && $response['error']) self::setRsMotorActivity($rsMotor->id_object, 0);
                 else self::setRsMotorActivity($rsMotor->id_object, 1);
             }

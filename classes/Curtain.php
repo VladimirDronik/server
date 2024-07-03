@@ -12,7 +12,8 @@
 
 class Curtain extends Device
 {
-    public $curtain = null;
+    private $curtain = null;
+    private $object = null;
 
     public function __construct($idObject)
     {
@@ -47,8 +48,8 @@ class Curtain extends Device
                 }
                 else
                 {
-                    $object = new Objects();
-                    $object->select($this->curtain->id_object);
+                    $this->object = new Objects();
+                    $this->object->select($this->curtain->id_object);
                 }
             }
             else 
@@ -154,7 +155,7 @@ class Curtain extends Device
             $mega->set($port, 1, $deviceId);
             usleep(500000);
             $mega->set($port, 0, $deviceId);
-            $object->setStatus('open', true, false);
+            $this->object->setStatus('open', true, false);
         }
         elseif ($this->curtain->place == 'phase')
         {
@@ -177,7 +178,7 @@ class Curtain extends Device
                 sleep($this->curtain->time+1);
                 $mega->set($openPort, 0, $deviceId);
             }
-            $object->setStatus('open', true, false);
+            $this->object->setStatus('open', true, false);
         }
     }
 
@@ -202,7 +203,7 @@ class Curtain extends Device
             $mega->set($port, 1, $deviceId);
             usleep(500000);
             $mega->set($port, 0, $deviceId);
-            $object->setStatus('close', true, false);
+            $this->object->setStatus('close', true, false);
         }
         elseif ($this->curtain->place == 'phase')
         {
@@ -225,7 +226,7 @@ class Curtain extends Device
                 sleep($this->curtain->time+1);
                 $mega->set($closePort, 0, $deviceId);
             }
-            $object->setStatus('close', true, false);
+            $this->object->setStatus('close', true, false);
         }
     }
 
@@ -256,7 +257,7 @@ class Curtain extends Device
             // 0304 - команда установки процента открытия
             $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0304', $percent);
             $response = $this->sendCmd($packet);
-            if (!$response['error']) $this->putPercentToDb($percent);
+            if ($response && !$response['error']) $this->putPercentToDb($percent);
             else return $response;
         }
     }
@@ -272,6 +273,7 @@ class Curtain extends Device
         $response = $this->sendCmd($packet, null, $force);
         if ($response && !$response['error']) $this->putPercentToDb(hexdec($response['raw_response'][6]));
         else self::setRsMotorActivity($this->curtain->id_object, 0);
+        return $response;
     }
 
     /**
@@ -280,8 +282,8 @@ class Curtain extends Device
     public function putPercentToDb(int $value)
     {
         parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
-        if ($value > 0) $object->setStatus('open', true, false);
-        else $object->setStatus('close', true, false);
+        if ($value > 0) $this->object->setStatus('open', true, false);
+        else $this->object->setStatus('close', true, false);
     }
 
     /**
@@ -429,7 +431,7 @@ class Curtain extends Device
             {
                 $curtain = new Curtain ($rsMotor->id_object);
                 $response = $curtain->getPercent(true);
-                if ($response['error']) self::setRsMotorActivity($rsMotor->id_object, 0);
+                if ($response && $response['error']) self::setRsMotorActivity($rsMotor->id_object, 0);
                 else self::setRsMotorActivity($rsMotor->id_object, 1);
             }
         }

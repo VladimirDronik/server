@@ -75,6 +75,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     function readCoilsResponse($task, $binaryData)
     {
         $response = RtuConverter::fromRtu($binaryData)->getCoils();
+        var_dump($response);
         $result = (bool)$response[0];
         if ($result) $result = 'true';
         else $result = 'false';
@@ -98,26 +99,43 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputDiscretesResponse($task, $binaryData)
     {
-        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
-        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
-        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
-        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
-        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
-        if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
+        // if ($task->format == 'bool') $result = $response->getQuadWordAt($task->starting_address)->getUInt16();
+        // if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
+        // if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
+        // if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
+        // if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
+        // if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
+        // if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
+        // if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
+        // if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
+        // if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
 
-        if ($task->scale) $result = $result * $task->scale;
+        // if ($task->scale) $result = $result * $task->scale;
 
-        if (isset($result)) 
-        {
-            if (is_null($result)) $result = 0;
-            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
-            echo PHP_EOL;
-            return strval($result);
-        }
-        else return null;
+        // if (isset($result))
+        // {
+        //     if (is_null($result))
+        //     {
+        //         if ($task->format == 'bool') $result = "false";
+        //         else $result = 0;
+        //     }
+        //     else 
+        //     {
+        //         if ($task->format == 'bool') $result = "true";
+        //     }
+        //     echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+        //     echo PHP_EOL;
+        //     return strval($result);
+        // }
+        // else return null;
+
+        $response = RtuConverter::fromRtu($binaryData)->getCoils();
+        $result = (bool)$response[0];
+        if ($result) $result = 'true';
+        else $result = 'false';
+        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
+        echo PHP_EOL;
+        return $result;
     }
 
     /**

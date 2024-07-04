@@ -284,11 +284,12 @@ class Modbus extends System {
         {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
+                echo "Checking slaver ID $register->slaver_id:  ";
                 $response = self::modbusRtu($register->id, 'read', 5, null, true);
+
                 if ($response['error'])
                 {
-                    self::setSlaverActivity($register->slaver_id, 0);
-
+                    echo "FAIL" . PHP_EOL;
                     if (isset($modbusSlaverId))
                     {
                         echo 'false';
@@ -297,6 +298,7 @@ class Modbus extends System {
                 }
                 else
                 {
+                    echo "OK" . PHP_EOL;
                     self::setSlaverActivity($register->slaver_id, 1);
                     if (isset($modbusSlaverId))
                     {
@@ -330,7 +332,7 @@ class Modbus extends System {
 		return chr($lowCrc).chr($highCrc);
 	}
 
-    public static function modbusRaw(string $cmd, int $busId)
+    public static function modbusRaw(string $cmd, int $busId, int $priority = null)
     {
         $uid = uniqid();
         $rawData = pack ('c*', ...array_map('hexdec', str_split(str_replace(' ', '', $cmd), 2)));
@@ -342,7 +344,8 @@ class Modbus extends System {
             'raw_data' => base64_encode($rawData),
         ];
 
-        BeanstalkQueue::putTask($busId, $task, 5);
+        if (!isset($priority)) $priority = 50;
+        BeanstalkQueue::putTask($busId, $task, $priority);
         $response = Mqtt::subscribe("modbus/$busId/response", $uid);
 
         return $response;
@@ -365,7 +368,7 @@ class Modbus extends System {
             if ($action == 'read')
             {
                 if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
-                if ($modbusRegister->register_type == 'input_discrete') $modbusFunction = 2;
+                if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
                 if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
                 if ($modbusRegister->register_type == 'input') $modbusFunction = 4;
             }
@@ -394,11 +397,13 @@ class Modbus extends System {
                 'scale' => $modbusRegister->scale_unit,                     // Множитель значения
                 'uid' => $uid,
             );
-            
+
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
-            if ($response['error']) self::checkModbusAvailible($modbusRegister->slaver_id);
+
+            if ($response['error']) self::setSlaverActivity($modbusRegister->slaver_id, 0);
             else self::setValue($modbusRegisterId, $response['response']);
+
             return $response;
         }
     }
@@ -435,7 +440,6 @@ class Modbus extends System {
                 // $rawResponse = implode(" ", $rawResponse);
                 $error = false;
                 if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
-                var_dump($response);
             }
             else 
             {
@@ -456,7 +460,6 @@ class Modbus extends System {
             if (isset($response)) $payload += ['response' => $response,];
             if ($error) $payload += ['error_code' => $errorCode,];
             Mqtt::publish($topic, $payload);
-
             $queue->delete($job['id']);
         }
     }

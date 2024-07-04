@@ -74,9 +74,7 @@ class Mqtt extends System {
         });
 
         $client->connect(null, true);
-
         $client->subscribe($topic, function ($topic, $message) use ($client, $uid) {
-            // echo sprintf("Received message on topic [%s]: %s\n", $topic, $message);
             if (json_decode($message, true)['uid'] == $uid)
             {
                 self::$response = json_decode($message, true);
@@ -86,7 +84,6 @@ class Mqtt extends System {
         $client->loop(true);
 
         $client->disconnect();
-
         return self::$response;
     }
 

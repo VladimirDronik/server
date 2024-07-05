@@ -10,225 +10,255 @@ class Dali extends Device
     private static $daliGatewayId;
     private static $daliState;
 
-    public static function daliDeviceInit (int $idObject)
+    private $daliDevice = null;
+
+    function __construct($idObject)
     {
-        $sql = parent::$db->query(" SELECT `dali_devices`.`address`, `dali_devices`.`dali_gateway`,
-                                    `dali_devices`.`brightness`, `objects`.`status`
-                                    FROM `dali_devices`
-                                    INNER JOIN `objects` ON `dali_devices`.`id_object` = `objects`.`id`
-                                    WHERE `id_object` = $idObject");
-        $daliDevice = $sql->fetch(PDO::FETCH_OBJ);
-        self::$address = $daliDevice->address;
-        self::$daliGatewayId = $daliDevice->dali_gateway;
-        self::$daliState = $daliDevice->status;
+        if (isset($idObject))
+        {
+            $sql = parent::$db->query(" SELECT `dali_devices`.`id_object`,
+                                               `dali_devices`.`address`,
+                                               `dali_devices`.`dali_gateway`,
+                                               `dali_devices`.`brightness`,
+                                               `objects`.`status`,
+                                               `modbus_slavers`.`active`
+                                        FROM `dali_devices`
+                                        INNER JOIN `objects`
+                                        ON `dali_devices`.`id_object` = `objects`.`id`
+                                        INNER JOIN `modbus_slavers`
+                                        ON `modbus_slavers`.`id` = `conditioners`.`modbus_slaver_id`
+                                        WHERE `id_object` = $idObject");
+
+            if($sql->rowCount() > 0) 
+            {
+                $this->daliDevice = $sql->fetch(PDO::FETCH_OBJ);
+                if ($this->daliDevice->active != 1)
+                {
+                    echo "[Error] Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен" . PHP_EOL;
+                    System::addLog("Error", "Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен", "port");
+                    exit(1);
+                }
+                else
+                {
+                    $object = new Objects();
+                    $object->select($idObject);
+                }
+            }
+            else 
+            {
+                echo "[Error] DALI устройство (ID $idObject) не найдено" . PHP_EOL;
+                exit(1);
+            }
+        }
+        else
+        {
+            echo "[Error] Не определен ID устройства DALI" . PHP_EOL;
+            exit(1);
+        }
     }
 
-    private static function nbit ($number, $n) 
+    private static function nbit($number, $n) 
     {
         return ($number >> $n) & 1;
     }
 
-    private static function percentToArcpower ($percent) 
+    private static function percentToArcpower($percent) 
     {
         $val = 253*(log10($percent)+1)/3+1;
         return round($val);
     }
 
-    private static function arcpowerTopercent ($arcpower) 
+    private static function arcpowerTopercent($arcpower) 
     {
         $val = pow(10, (3*($arcpower-1)/253)-1);
         return round($val);
     }
 
-    public static function getBrightness (int $idObject)
+    public function getBrightness()
     {
-        self::daliDeviceInit ($idObject);
-        return self::getBrightnessByAddress (self::$address, self::$daliGatewayId);
-    }
-
-    public static function getBrightnessByAddress (int $address, int $daliGatewayId)
-    {
-        $sql = parent::$db->query(" SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_get_brightness_a$address'");
+        // return $this->getBrightnessByAddress ();
+        $sql = parent::$db->query(" SELECT `id`
+                                    FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_get_brightness_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
             
-        $brightness = (int)Modbus::getRegisterValue ($registerId, 50);
-        $brightness = self::arcpowerTopercent($brightness);
-        if ($brightness > 0)
+        $response = Modbus::modbusRtu($registerId, 'read');
+        if ($response && !$response['error'])
+        {
+            $brightness = (int)$response['response'];
+            $brightness = self::arcpowerTopercent($brightness);
+
+            if ($brightness > 0)
+            {
+                parent::$db->query("UPDATE `dali_devices`
+                                    SET `brightness` = $brightness
+                                    WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                    AND `address` = {$this->daliDevice->address}");
+            }
+            else
+            {
+                $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices`
+                                            WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                            AND `address` = {$this->daliDevice->address}");
+                $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
+            }
+
+            return $brightness;
+        }
+        else return null;
+    }
+
+
+    public function getColorTemperature()
+    {
+        $sql = parent::$db->query(" SELECT `id`
+                                    FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_get_temperature_a{$this->daliDevice->address}'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+
+        $response = Modbus::modbusRtu($registerId, 'read');
+
+        if ($response && !$response['error'])
+        {
+            $colorTemperature = (int)$response['response'];
+
+            parent::$db->query("UPDATE `dali_devices`
+                                SET `cct` = $colorTemperature
+                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                AND `address` = {$this->daliDevice->address}");
+
+            return $colorTemperature;
+        }
+        else return null;
+    }
+
+    public function getDeviceStatus()
+    {
+        $sql = parent::$db->query(" SELECT `id`
+                                    FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_device_status_a{$this->daliDevice->address}'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+
+        $response = Modbus::modbusRtu($registerId, 'read');
+
+        if ($response && !$response['error'])
+        {
+            $status = (int)$response['response'];
+            $statusArray = [];
+            // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
+            $isFailure = self::nbit ($status,1);
+            $statusArray["failure"] = $isFailure;
+            // bit 2 - состояние устройства. 0 = off; 1 = on
+            (self::nbit ($status,2) == 0) ? $state = "off" : $state = "on";
+            $statusArray["state"] = $state;
+            parent::$db->query("UPDATE `dali_devices`
+                                SET `failure` = $isFailure
+                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                AND `address` = {$this->daliDevice->address}");
+            parent::$db->query("UPDATE `objects`
+                                INNER JOIN `dali_devices`
+                                ON `objects`.`id` = `dali_devices`.`id_object`
+                                SET `objects`.`status` = '$state'
+                                WHERE `dali_devices`.`address` = {$this->daliDevice->address}
+                                AND `dali_devices`.`dali_gateway` = {$this->daliDevice->dali_gateway}");
+            return $statusArray;
+        }
+        else return null;
+    }
+
+    public function setBrightness(int $brightness)
+    {
+        $sql = parent::$db->query(" SELECT `id`
+                                    FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_set_brightness_a{$this->daliDevice->address}'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+ 
+        $arcpower = self::percentToArcpower($brightness);
+        
+
+        if ($object->status == 'on')
+        {
+            $response = Modbus::modbusRtu($registerId, 'write', null, $brightness);
+            if (!isset($response) || $response['error']) return false;
+        }
+        
+        if ($brightness > 0) parent::$db->query("   UPDATE `dali_devices`
+                                                    SET `brightness` =  $brightness
+                                                    WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                                    AND `address` = {$this->daliDevice->address}");
+
+        return true;
+    }
+
+    public function setColorTemperature(int $cct)
+    {
+        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_set_temperature_a{$this->daliDevice->address}'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+        
+        $response = Modbus::modbusRtu($registerId, 'write', null, $cct);
+        if ($response && !$response['error'])
         {
             parent::$db->query("UPDATE `dali_devices`
-                                SET `brightness` = $brightness
-                                WHERE `dali_gateway` = $daliGatewayId
-                                AND `address` = $address");
+                                SET `cct` =  $cct
+                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
+                                AND `address` = {$this->daliDevice->address}");
+            return true;
         }
+        else return false;
+    }
+
+    public function sendCmd(int $daliCmd)
+    {
+        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
+                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+                                    AND `alias` LIKE 'dali_send_cmd_a{$this->daliDevice->address}'");
+        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+            
+        $response = Modbus::modbusRtu($registerId, 'write', null, $daliCmd);
+        if ($response && !$response['error']) return true;
+        else return false;
+    }
+
+    public function daliOff (int $idObject)
+    {
+        $offCmd = $this->sendCmd(0);
+        if ($offCmd)
+        {
+            $object->setStatus('off',true,false);
+            return true;
+        }
+        else return false;
+    }
+
+    public function daliOn()
+    {
+        $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices` 
+                                    WHERE `id_object` = {$this->daliDevice->id_object}");
+        $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
+        $object->setStatus('on',true,false);
+        $onCmd = $this->setBrightness($brightness);
+        if ($onCmd) return true;
         else
         {
-            $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices`
-                                        WHERE `dali_gateway` = $daliGatewayId
-                                        AND `address` = $address");
-            $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
+            $object->setStatus('off',true,false);
+            return false;
         }
-
-        return $brightness;
     }
 
-    public static function getColorTemperature (int $idObject)
+    public function daliSw()
     {
-        self::daliDeviceInit ($idObject);
-        return self::getColorTemperatureByAddress (self::$address, self::$daliGatewayId);
-    }
-
-    public static function getColorTemperatureByAddress (int $address, int $daliGatewayId)
-    {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_get_temperature_a$address'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-            
-        $colorTemperature = (int)Modbus::getRegisterValue ($registerId, 50);
-
-        $sql = "UPDATE `dali_devices`
-                SET `cct` = ?
-                WHERE `dali_gateway` = $daliGatewayId
-                AND `address` = $address";
-        $stmt = parent::$db->prepare($sql);
-        $stmt->execute([$colorTemperature]);
-
-        return $colorTemperature;
-    }
-
-    public static function getDeviceStatus (int $idObject)
-    {
-        self::daliDeviceInit ($idObject);
-        return self::getStatusByAddress (self::$address, self::$daliGatewayId);
-    }
-
-    public static function getStatusByAddress (int $address, int $daliGatewayId)
-    {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_device_status_a$address'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-            
-        $status = (int)Modbus::getRegisterValue ($registerId, 50);
-        $statusArray = [];
-        // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
-        $isFailure = self::nbit ($status,1);
-        $statusArray["failure"] = $isFailure;
-        // bit 2 - состояние устройства. 0 = off; 1 = on
-        (self::nbit ($status,2) == 0) ? $state = "off" : $state = "on";
-        $statusArray["state"] = $state;
-        parent::$db->query("UPDATE `dali_devices`
-                            SET `failure` = $isFailure
-                            WHERE `dali_gateway` = $daliGatewayId
-                            AND `address` = $address");
-        // $stmt = parent::$db->prepare($sql);
-        parent::$db->query("UPDATE `objects`
-                            INNER JOIN `dali_devices` ON `objects`.`id` = `dali_devices`.`id_object`
-                            SET `objects`.`status` = '$state'
-                            WHERE `dali_devices`.`address` = $address
-                            AND `dali_devices`.`dali_gateway` = $daliGatewayId");
-        return $statusArray;
-    }
-
-    public static function setBrightness (int $idObject, int $brightness, bool $isOnCmd = false)
-    {
-        self::daliDeviceInit ($idObject);
-        if ($isOnCmd) self::$daliState = "on";
-        self::setBrightnessByAddress (self::$address, self::$daliGatewayId, $brightness);
-        $object = new Objects();
-        $object->select($idObject);
-        if ($brightness > 0) $state = 'on';
-        else $state = 'off';
-        $object->setStatus($state,true,false);
-    }
-
-    public static function setBrightnessByAddress (int $address, int $daliGatewayId, int $brightness)
-    {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_set_brightness_a$address'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-        if ($brightness > 100) $brightness = 100;
-        $arcpower = self::percentToArcpower($brightness);
-        if (self::$daliState != "off")
-            Modbus::putTaskIntoQueue($registerId, 'write', 5, $arcpower);
-        if ($brightness > 0)
-            parent::$db->query("UPDATE `dali_devices`
-                                SET `brightness` =  $brightness
-                                WHERE `dali_gateway` = $daliGatewayId
-                                AND `address` = $address");
-    }
-
-    public static function setColorTemperature (int $idObject, int $cct)
-    {
-        self::daliDeviceInit ($idObject);
-        self::setColorTemperatureByAddress (self::$address, self::$daliGatewayId, $cct);
-    }
-
-    public static function setColorTemperatureByAddress (int $address, int $daliGatewayId, int $cct)
-    {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_set_temperature_a$address'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-        Modbus::putTaskIntoQueue($registerId, 'write', 5, $cct);
-        parent::$db->query("UPDATE `dali_devices`
-                            SET `cct` =  $cct
-                            WHERE `dali_gateway` = $daliGatewayId
-                            AND `address` = $address");
-    }
-
-    public static function sendCmd (int $idObject, int $daliCmd)
-    {
-        self::daliDeviceInit ($idObject);
-        self::sendCmdByAddress (self::$address, self::$daliGatewayId, $daliCmd);
-    }
-
-    public static function sendCmdByAddress (int $address, int $daliGatewayId, int $daliCmd)
-    {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = $daliGatewayId
-                                    AND `alias` LIKE 'dali_send_cmd_a$address'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-            
-        Modbus::putTaskIntoQueue($registerId, 'write', 5, $daliCmd);
-    }
-
-    public static function daliOff (int $idObject)
-    {
-        self::sendCmd ($idObject, 0);
-        $object = new Objects();
-        $object->select($idObject);
-        $object->setStatus('off',true,false);
-        // parent::$db->query("UPDATE `objects`
-        //                     SET `status` = 'off'
-        //                     WHERE `id` = $idObject");
-    }
-
-    public static function daliOn (int $idObject)
-    {
-        $sql = parent::$db->query(" SELECT `brightness`
-                                    FROM `dali_devices` 
-                                    WHERE `id_object` = $idObject");
-        $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
-        self::setBrightness ($idObject, $brightness, true);
-
-        // parent::$db->query("UPDATE `objects`
-        //                     SET `status` = 'on'
-        //                     WHERE `id` = $idObject");
-    }
-
-    public static function daliSw (int $idObject)
-    {
-        $sql = parent::$db->query(" SELECT `status`
-                                    FROM `objects` 
-                                    WHERE `id` = $idObject");
+        $sql = parent::$db->query(" SELECT `status` FROM `objects` 
+                                    WHERE `id` = {$this->daliDevice->id_object}");
         $status = $sql->fetch(PDO::FETCH_OBJ)->status;
 
-        if ($status == "on") self::daliOff ($idObject);
-        else self::daliOn ($idObject);
+        if ($status == "on") return $this->daliOff();
+        else return $this->daliOn();
     }
 
     /**

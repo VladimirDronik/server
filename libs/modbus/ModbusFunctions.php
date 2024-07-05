@@ -74,14 +74,17 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readCoilsResponse($task, $binaryData)
     {
-        $response = RtuConverter::fromRtu($binaryData)->getCoils();
-        var_dump($response);
-        $result = (bool)$response[0];
-        if ($result) $result = 'true';
-        else $result = 'false';
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
-        echo PHP_EOL;
-        return $result;
+        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'))
+        {
+            $response = RtuConverter::fromRtu($binaryData)->getCoils();
+            var_dump($response);
+            $result = (bool)$response[0];
+            if ($result) $result = 'true';
+            else $result = 'false';
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
+            echo PHP_EOL;
+            return $result;
+        }
     }
 
     /**
@@ -99,27 +102,17 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputDiscretesResponse($task, $binaryData)
     {
-        $response = RtuConverter::fromRtu($binaryData)->getCoils();
-        $response->withStartAddress($startAddress)
-
-
-        // $response = ResponseFactory::parseResponseOrThrow($binaryData);
-        // echo 'Parsed packet (in hex):     ' . $response->toHex() . PHP_EOL;
-        // echo 'Data parsed from packet (bytes):' . PHP_EOL;
-        // print_r($response->getCoils());
-    
-        // // set internal index to match start address to simplify array access
-        // $responseWithStartAddress = $response->withStartAddress($task->starting_address);
-        // print_r($responseWithStartAddress[$task->starting_address]); // coil value at 12288
-
-
-
-        $result = (bool)$response[0];
-        if ($result) $result = 'true';
-        else $result = 'false';
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
-        echo PHP_EOL;
-        return $result;
+        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesResponse'))
+        {
+            $response = RtuConverter::fromRtu($binaryData)->getCoils();
+            $response->withStartAddress($startAddress);
+            $result = (bool)$response[0];
+            if ($result) $result = 'true';
+            else $result = 'false';
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
+            echo PHP_EOL;
+            return $result;
+        }
     }
 
     /**
@@ -141,8 +134,8 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
 
         $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
         // var_dump ($response);
-        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersResponse'))
-        // {
+        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersResponse'))
+        {
             if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
             if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
             if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
@@ -154,10 +147,10 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
             if ($task->scale) $result = $result * $task->scale;
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
-            // echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
             echo PHP_EOL;
             return strval($result);
-        // }
+        }
 
     }
 
@@ -176,33 +169,36 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputRegistersResponse($task, $binaryData)
     {
-        $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
-        if ($task->format == 'string')
+        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse'))
         {
-            $i = 0;
-            $result = null;
-            while ($response->getAsciiStringAt($task->starting_address+$i, 1))
+            $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
+            if ($task->format == 'string')
             {
-                $result .= $response->getAsciiStringAt($task->starting_address+$i, 1);
-                $i++;
+                $i = 0;
+                $result = null;
+                while ($response->getAsciiStringAt($task->starting_address+$i, 1))
+                {
+                    $result .= $response->getAsciiStringAt($task->starting_address+$i, 1);
+                    $i++;
+                }
             }
-        }
-        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
-        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
-        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
-        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
-        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
-        if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
-        if ($task->scale) $result = $result * $task->scale;
+            if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
+            if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
+            if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
+            if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
+            if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
+            if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
+            if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
+            if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
+            // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+            if ($task->scale) $result = $result * $task->scale;
 
-        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
-        
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
-        echo PHP_EOL;
-        return strval($result);
+            if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
+            
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+            echo PHP_EOL;
+            return strval($result);
+        }
     }
 
     /**

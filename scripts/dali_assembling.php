@@ -4,60 +4,42 @@ require_once '../include.php';
 
 $daliGatewayId = $argv[1];
 
-function nbit($number, $n) 
+function nbit($number, $n)
 {
     return ($number >> $n) & 1;
 }
 
 // Получаем регистр управления сборкой шины DALI
-$sql = System::$db->query("SELECT `id` FROM `modbus_registers` WHERE `slaver_id` = $daliGatewayId AND `alias` = 'dali_bus_assembling'");
+$sql = System::$db->query(" SELECT `id`
+                            FROM `modbus_registers`
+                            WHERE `slaver_id` = $daliGatewayId
+                            AND `alias` = 'dali_bus_assembling'");
 $assemblingRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
 // Записываем команду запуска сборки шины
-Modbus::putTaskIntoQueue($assemblingRegister, 'write', 0, 0x01);
+$response = Modbus::modbusRtu($assemblingRegister, 'write', null, 0x01);
+if (!isset($response) || $response['error']) exit(1);
 
-// Запускаем непрерывное считывание значения регистра
-Modbus::pollingCtl($assemblingRegister, true, 0);
-
-// Вычитывем из БД значение регистра
-$query = System::$db->prepare("SELECT `last_value` FROM `modbus_registers` WHERE `id` = $assemblingRegister");
-
-$start = time();
-echo "Выполняется поиск устройств на шине.";
-do 
+// Ждем окончания процесса сборки шины
+echo "Выполняется поиск устройств на шине";
+while ($registerValue = (int)Modbus::modbusRtu($assemblingRegister, 'read')['response'] == 0x11) echo ".";
+if ((int)$registerValue == 0x06)
 {
-    sleep(1);
-    $query->execute();
-    $registerValue = $query->fetch(PDO::FETCH_OBJ)->last_value;
-    echo ".";
-} 
-while ((int)$registerValue === 17 && (time() - $start) < 60);
-echo PHP_EOL;
-
-// Завершаем непрерывное считывание значения регистра
-Modbus::pollingCtl($assemblingRegister, false);
-
-if ((int)$registerValue == 6) 
-{
-    echo "[ERROR] Сбор шины провален" . PHP_EOL;
-    exit ("Сбор шины провален. Код ошибки: 0x06.");
+    echo "[FAIL]" . PHP_EOL;
+    exit (1);
 }
-if ((int)$registerValue == 0)
-{
-    echo "[OK] Сбор шины выполнен" . PHP_EOL;
+if ((int)$registerValue == 0) echo "[OK]" . PHP_EOL;
+   
+// Определяем количество устройств на шине
+$sql = System::$db->query("SELECT `id`
+                                FROM `modbus_registers`
+                            WHERE `slaver_id` = $daliGatewayId
+                                AND `alias` = 'dali_devices_quantity'");
+$daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
+$daliDevicesAmount = Modbus::modbusRtu($daliDevicesAmountRegister, 'read');
+echo "Найдено устройств:   {$daliDevicesAmount['response']}" . PHP_EOL;
     
-    // Определяем количество устройств на шине
-    $sql = System::$db->query("SELECT `id`
-                                 FROM `modbus_registers`
-                                WHERE `slaver_id` = $daliGatewayId
-                                  AND `alias` = 'dali_devices_quantity'");
-    $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
-
-    // Modbus::putTaskIntoQueue($daliDevicesAmount->id, 'read', 5);
-    // sleep(3);
-    $daliDevicesAmount = Modbus::getRegisterValue ($daliDevicesAmountRegister);
-    echo "Найдено $daliDevicesAmount устройств" . PHP_EOL;
-    
+exit;
     // Удаляем связанные с DALI устройствами объекты. Устройства и методы должны удаляться каскадно.
     // $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
     $sql = System::$db->query("SELECT `id_object` FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
@@ -149,6 +131,6 @@ if ((int)$registerValue == 0)
         if ($daliAcknoledgedAddresses == $daliDevicesAmount) break;
     }
     echo "Все устройства найдены и добавлены" . PHP_EOL;
-}
+
 
 exit (0);

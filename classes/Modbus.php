@@ -355,7 +355,7 @@ class Modbus extends System {
      * Постановка задания на чтение/запись регистра(ов) в очередь
      * $force=true для принудительного опроса, даже если устройство неактивно
      */
-    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority, mixed $value = null, bool $force = false)
+    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority = null, mixed $value = null, bool $force = false)
     {
         $uid = uniqid();
 
@@ -367,6 +367,7 @@ class Modbus extends System {
         {
             if ($action == 'read')
             {
+                if (!isset($priopity)) $priopity = 100;
                 if ($modbusRegister->register_type == 'coil') $modbusFunction = 1;
                 if ($modbusRegister->register_type == 'discrete') $modbusFunction = 2;
                 if ($modbusRegister->register_type == 'holding') $modbusFunction = 3;
@@ -375,7 +376,7 @@ class Modbus extends System {
     
             if ($action == 'write')
             {
-                $priority = 0;
+                if (!isset($priopity)) $priopity = 50;
                 if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
                 elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
                 elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;

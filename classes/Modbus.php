@@ -403,7 +403,7 @@ class Modbus extends System {
             $response = Mqtt::subscribe("modbus/{$modbusRegister->bus_id}/response", $uid);
 
             if ($response['error']) self::setSlaverActivity($modbusRegister->slaver_id, 0);
-            else self::setValue($modbusRegisterId, $response['response']);
+            elseif (isset($response['response'])) self::setValue($modbusRegisterId, $response['response']);
 
             return $response;
         }

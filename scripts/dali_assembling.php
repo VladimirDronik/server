@@ -39,15 +39,17 @@ $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 $daliDevicesAmount = Modbus::modbusRtu($daliDevicesAmountRegister, 'read');
 echo "Найдено устройств:   {$daliDevicesAmount['response']}" . PHP_EOL;
     
-exit;
+if ($daliDevicesAmount['response'] > 0)
+{
     // Удаляем связанные с DALI устройствами объекты. Устройства и методы должны удаляться каскадно.
-    // $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
+    
     $sql = System::$db->query("SELECT `id_object` FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
     $daliObjectsIdsArray = [];
     while ($daliObjectsId = $sql->fetch(PDO::FETCH_OBJ))
         $daliObjectsIdsArray[] = (int)$daliObjectsId->id_object;
     foreach ($daliObjectsIdsArray as $objectId)
         System::$db->query("DELETE FROM `objects` WHERE `id` = $objectId");
+    $sql = System::$db->query("DELETE FROM `dali_devices` WHERE `dali_gateway` = $daliGatewayId");
 
     // Теперь проверим на каких адресах расположены устройства.
     // Поиск можно остановить, когда все будут определены адреса для всех найденных устройств.
@@ -64,28 +66,32 @@ exit;
             $daliAddressRegistersArray[$daliAddressRegister->alias] = (int)$daliAddressRegister->id;
 
         // Проверяем есть ли на шине устройство с адресом $address
-        $daliDeviceType = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_is_on_bus_a$address"]);
+        $response = Modbus::modbusRtu($daliAddressRegistersArray["dali_is_on_bus_a$address"], 'read');
 
-        if (isset($daliDeviceType)) 
+        if (isset($response['response']) && !$response['error']) $daliDeviceType = $response['response'];
+        else $daliDeviceType = null;
+
+        if (isset($daliDeviceType))
         {
             $daliAcknoledgedAddresses++;
             echo "Устройство А$address:" . PHP_EOL;
             // Получаем данные устройства
             // Регистр 3003+A*5 - Статус устройства
-            $daliStatus = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_device_status_a$address"]);
+            $daliStatus = Modbus::modbusRtu($daliAddressRegistersArray["dali_device_status_a$address"], 'read')['response'];
             // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
-            $failure = nbit ($daliStatus,1);
+            $failure = nbit($daliStatus,1);
             // bit 2 - состояние устройства. 0 = off; 1 = on
-            if (nbit ($daliStatus,2) == 0) $status = "off";
+            if (nbit($daliStatus,2) == 0) $status = "off";
             else $status = "on";
             
             // Регистр 3004+A*5 - Текущий уровень яркости
-            $daliBrightness = 100;
+            $daliBrightness = Modbus::modbusRtu($daliAddressRegistersArray["dali_get_brightness_a$address"], 'read')['response'];
+            $daliBrightness = Dali::arcpowerTopercent($daliBrightness);
 
             // Регистр 3322+A*5 - Варианты управления цветом
-            $daliCctVariants = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_cct_variants_a$address"]);
+            $daliCctVariants = Modbus::modbusRtu($daliAddressRegistersArray["dali_cct_variants_a$address"], 'read')['response'];
             // bit 1 - управление цветовой температурой. 0 = не поддерживается; 1 = поддерживается
-            $cctControl = nbit ($daliCctVariants,1);
+            $cctControl = nbit($daliCctVariants,1);
 
             echo "      Тип устройства: $daliDeviceType" . PHP_EOL;
             echo "      Устройство неисправно: $failure" . PHP_EOL;
@@ -95,21 +101,16 @@ exit;
             // Если устройство поддерживает управление цветовой температурой, то можем считать значение 
             if ($cctControl)
             {
-                $daliCctValue = Modbus::getRegisterValue ($daliAddressRegistersArray["dali_get_temperature_a$address"]);
+                $daliCctValue = Modbus::modbusRtu($daliAddressRegistersArray["dali_get_temperature_a$address"], 'read')['response'];
                 echo "      Поддержка управления цветовой температурой: Да" . PHP_EOL;
                 echo "      Цветовая температура: $daliCctValue" . PHP_EOL;
             }
             else $daliCctValue = null;
             
-            // Проверим есть ли в бд запись об устройстве с адресом $address
-            // $isRowExistsQuery = System::$db->query("SELECT * FROM `dali_devices` WHERE `address` =  $address 
-            //                                            AND `dali_gateway` = $daliGatewayId");
-            // $isRowExists = $isRowExistsQuery->fetch(PDO::FETCH_OBJ);
-
             // Добавляем запись в БД.
             $placeholders = ":name,:type,:dali_gateway,:address,:failure,:brightness,:is_cct,:cct";
             $values = [
-                "name"          => "Устройство А$address", 
+                "name"          => "Устройство А$address",
                 "type"          => $daliDeviceType,
                 "dali_gateway"  => $daliGatewayId,
                 "address"       => $address,
@@ -122,15 +123,15 @@ exit;
             $stmt = System::$db->prepare("INSERT INTO dali_devices ($columns) VALUES ($placeholders)");
             $stmt->execute($values);
 
-            Dali::setBrightnessByAddress ($address, $daliGatewayId, $daliBrightness, true);
+            // $dali = new Dali();
+            // $dali->setBrightness($daliBrightness);
             // Dali::sendCmdByAddress ($address, $daliGatewayId, 0);
-
         }
         
         // Если для всех найденых устройсв определены адреса выходим из цикла. Нет смысла продолжать опрос.
-        if ($daliAcknoledgedAddresses == $daliDevicesAmount) break;
+        if ($daliAcknoledgedAddresses == $daliDevicesAmount['response']) break;
     }
     echo "Все устройства найдены и добавлены" . PHP_EOL;
-
+}
 
 exit (0);

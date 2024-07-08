@@ -11,6 +11,7 @@ class Dali extends Device
     private static $daliState;
 
     private $daliDevice = null;
+    private $object = null;
 
     function __construct($idObject)
     {
@@ -26,7 +27,7 @@ class Dali extends Device
                                         INNER JOIN `objects`
                                         ON `dali_devices`.`id_object` = `objects`.`id`
                                         INNER JOIN `modbus_slavers`
-                                        ON `modbus_slavers`.`id` = `conditioners`.`modbus_slaver_id`
+                                        ON `modbus_slavers`.`id` = `dali_devices`.`dali_gateway`
                                         WHERE `id_object` = $idObject");
 
             if($sql->rowCount() > 0) 
@@ -40,8 +41,8 @@ class Dali extends Device
                 }
                 else
                 {
-                    $object = new Objects();
-                    $object->select($idObject);
+                    $this->object = new Objects();
+                    $this->object->select($idObject);
                 }
             }
             else 
@@ -62,13 +63,13 @@ class Dali extends Device
         return ($number >> $n) & 1;
     }
 
-    private static function percentToArcpower($percent) 
+    public static function percentToArcpower($percent) 
     {
         $val = 253*(log10($percent)+1)/3+1;
         return round($val);
     }
 
-    private static function arcpowerTopercent($arcpower) 
+    public static function arcpowerTopercent($arcpower) 
     {
         $val = pow(10, (3*($arcpower-1)/253)-1);
         return round($val);
@@ -180,7 +181,7 @@ class Dali extends Device
         $arcpower = self::percentToArcpower($brightness);
         
 
-        if ($object->status == 'on')
+        if ($this->object->status == 'on')
         {
             $response = Modbus::modbusRtu($registerId, 'write', null, $brightness);
             if (!isset($response) || $response['error']) return false;
@@ -225,12 +226,12 @@ class Dali extends Device
         else return false;
     }
 
-    public function daliOff (int $idObject)
+    public function daliOff()
     {
         $offCmd = $this->sendCmd(0);
         if ($offCmd)
         {
-            $object->setStatus('off',true,false);
+            $this->object->setStatus('off',true,false);
             return true;
         }
         else return false;
@@ -241,12 +242,12 @@ class Dali extends Device
         $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices` 
                                     WHERE `id_object` = {$this->daliDevice->id_object}");
         $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
-        $object->setStatus('on',true,false);
+        $this->object->setStatus('on',true,false);
         $onCmd = $this->setBrightness($brightness);
         if ($onCmd) return true;
         else
         {
-            $object->setStatus('off',true,false);
+            $this->object->setStatus('off',true,false);
             return false;
         }
     }

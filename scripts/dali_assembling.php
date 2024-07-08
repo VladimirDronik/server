@@ -4,11 +4,6 @@ require_once '../include.php';
 
 $daliGatewayId = $argv[1];
 
-function nbit($number, $n)
-{
-    return ($number >> $n) & 1;
-}
-
 // Получаем регистр управления сборкой шины DALI
 $sql = System::$db->query(" SELECT `id`
                             FROM `modbus_registers`
@@ -31,15 +26,15 @@ if ((int)$registerValue == 0x06)
 if ((int)$registerValue == 0) echo "[OK]" . PHP_EOL;
    
 // Определяем количество устройств на шине
-$sql = System::$db->query("SELECT `id`
-                                FROM `modbus_registers`
+$sql = System::$db->query(" SELECT `id`
+                            FROM `modbus_registers`
                             WHERE `slaver_id` = $daliGatewayId
-                                AND `alias` = 'dali_devices_quantity'");
+                            AND `alias` = 'dali_devices_quantity'");
 $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
-$daliDevicesAmount = Modbus::modbusRtu($daliDevicesAmountRegister, 'read');
-echo "Найдено устройств:   {$daliDevicesAmount['response']}" . PHP_EOL;
+$daliDevicesAmount = Modbus::modbusRtu($daliDevicesAmountRegister, 'read')['response'];
+echo "Найдено устройств:   $daliDevicesAmount" . PHP_EOL;
     
-if ($daliDevicesAmount['response'] > 0)
+if ($daliDevicesAmount > 0)
 {
     // Удаляем связанные с DALI устройствами объекты. Устройства и методы должны удаляться каскадно.
     
@@ -79,9 +74,9 @@ if ($daliDevicesAmount['response'] > 0)
             // Регистр 3003+A*5 - Статус устройства
             $daliStatus = Modbus::modbusRtu($daliAddressRegistersArray["dali_device_status_a$address"], 'read')['response'];
             // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
-            $failure = nbit($daliStatus,1);
+            $failure = Dali::nbit($daliStatus,1);
             // bit 2 - состояние устройства. 0 = off; 1 = on
-            if (nbit($daliStatus,2) == 0) $status = "off";
+            if (Dali::nbit($daliStatus,2) == 0) $status = "off";
             else $status = "on";
             
             // Регистр 3004+A*5 - Текущий уровень яркости
@@ -91,7 +86,7 @@ if ($daliDevicesAmount['response'] > 0)
             // Регистр 3322+A*5 - Варианты управления цветом
             $daliCctVariants = Modbus::modbusRtu($daliAddressRegistersArray["dali_cct_variants_a$address"], 'read')['response'];
             // bit 1 - управление цветовой температурой. 0 = не поддерживается; 1 = поддерживается
-            $cctControl = nbit($daliCctVariants,1);
+            $cctControl = Dali::nbit($daliCctVariants,1);
 
             echo "      Тип устройства: $daliDeviceType" . PHP_EOL;
             echo "      Устройство неисправно: $failure" . PHP_EOL;

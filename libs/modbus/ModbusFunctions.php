@@ -74,17 +74,17 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readCoilsResponse($task, $binaryData)
     {
-        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'))
-        {
-            $response = RtuConverter::fromRtu($binaryData)->getCoils();
-            var_dump($response);
-            $result = (bool)$response[0];
-            if ($result) $result = 'true';
-            else $result = 'false';
+        $response = RtuConverter::fromRtu($binaryData)->getCoils();
+        // var_dump(is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'));
+        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'))
+        // {
+            $result = $response[0];
+            if ($result) $result = 1;
+            else $result = 0;
             echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
             echo PHP_EOL;
-            return $result;
-        }
+            return strval($result);
+        // }
     }
 
     /**
@@ -102,17 +102,17 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputDiscretesResponse($task, $binaryData)
     {
-        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesResponse'))
-        {
-            $response = RtuConverter::fromRtu($binaryData)->getCoils();
-            $response->withStartAddress($startAddress);
-            $result = (bool)$response[0];
-            if ($result) $result = 'true';
-            else $result = 'false';
+        $response = RtuConverter::fromRtu($binaryData)->getCoils();
+        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesResponse'))
+        // {
+            // $response->withStartAddress($startAddress);
+            $result = $response[0];
+            if ($result) $result = 1;
+            else $result = 0;
             echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
             echo PHP_EOL;
-            return $result;
-        }
+            return strval($result);
+        // }
     }
 
     /**
@@ -169,9 +169,9 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputRegistersResponse($task, $binaryData)
     {
+        $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
         if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse'))
         {
-            $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
             if ($task->format == 'string')
             {
                 $i = 0;

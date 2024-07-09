@@ -58,7 +58,7 @@ class Dali extends Device
         }
     }
 
-    private static function nbit($number, $n) 
+    public static function nbit($number, $n)
     {
         return ($number >> $n) & 1;
     }
@@ -85,7 +85,7 @@ class Dali extends Device
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
             
         $response = Modbus::modbusRtu($registerId, 'read');
-        if ($response && !$response['error'])
+        if ($response && !$response['error'] && isset($response['response']))
         {
             $brightness = (int)$response['response'];
             $brightness = self::arcpowerTopercent($brightness);
@@ -145,7 +145,7 @@ class Dali extends Device
 
         $response = Modbus::modbusRtu($registerId, 'read');
 
-        if ($response && !$response['error'])
+        if ($response && !$response['error'] && isset($response['response']))
         {
             $status = (int)$response['response'];
             $statusArray = [];

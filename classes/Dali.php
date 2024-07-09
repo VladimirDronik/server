@@ -177,13 +177,10 @@ class Dali extends Device
                                     WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
                                     AND `alias` LIKE 'dali_set_brightness_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
- 
-        $arcpower = self::percentToArcpower($brightness);
-        
 
         if ($this->object->status == 'on')
         {
-            $response = Modbus::modbusRtu($registerId, 'write', null, $brightness);
+            $response = Modbus::modbusRtu($registerId, 'write', null, self::percentToArcpower($brightness));
             if (!isset($response) || $response['error']) return false;
         }
         
@@ -228,7 +225,7 @@ class Dali extends Device
 
     public function daliOff()
     {
-        $offCmd = $this->sendCmd(0);
+        $offCmd = $this->setBrightness(0);
         if ($offCmd)
         {
             $this->object->setStatus('off',true,false);

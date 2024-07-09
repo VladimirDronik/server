@@ -33,7 +33,7 @@ while (true)
 
     if (isset($changesAmount) && $changesAmount > 0)
     {
-        echo " [ Изменений : $changesAmount ] ";
+        echo " [ Изменений : $changesAmount ] " . PHP_EOL;
             foreach ($devicesChangesRegisters as $key => $registerId)
             {
                 $flagsRequest = Modbus::modbusRtu($registerId, 'read');
@@ -47,7 +47,7 @@ while (true)
                         if ($isDeviceChanges = Dali::nbit($flags, $bit))
                         {
                             $address = $bit+$key*16;
-                            echo " [ Адрес A$address ] :";
+                            echo " [ Адрес A$address ] ->";
     
                             $sql = System::$db->query(" SELECT `dali_devices`.`id_object`
                                                         FROM `dali_devices`
@@ -66,11 +66,11 @@ while (true)
                                                                 WHERE `dali_gateway` = $daliGatewayId
                                                                 AND `address` = $address");
                                     if ($sql->fetch(PDO::FETCH_OBJ)->is_cct) $cct = $dali->getColorTemperature();
-                                    echo " [ OK ]";
+                                    echo " [ OK ] ->";
                                 }
-                                else echo " [ FAIL ] ";
+                                else echo " [ FAIL ] ->";
                             }
-                            else echo " [ DEVICE ID NOT FOUND ] ";
+                            else echo " [ DEVICE ID NOT FOUND ] ->";
                         }
                     }
                 }
@@ -83,7 +83,7 @@ while (true)
         if (isset($changesAmountAck))
         {
             $isCounterReset = Modbus::modbusRtu($changesAmountRegister, 'write', null, 0);
-            if (isset($isCounterReset) && !$isCounterReset['error']) echo " [ Counter reset ] " . PHP_EOL;
+            if (isset($isCounterReset) && !$isCounterReset['error']) echo " [ Counter reset ]" . PHP_EOL;
         }
     }
 }

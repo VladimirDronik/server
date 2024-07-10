@@ -1,45 +1,55 @@
 <?php
 
 class Tape extends Device
-{
-    private $idObject;
-    private $port;
-    private $address;
-    private $type;
-    private $status;
-    private $h;
-    private $s;
-    private $v;
-    private $w;
-    
+{   
     private $tape = null;
     private $registersIds = [];
     private $object = null;
 
     function __construct($objectId)
     {
-        //Определяем параметры ленты
-        $sql = parent::$db->query(" SELECT `tapes`.`type` AS 'type',
-                                           `tapes`.`h` AS 'hue',
-                                           `tapes`.`s` AS 'saturation',
-                                           `tapes`.`v` AS 'value',
-                                           `tapes`.`w` AS 'brightness',
-                                           `tapes`.`channel` AS 'channel',
-                                           `tapes`.`controller_id` AS 'controller'
-                                    FROM `tapes`
-                                    WHERE `tapes`.`id_object` = $objectId");
-
-        if($sql->rowCount() > 0)
+        if (isset($objectId))
         {
-            $this->tape = $sql->fetch(PDO::FETCH_OBJ);
-            $this->registersIds = $this->getRegistersIdByTapeType();
-            $this->object = new Objects();
-            $this->object->select($objectId);
-        }
-        
-        // else self::$tape = null;
-    }
+            //Определяем параметры ленты
+            $sql = parent::$db->query(" SELECT `tapes`.`type` AS 'type',
+                                            `tapes`.`h` AS 'hue',
+                                            `tapes`.`s` AS 'saturation',
+                                            `tapes`.`v` AS 'value',
+                                            `tapes`.`w` AS 'brightness',
+                                            `tapes`.`channel` AS 'channel',
+                                            `tapes`.`controller_id` AS 'controller',
+                                            `modbus_slavers`.`active`
+                                        FROM `tapes`
+                                        INNER JOIN `modbus_slavers`
+                                        ON `modbus_slavers`.`id` = `tapes`.`controller_id`
+                                        WHERE `tapes`.`id_object` = $objectId");
 
+            if($sql->rowCount() > 0)
+            {
+                $this->tape = $sql->fetch(PDO::FETCH_OBJ);
+                if ($this->tape->active != 1)
+                {
+                    $modbusGw = $this->tape->controller;
+                    echo "[Error] Modbus устройство WB-LED (ID $modbusGw) недоступно" . PHP_EOL;
+                    System::addLog("Error", "Modbus шлюз кондиционера (ID $modbusGw) недоступен", "port");
+                    exit;
+                }
+                $this->registersIds = $this->getRegistersIdByTapeType();
+                $this->object = new Objects();
+                $this->object->select($objectId);
+            }
+            else 
+            {
+                echo "[Error] LED лента с ID $objectId не найдена" . PHP_EOL;
+                exit;
+            }
+        }
+        else
+        {
+            echo "[Error] Не определен ID LED ленты" . PHP_EOL;
+            exit;
+        }
+    }
 
     private function getRegistersIdByTapeType()
     {
@@ -53,11 +63,6 @@ class Tape extends Device
             123 => 'ch1_ch2_ch3',
             1234 => 'ch1_ch2_ch3_ch4'
         ];
-
-        // $keys = [];
-        // $registersIds['state'] = Modbus::getRegisterIdByAlias($this->tape->controller,
-        //             $channelAliasConnection[$this->tape->channel].'_state');
-        // var_dump ($this->tape->type);
 
         switch ($this->tape->type)
         {
@@ -86,20 +91,19 @@ class Tape extends Device
                     $channelAliasConnection[$this->tape->channel].$str.'_brightness');
                 break;
         }
-        // var_dump ($registersIds);
         return $registersIds;
     }
 
     public function tapeOn()
     {
-        Modbus::putTaskIntoQueue($this->registersIds['state'], 'write', 5, 1);
-        $this->object->setStatus('on',true,false);
+        $response = Modbus::modbusRtu($this->registersIds['state'], 'write', 5, 1);
+        if ($response && !$response['error']) $this->object->setStatus('on',true,false);
     }
 
     public function tapeOff()
     {
-        Modbus::putTaskIntoQueue($this->registersIds['state'], 'write', 5, 0);
-        $this->object->setStatus('off',true,false);
+        $response = Modbus::modbusRtu($this->registersIds['state'], 'write', 5, 0);
+        if ($response && !$response['error']) $this->object->setStatus('off',true,false);
     }
 
     public function tapeSw()
@@ -116,14 +120,25 @@ class Tape extends Device
      */
     public function tapeSetColor (int $hue, int $saturation)
     {
-        if ($this->tape->type == 'RGB')
+        if (isset($hue) && isset($saturation))
         {
-            Modbus::putTaskIntoQueue($this->registersIds['h_component'], 'write', 5, $hue);
-            Modbus::putTaskIntoQueue($this->registersIds['s_component'], 'write', 5, $saturation);
-            parent::$db->query("UPDATE `tapes` SET `h` = $hue, `s` = $saturation
-                                WHERE `id_object` = ". $this->object->id);
+            if ($this->tape->type == 'RGB')
+            {
+                $response = Modbus::modbusRtu($this->registersIds['h_component'], 'write', 5, $hue);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `h` = $hue
+                                        WHERE `id_object` = {$this->object->id}");
+
+                $response = Modbus::modbusRtu($this->registersIds['s_component'], 'write', 5, $saturation);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `s` = $saturation
+                                        WHERE `id_object` = {$this->object->id}");
+            }
+            else echo "[Error] Устройство не поддерживает настройку цвета" . PHP_EOL;
         }
-        else echo "Устройство не поддерживает настройку цвета" . PHP_EOL;
+        else echo "[Error] Не указаны значения оттенка и/или насыщенности" . PHP_EOL;
     }
 
     /**
@@ -132,13 +147,19 @@ class Tape extends Device
      */
     public function tapeSetTemperature (int $temperature)
     {
-        if ($this->tape->type == 'CCT')
+        if (isset($temperature))
         {
-            Modbus::putTaskIntoQueue($this->registersIds['temperature'], 'write', 5, $temperature);
-            parent::$db->query("UPDATE `tapes` SET `cct` = $temperature
-                                WHERE `id_object` = ". $this->object->id);
+            if ($this->tape->type == 'CCT')
+            {
+                $response = Modbus::modbusRtu($this->registersIds['temperature'], 'write', 5, $temperature);
+                if ($response && !$response['error'])
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `cct` = $temperature
+                                        WHERE `id_object` = {$this->object->id}");
+            }
+            else echo "[Error] Устройство не поддерживает настройку цветовой температуры" . PHP_EOL;
         }
-        else echo "Устройство не поддерживает настройку цветовой температуры" . PHP_EOL;
+        else echo "[Error] Не указано значение цветовой температуры" . PHP_EOL;
     }
 
     /**
@@ -146,112 +167,21 @@ class Tape extends Device
      */
     public function tapeSetBrightness (int $brightness)
     {
-        if ($brightness > 0)
+        if (isset($brightness))
         {
-            Modbus::putTaskIntoQueue($this->registersIds['brightness'], 'write', 5, $brightness);
-            $this->tapeOn();
-            if ($this->tape->type == 'RGB') $column = 'v';
-            else $column = 'w';
-            parent::$db->query("UPDATE `tapes` SET `$column` = $brightness
-                                WHERE `id_object` = ". $this->object->id);
+            if ($brightness > 0)
+            {
+                Modbus::modbusRtu($this->registersIds['brightness'], 'write', 5, $brightness);
+                if ($response && !$response['error'])
+                {
+                    if ($this->tape->type == 'RGB') $column = 'v';
+                    else $column = 'w';
+                    parent::$db->query("UPDATE `tapes`
+                                        SET `$column` = $brightness
+                                        WHERE `id_object` = {$this->object->id}");
+                }
+            }
         }
-        else $this->tapeOff();
+        else echo "[Error] Не указано значение яркости" . PHP_EOL;
     }
-
-    /**
-     * Установка статуса для ленты вкл/выкл
-     */
-    // function setStatus(int $color, int $shade, int $bright, int $wbright, string $status) {
-               
-    
-    //       // если значения цвета и яркости не пришли от приложения, значит берем предыдущие значения, которые были в БД
-    //       // иначе берем новые значения, которые пришли от приложения
-    //     if ($color == 0 && $bright == 0 && $shade == 0) {
-    //        $color = $this->h; 
-    //        $bright = $this->v; 
-    //        $shade = $this->s;
-    //     } 
-        
-    //     //Если значение яркости белого не пришло, значит берем предыдущее значение из БД
-    //     if ($wbright == 0) {
-    //         $wbright = $this->w;
-    //     }
-
-    //     parent::$db->query("UPDATE tapes 
-    //                         SET status = '$status', h = $color, s = $shade, v = $bright, w = $wbright 
-    //                         WHERE id_object = $this->idObject");
-
-    //     $this->setValue($color, $shade, $bright, $wbright, $status);
-
-    // }
-
-    /**
-     * Установка значения для ленты RGB
-     */
-    // function setValue(int $color, int $shade, int $bright, int $wbright, string $status) {
-
-    //     //обработка включения ленты с выбором цвета и яркости (если пользователь выбрал цвет в приложении)
-    //     if ($status == "on") {
-    //         if ($this->type == 'RGB' || $this->type == 'RGBW') {
-    //             //Цвет и яркость для цветной ленты
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch123_color");
-    //             Action::runAction($method->id, null, null, $color);
-
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch123_shade");
-    //             Action::runAction($method->id, null, null, $shade);
-
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch123_bright");
-    //             Action::runAction($method->id, null, null, $bright);
-
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch123_enable");
-    //             if ($bright <= 1) {
-    //                 Action::runAction($method->id, null, null, false);
-    //             } else {
-    //                 Action::runAction($method->id, null, null, true);
-    //             }
-                
-    //         } 
-    //         //обработка яркости для белой ленты
-    //         if ($this->type == 'RGBW') {    
-                
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_bright");
-    //             Action::runAction($method->id, null, null, $wbright);
-
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_enable");
-    //             if ($wbright <= 1) {
-    //                 Action::runAction($method->id, null, null, false);
-    //             } else {
-    //                 Action::runAction($method->id, null, null, true);
-    //             }
-    //         } 
-    //         elseif ($this->type == 'W') {
-    //             //яркость для белой ленты, висящей отдельно на 4м порту
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_bright");
-    //             Action::runAction($method->id, null, null, $wbright);
-
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_enable");
-    //             if ($wbright <= 1) {
-    //                 Action::runAction($method->id, null, null, false);
-    //             } else {
-    //                 Action::runAction($method->id, null, null, true);
-    //             }
-    //         } 
-
-        
-
-    //     }  else {
-    //         //обработка выключения ленты
-    //         if ($this->type == 'RGB' || $this->type == 'RGBW') {
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch123_enable");
-    //             Action::runAction($method->id, null, null, false);
-                
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_enable");
-    //             Action::runAction($method->id, null, null, false);
-    //         } elseif ($this->type == 'w') {
-    //             $method = Objects::getMethodByAlias($this->idObject, "ch4_enable");
-    //             Action::runAction($method->id, null, null, false);
-    //         }  
-    // }
-    
-    // }
 }

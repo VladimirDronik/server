@@ -4,15 +4,6 @@ require_once '../include.php';
 
 $daliGatewayId = $argv[1];
 
-// $pid = getmypid();
-// echo "Скрипт запущен с PID " . $pid . PHP_EOL;
-// System::setVariable("daliPollinLoop_ID$daliGatewayId", $pid);
-
-function nbit($number, $n) 
-{
-    return ($number >> $n) & 1;
-}
-
 $getRegisterQuery = System::$db->prepare("  SELECT `id`
                                             FROM `modbus_registers`
                                             WHERE `slaver_id` = $daliGatewayId
@@ -22,98 +13,77 @@ $getRegisterQuery = System::$db->prepare("  SELECT `id`
 $getRegisterQuery->execute(["dali_bus_changes"]);
 $changesAmountRegister = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
 
-// Получаем массив адресов устройств на шине
-$daliAddressesArray = [];
-$sql = System::$db->query(" SELECT `address`
-                            FROM `dali_devices`
-                            WHERE `dali_gateway` = $daliGatewayId 
-                            ORDER BY `address`");
-while ($address = $sql->fetch(PDO::FETCH_OBJ)) $daliAddressesArray[] = $address->address;
-
-// В зависимости от количества устройств на шине,
-// получаем массив регистров для поиска флагов изменений
-$devicesChangesRegisterArray = [];
+// Получаем массив регистров для поиска флагов изменений
+$devicesChangesRegisters = [];
 $getRegisterQuery->execute(["dali_15_0_changes"]);
-$devicesChangesRegisterArray[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
-if (end($daliAddressesArray) >= 16) 
-{
-    $getRegisterQuery->execute(["dali_31_16_changes"]);
-    $devicesChangesRegisterArray[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
-}
-if (end($daliAddressesArray) >= 32) 
-{
-    $getRegisterQuery->execute(["dali_47_32_changes"]);
-    $devicesChangesRegisterArray[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
-}
-if (end($daliAddressesArray) >= 48) 
-{
-    $getRegisterQuery->execute(["dali_63_48_changes"]);
-    $devicesChangesRegisterArray[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
-}
-
-
-// Обнуляем счетчик изменений шины DALI
-// Modbus::putTaskIntoQueue($changesAmountRegister, 'write', 0, 0);
-
-// Запускаем непрерывный опрос регистра контроля изменений шины DALI
-Modbus::pollingCtl($changesAmountRegister, true, 0);
+$devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
+$getRegisterQuery->execute(["dali_31_16_changes"]);
+$devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
+$getRegisterQuery->execute(["dali_47_32_changes"]);
+$devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
+$getRegisterQuery->execute(["dali_63_48_changes"]);
+$devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
 
 while (true)
 {
-    usleep (500000);
     // Получаем текущее количество изменений на шине DALI
-    $changesAmount = Modbus::getRegisterValueFromDB($changesAmountRegister);
+    $changesRequest = Modbus::modbusRtu($changesAmountRegister, 'read', 150);
+    if (isset($changesRequest) && !$changesRequest['error']) $changesAmount = (int)$changesRequest['response'];
+    else $changesAmount = null;
 
-    $changedAddressesArray = []; // Массив адресов с изменениями
-
-    while ($changesAmount > 0)
+    if (isset($changesAmount) && $changesAmount > 0)
     {
-        echo "Текущее значение изменений: " . $changesAmount . PHP_EOL;
-
-        foreach ($devicesChangesRegisterArray as $key => $registerId)
-        {
-            $flags = Modbus::getRegisterValue($registerId);
-            foreach ($daliAddressesArray as $address)
+        echo " [ Изменений : $changesAmount ] " . PHP_EOL;
+            foreach ($devicesChangesRegisters as $key => $registerId)
             {
-                echo "A" . $address+$key*16 . ": " . nbit($flags, $address+$key*16) . PHP_EOL;
-                if (nbit($flags, $address-$key*16) == 1) 
+                $flagsRequest = Modbus::modbusRtu($registerId, 'read');
+                if (isset($flagsRequest) && !$flagsRequest['error'] && $flagsRequest['response'] != 0)
+                    $flags = $flagsRequest['response'];
+                else $flags = null;
+                if (isset($flags))
                 {
-                    if (!in_array($address, $changedAddressesArray))
-                        $changedAddressesArray[] = $address; // Добавляем адрес в массив
+                    for ($bit = 0; $bit<16; $bit++)
+                    {
+                        if ($isDeviceChanges = Dali::nbit($flags, $bit))
+                        {
+                            $address = $bit+$key*16;
+                            echo " [ Адрес A$address ] ->";
+    
+                            $sql = System::$db->query(" SELECT `dali_devices`.`id_object`
+                                                        FROM `dali_devices`
+                                                        WHERE `dali_gateway` = $daliGatewayId
+                                                        AND `address` = $address");
+                            if($sql->rowCount() > 0) 
+                            {
+                       
+                                $dali = new Dali($sql->fetch(PDO::FETCH_OBJ)->id_object);
+                                if (isset($dali))
+                                {
+                                    $status = $dali->getDeviceStatus();
+                                    $brightness = $dali->getBrightness();
+                                    $sql = System::$db->query(" SELECT `is_cct`
+                                                                FROM `dali_devices`
+                                                                WHERE `dali_gateway` = $daliGatewayId
+                                                                AND `address` = $address");
+                                    if ($sql->fetch(PDO::FETCH_OBJ)->is_cct) $cct = $dali->getColorTemperature();
+                                    echo " [ OK ] ->";
+                                }
+                                else echo " [ FAIL ] ->";
+                            }
+                            else echo " [ DEVICE ID NOT FOUND ] ->";
+                        }
+                    }
                 }
             }
-        }
-        
-        $currentChangesAmount = Modbus::getRegisterValueFromDB($changesAmountRegister);
-        // var_dump($changesAmount, $currentChangesAmount);
-        if ($changesAmount == $currentChangesAmount) 
-        {
-            Modbus::putTaskIntoQueue($changesAmountRegister, 'write', 0, 0);
 
-            $changesAmount = 0;
-        }
-        else $changesAmount = $currentChangesAmount;
-    }
+        $changesRequest = Modbus::modbusRtu($changesAmountRegister, 'read', 150);
+        if (isset($changesRequest) && !$changesRequest['error']) $changesAmountAck = (int)$changesRequest['response'];
+        else $changesAmountAck = null;
 
-    // Обрабатываем полученные адреса устройств
-    // Получаем данные устройств
-    if (!empty($changedAddressesArray))
-    {
-        foreach ($changedAddressesArray as $address)
+        if (isset($changesAmountAck))
         {
-            // Статус
-            $status = Dali::getStatusByAddress ($address, $daliGatewayId);
-            // Яркость
-            // Если 0, то не пишем в БД. Оставляем текущее значение, как последнее установленное.
-            Dali::getBrightnessByAddress ($address, $daliGatewayId);
-            // Определяем умеет ли устройство управлять цветовой температурой
-            $sql = System::$db->query(" SELECT `is_cct`
-                                        FROM `dali_devices`
-                                        WHERE `dali_gateway` = $daliGatewayId
-                                        AND `address` = $address");
-            $isCctControl = $sql->fetch(PDO::FETCH_OBJ)->is_cct;
-            // Цветовая температура
-            if ($isCctControl) Dali::getColorTemperatureByAddress ($address, $daliGatewayId);
+            $isCounterReset = Modbus::modbusRtu($changesAmountRegister, 'write', null, 0);
+            if (isset($isCounterReset) && !$isCounterReset['error']) echo " [ Counter reset ]" . PHP_EOL;
         }
     }
 }

@@ -3,5 +3,7 @@
 require_once '../include.php';
 
 // $argv[1] - id объекта
-$tape = new Tape($argv[1]);
-$tape->tapeSetBrightness($argv[2]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$br = (isset($argv[2]) ? $argv[2] : null);
+$tape = new Tape($id);
+$tape->tapeSetBrightness($br);

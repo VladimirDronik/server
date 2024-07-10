@@ -4,7 +4,7 @@ require_once '../include.php';
 $configFile = getenv('WORK_DIR') . '/configs/supervisord.conf';
 
 checkSupervisorCfg ('modbus');
-checkSupervisorCfg ('modbus_polling');
+// checkSupervisorCfg ('modbus_polling');
 checkSupervisorCfg ('dali_polling');
 // checkSupervisorCfg ('curtain_polling');
 

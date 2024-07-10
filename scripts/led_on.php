@@ -3,5 +3,6 @@
 require_once '../include.php';
 
 // $argv[1] - id объекта
-$tape = new Tape($argv[1]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$tape = new Tape($id);
 $tape->tapeOn();

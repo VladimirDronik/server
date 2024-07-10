@@ -16,7 +16,6 @@ use ModbusTcpClient\Utils\Endian;
  */
 function modbusFunction($task, bool $response = false, $binaryData = null)
 {
-    
     if ($task->function_code == 1)
     {
         if ($response) return readCoilsResponse($task, $binaryData);
@@ -76,12 +75,16 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     function readCoilsResponse($task, $binaryData)
     {
         $response = RtuConverter::fromRtu($binaryData)->getCoils();
-        $result = (bool)$response[0];
-        if ($result) $result = 'true';
-        else $result = 'false';
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
-        echo PHP_EOL;
-        return $result;
+        // var_dump(is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'));
+        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadCoilsResponse'))
+        // {
+            $result = $response[0];
+            if ($result) $result = 1;
+            else $result = 0;
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
+            echo PHP_EOL;
+            return strval($result);
+        // }
     }
 
     /**
@@ -99,26 +102,17 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
      */
     function readInputDiscretesResponse($task, $binaryData)
     {
-        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
-        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
-        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
-        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
-        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
-        if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
-
-        if ($task->scale) $result = $result * $task->scale;
-
-        if (isset($result)) 
-        {
-            if (is_null($result)) $result = 0;
-            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+        $response = RtuConverter::fromRtu($binaryData)->getCoils();
+        // if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesResponse'))
+        // {
+            // $response->withStartAddress($startAddress);
+            $result = $response[0];
+            if ($result) $result = 1;
+            else $result = 0;
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . PHP_EOL;
             echo PHP_EOL;
             return strval($result);
-        }
-        else return null;
+        // }
     }
 
     /**
@@ -176,32 +170,35 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     function readInputRegistersResponse($task, $binaryData)
     {
         $response = RtuConverter::fromRtu($binaryData)->withStartAddress($task->starting_address);
-        if ($task->format == 'string')
+        if (is_a($response, 'ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse'))
         {
-            $i = 0;
-            $result = null;
-            while ($response->getAsciiStringAt($task->starting_address+$i, 1))
+            if ($task->format == 'string')
             {
-                $result .= $response->getAsciiStringAt($task->starting_address+$i, 1);
-                $i++;
+                $i = 0;
+                $result = null;
+                while ($response->getAsciiStringAt($task->starting_address+$i, 1))
+                {
+                    $result .= $response->getAsciiStringAt($task->starting_address+$i, 1);
+                    $i++;
+                }
             }
-        }
-        if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
-        if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
-        if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
-        if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
-        if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
-        if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
-        if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-        // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
-        if ($task->scale) $result = $result * $task->scale;
+            if ($task->format == 'double') $result = $response->getQuadWordAt($task->starting_address)->getDouble();
+            if ($task->format == 'u64') $result = $response->getQuadWordAt($task->starting_address)->getUInt64();
+            if ($task->format == 's64') $result = $response->getQuadWordAt($task->starting_address)->getInt64();
+            if ($task->format == 'float') $result = $response->getDoubleWordAt($task->starting_address)->getFloat(Endian::BIG_ENDIAN);
+            if ($task->format == 'u32') $result = $response->getDoubleWordAt($task->starting_address)->getUInt32(Endian::BIG_ENDIAN);
+            if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
+            if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
+            if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
+            // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+            if ($task->scale) $result = $result * $task->scale;
 
-        if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
-        
-        echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
-        echo PHP_EOL;
-        return strval($result);
+            if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
+            
+            echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
+            echo PHP_EOL;
+            return strval($result);
+        }
     }
 
     /**
@@ -246,8 +243,9 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
-        // return $response;
-        return $task->value;
+        if ($task->scale) $result = $task->value * $task->scale;
+        else $result = $task->value;
+        return $result;
     }
 
     /**
@@ -277,6 +275,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     {
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
-        echo PHP_EOL;
-        return $response;
+        if ($task->scale) $result = $task->value * $task->scale;
+        else $result = $task->value;
+        return $result;
     }

@@ -2,4 +2,8 @@
 
 require_once '../include.php';
 
-Modbus::putTaskIntoQueue($argv[1], 'write', 0, $argv[2]);
+$response = Modbus::modbusRtu($argv[1], 'write', null, $argv[2]);
+
+if ($response && !$response['error']) exit(0);
+
+exit(1);

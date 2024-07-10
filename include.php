@@ -7,7 +7,6 @@
 //Корневая папка для проекта
 define("ROOT_DIR",  __DIR__);
 
-
 //Переменная для вывода в неё служебной информации
 $system_message = true;
 
@@ -56,12 +55,12 @@ require_once __DIR__. '/classes/YandexStation.php';
 require_once __DIR__. '/classes/Tape.php';
 require_once __DIR__. '/classes/Labels.php';
 require_once __DIR__. '/classes/Modbus.php';
-require_once __DIR__. '/classes/ModbusQueue.php';
 require_once __DIR__. '/classes/Dali.php';
 require_once __DIR__. '/libs/YandexTTS.php';
 require_once __DIR__. '/classes/Pressurestat.php';
 require_once __DIR__. '/classes/CarbDioxide.php';
-
+require_once __DIR__. '/classes/Mqtt.php';
+require_once __DIR__. '/classes/BeanstalkQueue.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

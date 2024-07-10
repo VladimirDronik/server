@@ -2,6 +2,6 @@
 
 include_once "../include.php";
 
-$ac = new Conditioner($argv[1]);
-
+$id = (isset($argv[1]) ? $argv[1] : null);
+$ac = new Conditioner($id);
 $ac->updateAcParams();

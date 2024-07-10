@@ -124,7 +124,7 @@ if ($daliDevicesAmount > 0)
         }
         
         // Если для всех найденых устройсв определены адреса выходим из цикла. Нет смысла продолжать опрос.
-        if ($daliAcknoledgedAddresses == $daliDevicesAmount['response']) break;
+        if ($daliAcknoledgedAddresses == $daliDevicesAmount) break;
     }
     echo "Все устройства найдены и добавлены" . PHP_EOL;
 }

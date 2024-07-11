@@ -243,13 +243,9 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         $response = RtuConverter::fromRtu($binaryData);
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
-<<<<<<< HEAD
         if ($task->scale) $result = $task->value * $task->scale;
         else $result = $task->value;
         return $result;
-=======
-        return $task->value;
->>>>>>> f42b87a (Работы по добавлению управления котлами по модбас)
     }
 
     /**

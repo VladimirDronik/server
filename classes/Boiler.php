@@ -7,14 +7,15 @@ class Boiler extends System
 {
 
     private $boiler = null;
-    // private $values = [];
     private $prevParams = [];
     private $currentParams = [];
     public $debug = false;
 
     function __construct($idObject)
     {
-        $sql = parent::$db->query("SELECT * FROM boilers WHERE `id_object` = $idObject");
+        $sql = parent::$db->query(" SELECT *, `modbus_slavers`.`active`
+                                    FROM `boilers`
+                                    WHERE `id_object` = $idObject");
         if($sql->rowCount() > 0)
         {
             $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
@@ -81,7 +82,7 @@ class Boiler extends System
     private function getValueFromDbByAlias(string $alias)
     {
         $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $alias);
-        return Modbus::getRegisterValueFromDB($registerId);
+        return Modbus::modbusRtu($registerId, 'read')['response'];
     }
 
     // public function checkBoiler()
@@ -135,8 +136,8 @@ class Boiler extends System
     {
         if ($this->boiler->gateway_type == 'modbus') 
         {
-            $registerId = Modbus::getRegisterIdByAlias ($this->boiler->gateway_id, $paramName);
-            if (isset($registerId)) Modbus::putTaskIntoQueue($registerId, 'write', 5, $this->currentParams[$paramName]);
+            $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $paramName);
+            if (isset($registerId)) Modbus::modbusRtu($registerId, 'write', null, $this->currentParams[$paramName]);
         }
     }
 

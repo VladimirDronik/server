@@ -5,79 +5,102 @@
  */
 class Boiler extends System
 {
-
     private $boiler = null;
-    private $prevParams = [];
-    private $currentParams = [];
+    private $object = null;
+    private $paramsList = [];
     public $debug = false;
 
     function __construct($idObject)
     {
-        $sql = parent::$db->query(" SELECT *, `modbus_slavers`.`active`
+        $sql = parent::$db->query(" SELECT `boilers`.`id_object`,
+                                           `boilers`.`id`,
+                                           `boilers`.`gateway_type`,
+                                           `boilers`.`gateway_id`,
+                                           `boilers`.`protocol`,
+                                           `boilers`.`mode`,
+                                           `boilers`.`heating_mode`,
+                                           `boilers`.`outdoor_sensor`,
+                                           `boilers`.`indoor_sensor`,
+                                           `modbus_slavers`.`active`
                                     FROM `boilers`
+                                    INNER JOIN `modbus_slavers`
+                                    ON `modbus_slavers`.`id` = `boilers`.`gateway_id`
                                     WHERE `id_object` = $idObject");
         if($sql->rowCount() > 0)
         {
             $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
-            $this->prevParams = $this->getPrevParams();
-            $this->currentParams = $this->getCurrentParams();
+            if ($this->boiler->active != 1)
+            {
+                echo "[Error] Modbus шлюз шины {$this->boiler->protocol} (ID {$this->boiler->gateway_id}) недоступен" . PHP_EOL;
+                System::addLog(
+                    "Error",
+                    "Modbus шлюз шины {$this->boiler->protocol} (ID {$this->boiler->gateway_id}) недоступен",
+                    "port"
+                );
+                exit(1);
+            }
+            else
+            {
+                $this->object = new Objects();
+                $this->object->select($idObject);
+                $this->paramsList = $this->getParamsList();
+            }
         }
         else echo "Котел с ID объекта $idObject не найден" . PHP_EOL;
-        var_dump ($this->boiler);
+
     }
 
-
-    private function getPrevParams()
+    private function getParamsList()
     {
         $sql = parent::$db->query(" SELECT *
                                     FROM `boilers_params_flags`
                                     WHERE `boiler_id` = {$this->boiler->id}");
-        $flags = $sql->fetch(PDO::FETCH_OBJ);
-        $flags = (array)$flags;
-        unset($flags['id'], $flags['boiler_id']);
-        $flags = array_keys($flags, 1);
-        $columns = implode(",", $flags);
+        $paramsList = (array)$sql->fetch(PDO::FETCH_OBJ);
+        // $flags = (array)$flags;
+        unset($paramsList['id'], $paramsList['boiler_id']);
+        $paramsList = array_keys($paramsList, 1);
+        // $columns = implode(",", $flags);
         
-        $sql = parent::$db->query(" SELECT $columns
-                                    FROM `boilers_params`
-                                    WHERE `boiler_id` = {$this->boiler->id}");
-        $prevParams = $sql->fetch(PDO::FETCH_OBJ);
-
-        return (array)$prevParams;
+        // $sql = parent::$db->query(" SELECT $columns
+        //                             FROM `boilers_params`
+        //                             WHERE `boiler_id` = {$this->boiler->id}");
+        // $paramsList = (array)$sql->fetch(PDO::FETCH_OBJ);
+        // var_dump($paramsList);
+        return $paramsList;
     }
 
-    private function getCurrentParams()
-    {
-        foreach (array_keys($this->prevParams) as $paramName)
-        {
-            switch ($paramName)
-            {
-                case 'outdoor_temp':
-                case 'indoor_temp':
-                    if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
-                    else $columnName = 'indoor_sensor';
-                    $sql = parent::$db->query(" SELECT `termostats`.`current`
-                                                FROM `termostats`
-                                                INNER JOIN `boilers`
-                                                ON `boilers`.`$columnName` = `termostats`.`id_object`
-                                                WHERE `boilers`.`id` = " . $this->boiler->id);
-                    $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
-                    break;
+    // private function getCurrentParams()
+    // {
+    //     foreach (array_keys($this->prevParams) as $paramName)
+    //     {
+    //         switch ($paramName)
+    //         {
+    //             case 'outdoor_temp':
+    //             case 'indoor_temp':
+    //                 if ($paramName == 'outdoor_temp') $columnName = 'outdoor_sensor';
+    //                 else $columnName = 'indoor_sensor';
+    //                 $sql = parent::$db->query(" SELECT `termostats`.`current`
+    //                                             FROM `termostats`
+    //                                             INNER JOIN `boilers`
+    //                                             ON `boilers`.`$columnName` = `termostats`.`id_object`
+    //                                             WHERE `boilers`.`id` = " . $this->boiler->id);
+    //                 $paramValue = $sql->fetch(PDO::FETCH_OBJ)->current;
+    //                 break;
                     
-                default:
-                    if ($this->boiler->gateway_type == 'modbus') 
-                    {
-                        $paramValue = (int)$this->getValueFromDbByAlias($paramName);
-                    }
-                    break;
-            }
+    //             default:
+    //                 if ($this->boiler->gateway_type == 'modbus') 
+    //                 {
+    //                     $paramValue = (int)$this->getValueFromDbByAlias($paramName);
+    //                 }
+    //                 break;
+    //         }
 
-            if (!isset($paramValue)) $paramValue = 'NULL';
-            $currentParams[$paramName] = $paramValue;
-        }
+    //         if (!isset($paramValue)) $paramValue = 'NULL';
+    //         $currentParams[$paramName] = $paramValue;
+    //     }
 
-        return $currentParams;
-    }
+    //     return $currentParams;
+    // }
 
     private function getValueFromDbByAlias(string $alias)
     {
@@ -103,41 +126,101 @@ class Boiler extends System
      */
     public function checkBoiler()
     {
-        foreach ($this->currentParams as $paramName => $paramValue)
+        foreach ($this->paramsList as $paramName)
         {
             switch ($paramName)
             {
                 case 'outdoor_temp':
-                    if ($this->boiler->heating_mode == 'auto')
+                    $sql = parent::$db->query(" SELECT `termostats`.`current`
+                                                FROM `termostats`
+                                                INNER JOIN `boilers`
+                                                ON `boilers`.`outdoor_sensor` = `termostats`.`id_object`
+                                                WHERE `boilers`.`id` = " . $this->boiler->id);
+                    $outdoorTemp = $sql->fetch(PDO::FETCH_OBJ)->current;
+                    
+                    if (isset($outdoorTemp))
                     {
-                        $sql = parent::$db->query(" SELECT `t_water`
-                                                    FROM `boiler_auto`
-                                                    WHERE `id_object` = {$this->boiler->id_object}
-                                                    AND `t_out` <= '$paramValue'
-                                                    OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
-                                                    ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
-                        $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
-                        $this->currentParams['ch_setpoint_temp'] = $newSetpoint;
-                        $this->putParam('ch_setpoint_temp');
-                        if ($this->debug) echo "Исходя из значения уличной температуры температуры, " .
-                                            "значение уставки: $newSetpoint" . PHP_EOL;
+                        if ($this->boiler->heating_mode == 'auto')
+                        {
+                            $sql = parent::$db->query(" SELECT `t_water`
+                                                        FROM `boiler_auto`
+                                                        WHERE `id_object` = {$this->boiler->id_object}
+                                                        AND `t_out` <= $outdoorTemp
+                                                        OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
+                                                        ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
+                            $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
+                            if ($this->setParam('ch_setpoint_temp', $newSetpoint))
+                            {
+                                parent::$db->query("UPDATE `boilers_params`
+                                                    SET `ch_setpoint_temp` = $newSetpoint
+                                                    WHERE `boiler_id` = {$this->boiler->id}");
+                            }
+                        }
                     }
+                    
+                    if ($this->debug) echo "$paramName: {$outdoorTemp}" . PHP_EOL;
                     break;
+                
+                case 'indoor_temp':
+                    break;
+
+                default:
+                    $paramValue = $this->getParam($paramName);
+                    if (isset($paramValue))
+                    {
+                        parent::$db->query("UPDATE `boilers_params`
+                                            SET $paramName = $paramValue
+                                            WHERE `boiler_id` = {$this->boiler->id}");
+                    }
+
+                    if ($this->debug) echo "$paramName: {$paramValue}" . PHP_EOL;
+                    break;
+                
             }
         }
         
-        $this->fillElements();
+        // $this->fillElements();
+    }
+
+
+    /**
+     * Функция получения значения параметра
+     */
+    private function getParam(string $paramName)
+    {
+        if ($this->boiler->gateway_type == 'modbus')
+        {
+            $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $paramName);
+            if (isset($registerId))
+            {
+                $response = Modbus::modbusRtu($registerId, 'read');
+                if (isset($response) && !$response['error'] && isset($response['response']))
+                {
+                    return $response['response'];
+                }
+                else return null;
+            }
+            else return null;
+        }
     }
 
     /**
-     * Функция отправки нового значения параметра на устройство
+     * Функция отправки значения параметра на устройство
      */
-    private function putParam(string $paramName)
+    private function setParam(string $paramName, mixed $value)
     {
-        if ($this->boiler->gateway_type == 'modbus') 
+        if ($this->boiler->gateway_type == 'modbus')
         {
             $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $paramName);
-            if (isset($registerId)) Modbus::modbusRtu($registerId, 'write', null, $this->currentParams[$paramName]);
+            if (isset($registerId))
+            {
+                $response = Modbus::modbusRtu($registerId, 'write', null, $value);
+                if (isset($response) && !$response['error'])
+                {
+                    return true;
+                }
+                else return false;
+            }
         }
     }
 
@@ -148,7 +231,7 @@ class Boiler extends System
     {
         $setString = '';
 
-        foreach ($this->currentParams as $column => $value)
+        foreach ($this->params as $column => $value)
         {
             $setString .= "$column=$value, ";
 
@@ -169,17 +252,17 @@ class Boiler extends System
     /**
      * Функция установки значения параметра
      */
-    public function setParam(string $paramName, mixed $value)
-    {
+    // public function setParam(string $paramName, mixed $value)
+    // {
 
-        if ($this->boiler->gateway_type == 'modbus') 
-        {
-            $this->currentParams[$paramName] = $value;
-            var_dump($this->currentParams);
-            $this->putParam($paramName);
-            $this->fillElements();
-        }
-    }
+    //     if ($this->boiler->gateway_type == 'modbus') 
+    //     {
+    //         $this->currentParams[$paramName] = $value;
+    //         var_dump($this->currentParams);
+    //         $this->putParam($paramName);
+    //         $this->fillElements();
+    //     }
+    // }
 
 
     /**

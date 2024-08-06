@@ -76,7 +76,7 @@ class Onviz
 
         if (isset($value))
         {
-            if (!is_array($value)) $value = [$value];
+            if (!is_array($value)) $value = [dechex($value)];
             $cmd = $commands[$command]['bytes'];
             $cmd = array_merge($cmd, $value);
         }

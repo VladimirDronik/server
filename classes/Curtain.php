@@ -71,44 +71,6 @@ class Curtain extends Device
             exit(1);
         }
     }
-    
-
-    /**
-     * Сборка пакета для отправки (для штор с RS485)
-     */
-    // private function packetAssembling (mixed $address, mixed $group, string $cmd, mixed $param1=null, mixed $param2=null)
-    // {
-    //     if ($this->curtain->vendor == 'onviz')
-    //     {
-    //         $firstByte = '55';
-    //         $address = $this->addZero($address);
-    //         $group = $this->addZero($group);
-    //     }
-
-    //     if ($this->curtain->vendor == 'aok')
-    //     {
-    //         $firstByte = '9a';
-    //         $address = $this->addZero($address);
-    //         $group = $this->getAokChannel($group);
-    //         $verifyCode = hexdec($address) ^ hexdec(str_split($group, 2)[0]) ^ hexdec(str_split($group, 2)[1]);
-    //         if (strlen($cmd) == 4) $verifyCode = $verifyCode ^ hexdec(str_split($cmd, 2)[0]) ^ hexdec(str_split($cmd, 2)[1]);
-    //         else $verifyCode = $verifyCode ^ hexdec($cmd) ^ hexdec($param1);
-    //     }
-
-    //     $packet = $firstByte . $address . $group . $cmd;
-    //     if (isset($param1)) $packet .= $this->addZero($param1);
-    //     if (isset($param2)) $packet .= $this->addZero($param2);
-    //     if (isset($verifyCode)) $packet .= dechex($verifyCode);
-
-    //     return $packet;
-    // }
-
-    // private function addZero($param)
-    // {
-    //     $param = dechex($param);
-    //     if (strlen($param) < 2) return '0' . $param;
-    //     else return $param;
-    // }
 
     /**
      * Отправка команды (для штор с RS485)
@@ -138,22 +100,6 @@ class Curtain extends Device
             return $response;
         }
 	}
-
-    /**
-     * Считывание текущего состояния двигателя (для штор с RS485)
-     *  010501 - команда считывания текущего состояния привода
-     * Возможные ответы 01 01 XX
-     * 00 - остановлен
-     * 01 - открывается
-     * 02 - закрывается
-     * 03 - режим настройки
-     */
-    // public function getInfo()
-    // {
-    //     $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010501');
-    //     $response = $this->sendCmd($packet);
-    //     if ($response) return $response;
-    // }
 
     /**
      * Открытие шторы
@@ -284,7 +230,7 @@ class Curtain extends Device
 
             if (isset($response))
             {
-                // $this->getPercent();
+                $this->getPercent();
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда остановки" . PHP_EOL;
                 return true;
             }
@@ -294,7 +240,7 @@ class Curtain extends Device
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
-        } 
+        }
     }
 
     /**
@@ -358,17 +304,6 @@ class Curtain extends Device
     }
 
     /**
-     * Сброс конечных положений (для штор с RS485)
-     * 0307 - команда сброса выставленных пределов
-     */
-    // public static function resetLimits()
-    // {
-    //     $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0307');
-    //     $response = $this->sendCmd($packet);
-    //     if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
-    // }
-
-    /**
      * Изменение направления привода (для штор с RS485)
      * 02 03 01 XX
      * 00 - мотор слева
@@ -417,7 +352,7 @@ class Curtain extends Device
         {
             $protocol = $this->protocol->getProtocol('setAddress', $this->curtain);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
-            
+
             if ($protocol['isResponse'])
             {
                 if (isset($response))
@@ -497,7 +432,6 @@ class Curtain extends Device
     public static function checkRsMotorAvailible(int $rsMotorId = null)
     {
         if (isset($rsMotorId)) $additionalCondition = "AND `id_object` = $rsMotorId";
-        // else $additionalCondition = "AND `active` = 0";
         else $additionalCondition = null;
         
         $sql = parent::$db->query(" SELECT `id_object`

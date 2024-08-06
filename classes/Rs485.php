@@ -162,17 +162,20 @@ class Rs485 extends System
             {
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                echo PHP_EOL;
                 return $binaryData;
             }
             else
             {
                 echo "No response from device" . PHP_EOL;
+                echo PHP_EOL;
                 return false;
             }
         }
         else 
         {
             echo 'Response is not needed' . PHP_EOL;
+            echo PHP_EOL;
             return true;
         }
     }

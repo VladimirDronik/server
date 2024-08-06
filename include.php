@@ -61,12 +61,16 @@ require_once __DIR__. '/classes/Pressurestat.php';
 require_once __DIR__. '/classes/CarbDioxide.php';
 require_once __DIR__. '/classes/Mqtt.php';
 require_once __DIR__. '/classes/BeanstalkQueue.php';
+require_once __DIR__. '/classes/Rs485.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';
 require_once __DIR__.'/libs/mod_i2c_MAX44009.php';
 require_once __DIR__.'/libs/mod_i2c_bh1750.php';
 
+//Classes for RS485 protocols
+require_once __DIR__ . '/classes/Rs485Protocols/Onviz.php';
+require_once __DIR__ . '/classes/Rs485Protocols/Aok.php';
 
 //Classes for user scripts
 require_once __DIR__ . '/classes/Scriptlang/MyObject.php';
@@ -76,10 +80,6 @@ require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 // ModbusTCP library
 require_once __DIR__.'/libs/modbus/ModbusTcp.php';
 require_once __DIR__. '/libs/modbus/ModbusFunctions.php';
-
-// ModbusSerial library
-require_once __DIR__.'/libs/modbus/PhpSerialModbus.php';
-require_once __DIR__.'/libs/modbus/ModbusRtu.php';
 
 require_once  __DIR__.'/vendor/autoload.php';
 

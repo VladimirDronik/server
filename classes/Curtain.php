@@ -14,14 +14,16 @@ class Curtain extends Device
 {
     private $curtain = null;
     private $object = null;
+    private $protocol = null;
 
     // $force=true для принудительного опроса, даже если устройство неактивно
-    public function __construct(int $idObject, bool $force = false) 
+    public function __construct(int $idObject, bool $force = false)
     {
         if (isset($idObject))
         {
             $sql = parent::$db->query(" SELECT `curtains`.`id_object`,
                                                `curtains`.`type`,
+                                               `curtains`.`vendor`,
                                                `curtains`.`port_open` AS 'openPort',
                                                `curtains`.`port_close` AS 'closePort',
                                                `curtains`.`time`,
@@ -52,6 +54,9 @@ class Curtain extends Device
                 {
                     $this->object = new Objects();
                     $this->object->select($this->curtain->id_object);
+
+                    if ($this->curtain->vendor == 'aok') $this->protocol = new Aok();
+                    if ($this->curtain->vendor == 'onviz') $this->protocol = new Onviz();
                 }
             }
             else 
@@ -71,25 +76,44 @@ class Curtain extends Device
     /**
      * Сборка пакета для отправки (для штор с RS485)
      */
-    private function packetAssembling (mixed $address, mixed $group, string $cmd, mixed $param1=null, mixed $param2=null)
-    {
-        $packet = '55' . $this->format($address) . $this->format($group) . $cmd;
-        if (isset($param1)) $packet .= $this->format($param1);
-        if (isset($param2)) $packet .= $this->format($param2);
-        return $packet;
-    }
+    // private function packetAssembling (mixed $address, mixed $group, string $cmd, mixed $param1=null, mixed $param2=null)
+    // {
+    //     if ($this->curtain->vendor == 'onviz')
+    //     {
+    //         $firstByte = '55';
+    //         $address = $this->addZero($address);
+    //         $group = $this->addZero($group);
+    //     }
 
-    private function format($param)
-    {
-        $param = dechex($param);
-        if (strlen($param) < 2) return '0' . $param;
-        else return $param;
-    }
+    //     if ($this->curtain->vendor == 'aok')
+    //     {
+    //         $firstByte = '9a';
+    //         $address = $this->addZero($address);
+    //         $group = $this->getAokChannel($group);
+    //         $verifyCode = hexdec($address) ^ hexdec(str_split($group, 2)[0]) ^ hexdec(str_split($group, 2)[1]);
+    //         if (strlen($cmd) == 4) $verifyCode = $verifyCode ^ hexdec(str_split($cmd, 2)[0]) ^ hexdec(str_split($cmd, 2)[1]);
+    //         else $verifyCode = $verifyCode ^ hexdec($cmd) ^ hexdec($param1);
+    //     }
+
+    //     $packet = $firstByte . $address . $group . $cmd;
+    //     if (isset($param1)) $packet .= $this->addZero($param1);
+    //     if (isset($param2)) $packet .= $this->addZero($param2);
+    //     if (isset($verifyCode)) $packet .= dechex($verifyCode);
+
+    //     return $packet;
+    // }
+
+    // private function addZero($param)
+    // {
+    //     $param = dechex($param);
+    //     if (strlen($param) < 2) return '0' . $param;
+    //     else return $param;
+    // }
 
     /**
      * Отправка команды (для штор с RS485)
      */
-    private function sendCmd (string $packet, string $cmd=null)
+    private function sendCmd (string $packet, bool $needResponse, $targetByte = null)
 	{
 	    if ($this->curtain->bus_type == "tcp")
         {
@@ -109,17 +133,12 @@ class Curtain extends Device
         
         if ($this->curtain->bus_type == "rtu")
         {
-            // $isRSMotorActive = $this->curtain->active;
-            // if ($force) $isRSMotorActive = true;
-            // var_dump($force,$isRSMotorActive);
-            // if ($isRSMotorActive)
-            // {
-                $response = Modbus::modbusRaw($packet, $this->curtain->bus_id);
-                return $response;
-            // }
+            $bus = new Rs485();
+            $response = $bus->rawCmd($packet, $this->curtain->bus_id, $needResponse, $targetByte);
+            return $response;
         }
 	}
-    
+
     /**
      * Считывание текущего состояния двигателя (для штор с RS485)
      *  010501 - команда считывания текущего состояния привода
@@ -129,12 +148,12 @@ class Curtain extends Device
      * 02 - закрывается
      * 03 - режим настройки
      */
-    public function getInfo()
-    {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010501');
-        $response = $this->sendCmd($packet);
-        if ($response) return $response;
-    }
+    // public function getInfo()
+    // {
+    //     $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010501');
+    //     $response = $this->sendCmd($packet);
+    //     if ($response) return $response;
+    // }
 
     /**
      * Открытие шторы
@@ -143,21 +162,22 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            // 0301 - команда открытия
-            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0301');
-            $response = $this->sendCmd($packet);
-            if ($response && !$response['error'])
+            $protocol = $this->protocol->getProtocol('open', $this->curtain);
+            $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
+            
+            if (isset($response))
             {
                 $this->putPercentToDb(100);
-                echo "Штора (ID {$this->curtain->id_object}) открыта" . PHP_EOL;
+                echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия" . PHP_EOL;
                 return true;
             }
             else
             {
                 self::setRsMotorActivity($this->curtain->id_object, 0);
-                echo "Привод штор (ID $motorId) недоступен" . PHP_EOL;
+                echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
+
         }
         elseif ($this->curtain->place == 'port')
         {
@@ -201,18 +221,19 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            // 0302 - команда закрытия
-            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0302');
-            $response = $this->sendCmd($packet);
-            if ($response && !$response['error'])
+            $protocol = $this->protocol->getProtocol('close', $this->curtain);
+            $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
+            
+            if (isset($response))
             {
                 $this->putPercentToDb(0);
-                echo "Штора (ID {$this->curtain->id_object}) закрыта" . PHP_EOL;
+                echo "Штора (ID {$this->curtain->id_object}): Отправлена команда закрытия" . PHP_EOL;
                 return true;
             }
             else
             {
                 self::setRsMotorActivity($this->curtain->id_object, 0);
+                echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
         }
@@ -258,21 +279,22 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            // 0303 - команда остановки
-            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0303');
-            $response = $this->sendCmd($packet);
-            if ($response && !$response['error'])
+            $protocol = $this->protocol->getProtocol('stop', $this->curtain);
+            $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
+
+            if (isset($response))
             {
-                $this->getPercent();
-                echo "Штора (ID {$this->curtain->id_object}) остановлена" . PHP_EOL;
+                // $this->getPercent();
+                echo "Штора (ID {$this->curtain->id_object}): Отправлена команда остановки" . PHP_EOL;
                 return true;
             }
             else
             {
                 self::setRsMotorActivity($this->curtain->id_object, 0);
+                echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
-        }
+        } 
     }
 
     /**
@@ -283,19 +305,20 @@ class Curtain extends Device
         if ($percent >= 0 && $percent <= 100)
         {
             if ($this->curtain->is_inverse) $percent = 100 - $percent;
-            var_dump ($percent);
-            // 0304 - команда установки процента открытия
-            $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '0304', $percent);
-            $response = $this->sendCmd($packet);
-            if ($response && !$response['error'])
+            
+            $protocol = $this->protocol->getProtocol('setPercent', $this->curtain, $percent);
+            $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
+
+            if (isset($response))
             {
                 $this->putPercentToDb($percent);
-                echo "Штора (ID {$this->curtain->id_object}) открыта на $percent%" . PHP_EOL;
+                echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия на $percent%" . PHP_EOL;
                 return true;
             }
             else
             {
                 self::setRsMotorActivity($this->curtain->id_object, 0);
+                echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
         }
@@ -303,16 +326,25 @@ class Curtain extends Device
 
     /**
      * Получение процента открытия шторы (для штор с RS485)
-     * 010201 - команда считывания текущего процента открытия
-     * Ответ 01 01 XX
      */
     public function getPercent(bool $force = false)
     {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '010201');
-        $response = $this->sendCmd($packet);
-        if ($response && !$response['error']) $this->putPercentToDb(hexdec($response['raw_response'][6]));
-        else self::setRsMotorActivity($this->curtain->id_object, 0);
-        return $response;
+        $protocol = $this->protocol->getProtocol('getPercent', $this->curtain);
+        $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse'], $protocol['targetByte']);
+
+        if (isset($response))
+        {
+            $percent = hexdec($response);
+            $this->putPercentToDb($percent);
+            echo "Штора (ID {$this->curtain->id_object}): Открыта на $percent%" . PHP_EOL;
+            return true;
+        }
+        else
+        {
+            self::setRsMotorActivity($this->curtain->id_object, 0);
+            echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+            return false;
+        }
     }
 
     /**
@@ -329,12 +361,12 @@ class Curtain extends Device
      * Сброс конечных положений (для штор с RS485)
      * 0307 - команда сброса выставленных пределов
      */
-    public static function resetLimits()
-    {
-        $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0307');
-        $response = $this->sendCmd($packet);
-        if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
-    }
+    // public static function resetLimits()
+    // {
+    //     $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0307');
+    //     $response = $this->sendCmd($packet);
+    //     if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
+    // }
 
     /**
      * Изменение направления привода (для штор с RS485)
@@ -343,22 +375,22 @@ class Curtain extends Device
      * 01 - мотор справа
      * Для некоторых приводов срабатывает команда 01 03 01, меняет значение на противоположное 
      */
-    public function changeDirection(int $direction = null) // 0 - мотор слева, 1 - мотор справа
-    {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
-        $response = $this->sendCmd($packet);
+    // public function changeDirection(int $direction = null) // 0 - мотор слева, 1 - мотор справа
+    // {
+    //     $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
+    //     $response = $this->sendCmd($packet);
 
-        if ($response && !$response['error'])
-        {
-            echo "Изменено положение привода шторы (ID {$this->curtain->id_object})" . PHP_EOL;
-            return true;
-        }
-        else
-        {
-            self::setRsMotorActivity($this->curtain->id_object, 0);
-            return false;
-        }
-    }
+    //     if ($response && !$response['error'])
+    //     {
+    //         echo "Изменено положение привода шторы (ID {$this->curtain->id_object})" . PHP_EOL;
+    //         return true;
+    //     }
+    //     else
+    //     {
+    //         self::setRsMotorActivity($this->curtain->id_object, 0);
+    //         return false;
+    //     }
+    // }
 
     /**
      * Смена адреса (для штор с RS485)
@@ -381,40 +413,38 @@ class Curtain extends Device
      */
     public function setAddress()
     {
-        if ($this->curtain->type == 'roller')
-        {
-            $address = 'FE';
-            $group = 'FE';
-        }
-        if ($this->curtain->type == 'curtain')
-        {
-            $address = '00';
-            $group = '00';
-        }
-
         for ($i=1; $i<=10; $i++)
         {
-            $packet = $this->packetAssembling($address, $group, '020002', $this->curtain->address, $this->curtain->group);
-            $response = $this->sendCmd($packet);
-            if ($response['error'])
+            $protocol = $this->protocol->getProtocol('setAddress', $this->curtain);
+            $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
+            
+            if ($protocol['isResponse'])
             {
-                echo "Запрос #$i на установку адреса отправлен, но привод не ответил" . PHP_EOL;
-                if ($i == 10) echo "Адрес и группа не установлены, привод не ответил на запросы" . PHP_EOL;
-            }
-            else
-            {
-                if ($response['raw_response'][2] == $this->curtain->address && $response['raw_response'][3] == $this->curtain->group)
+                if (isset($response))
                 {
-                    echo "Адрес {$this->curtain->address} и группа {$this->curtain->group} установлены" . PHP_EOL;
-                    break;
+                    if ($response[2] == $this->curtain->address && $response[3] == $this->curtain->group)
+                    {
+                        echo "Адрес {$this->curtain->address} и группа {$this->curtain->group} установлены" . PHP_EOL;
+                        break;
+                    }
+                    else
+                    {
+                        echo "Адрес и группа не установлены, ответ пришел с неправильного адреса" . PHP_EOL;
+                        echo "Текущие настройки - адрес: " . hexdec($response[2]) . 
+                            ", группа: " . hexdec($response[3]) . PHP_EOL;
+                        break;
+                    }
                 }
                 else
                 {
-                    echo "Адрес и группа не установлены, ответ пришел с неправильного адреса" . PHP_EOL;
-                    echo "Текущие настройки - адрес: " . hexdec($response['raw_response'][2]) . 
-                        ", группа: " . hexdec($response['raw_response'][3]) . PHP_EOL;
-                    break;
+                    echo "Запрос #$i на установку адреса отправлен, но привод не ответил" . PHP_EOL;
+                    if ($i == 10) echo "Адрес и группа не установлены, привод не ответил на запросы" . PHP_EOL;
                 }
+            }
+            else
+            {
+                echo "Запрос #$i на установку адреса отправлен" . PHP_EOL;
+                sleep (1);
             }
         }
     }
@@ -480,8 +510,8 @@ class Curtain extends Device
             {
                 $curtain = new Curtain ($rsMotor->id_object, true);
                 $response = $curtain->getPercent();
-                if ($response && $response['error']) self::setRsMotorActivity($rsMotor->id_object, 0);
-                else self::setRsMotorActivity($rsMotor->id_object, 1);
+                if ($response) self::setRsMotorActivity($rsMotor->id_object, 1);
+                else self::setRsMotorActivity($rsMotor->id_object, 0);
             }
         }
     }

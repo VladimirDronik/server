@@ -250,9 +250,10 @@ class Curtain extends Device
     {
         if ($percent >= 0 && $percent <= 100)
         {
-            if ($this->curtain->is_inverse) $percent = 100 - $percent;
+            if ($this->curtain->is_inverse) $actualPercent = 100 - $percent;
+            else $actualPercent = $percent;
             
-            $protocol = $this->protocol->getProtocol('setPercent', $this->curtain, $percent);
+            $protocol = $this->protocol->getProtocol('setPercent', $this->curtain, $actualPercent);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
 
             if (isset($response))
@@ -301,40 +302,6 @@ class Curtain extends Device
         parent::$db->query("UPDATE curtains SET `percent` = $value WHERE id_object = " . $this->curtain->id_object);
         if ($value > 0) $this->object->setStatus('open', true, false);
         else $this->object->setStatus('close', true, false);
-    }
-
-    /**
-     * Изменение направления привода (для штор с RS485)
-     * 02 03 01 XX
-     * 00 - мотор слева
-     * 01 - мотор справа
-     * Для некоторых приводов срабатывает команда 01 03 01, меняет значение на противоположное 
-     */
-    // public function changeDirection(int $direction = null) // 0 - мотор слева, 1 - мотор справа
-    // {
-    //     $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020301', $direction);
-    //     $response = $this->sendCmd($packet);
-
-    //     if ($response && !$response['error'])
-    //     {
-    //         echo "Изменено положение привода шторы (ID {$this->curtain->id_object})" . PHP_EOL;
-    //         return true;
-    //     }
-    //     else
-    //     {
-    //         self::setRsMotorActivity($this->curtain->id_object, 0);
-    //         return false;
-    //     }
-    // }
-
-    /**
-     * Смена адреса (для штор с RS485)
-     */
-    public function changeAddress(int $newAddress, int $newGroup)
-    {
-        $packet = $this->packetAssembling($this->curtain->address, $this->curtain->group, '020002', $newAddress, $newGroup);
-        $response = $this->sendCmd($packet);
-        if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
     }
 
     /**

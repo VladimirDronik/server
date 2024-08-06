@@ -163,7 +163,7 @@ class Modbus extends System {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
-                $response = self::modbusRtu($register->id, 'read', 5, null, true);
+                $response = self::modbusRtu($register->id, 'read', null, true, 5);
 
                 if ($response['error'])
                 {
@@ -185,7 +185,6 @@ class Modbus extends System {
                     }
                 }
             }
-            
         }
     }
 
@@ -214,7 +213,7 @@ class Modbus extends System {
      * Постановка задания на чтение/запись регистра(ов) в очередь
      * $force=true для принудительного опроса, даже если устройство неактивно
      */
-    public static function modbusRtu(int $modbusRegisterId, string $action, int $priority = null, mixed $value = null, bool $force = false)
+    public static function modbusRtu(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
     {
         $uid = uniqid();
 

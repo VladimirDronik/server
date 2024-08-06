@@ -63,7 +63,7 @@ class Conditioner extends Device
             
         if (isset($registerId))
         {
-            $response = Modbus::modbusRtu($registerId, 'write', 5, $cmd);
+            $response = Modbus::modbusRtu($registerId, 'write', $cmd);
             if ($response && !$response['error'])
             {
                 $object = new Objects();
@@ -90,7 +90,7 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
             if (isset($registerId)) 
             {
-                $response = Modbus::modbusRtu($registerId, 'write', 5, $temperature);
+                $response = Modbus::modbusRtu($registerId, 'write', $temperature);
                 if ($response && !$response['error'])
                 {
                     parent::$db->query("UPDATE `conditioners`
@@ -118,7 +118,7 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
             if (isset($registerId)) 
             {
-                $response = Modbus::modbusRtu($registerId, 'write', 5, $acModes[$mode]);
+                $response = Modbus::modbusRtu($registerId, 'write', $acModes[$mode]);
                 if ($response && !$response['error'])
                 {
                     parent::$db->query("UPDATE `conditioners`
@@ -146,7 +146,7 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
             if (isset($registerId)) 
             {
-                $response = Modbus::modbusRtu($registerId, 'write', 5, $acFanSpeeds[$speed]);
+                $response = Modbus::modbusRtu($registerId, 'write', $acFanSpeeds[$speed]);
                 if ($response && !$response['error'])
                 {
                     parent::$db->query("UPDATE `conditioners`
@@ -178,7 +178,7 @@ class Conditioner extends Device
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_vdir');
                 if (isset($registerId))
                 {
-                    $response = Modbus::modbusRtu($registerId, 'write', 5, $acVDirs[$vDir]);
+                    $response = Modbus::modbusRtu($registerId, 'write', $acVDirs[$vDir]);
                     if ($response && !$response['error'])
                     {
                         parent::$db->query("UPDATE `conditioners`
@@ -211,7 +211,7 @@ class Conditioner extends Device
                 $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_hdir');
                 if (isset($registerId))
                 {
-                    $response = Modbus::modbusRtu($registerId, 'write', 5, $acHDirs[$hDir]);
+                    $response = Modbus::modbusRtu($registerId, 'write', $acHDirs[$hDir]);
                     if ($response && !$response['error'])
                     {
                         parent::$db->query("UPDATE `conditioners`
@@ -234,7 +234,7 @@ class Conditioner extends Device
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, $alias);
             if (isset($registerId))
             {
-                $response = Modbus::modbusRtu($registerId, 'read', 50);
+                $response = Modbus::modbusRtu($registerId, 'read');
                 if ($response && !$response['error'])
                 {
                     $paramName = str_replace('ac_', '', $alias);

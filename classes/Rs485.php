@@ -239,9 +239,9 @@ class Rs485 extends System
                 {
                     $rawResponse = unpack('C*', $binaryData);
                     $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
-                    if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
                     // $rawResponse = implode(" ", $rawResponse);
                     $error = false;
+                    if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
                     if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
                 }
                 else 

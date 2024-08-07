@@ -1,6 +1,5 @@
 <?php
 
-// require_once '../vendor/autoload.php';
 use Beanstalk\Client;
 use PhpMqtt\Client\MqttClient;
 

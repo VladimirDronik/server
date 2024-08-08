@@ -265,7 +265,7 @@ class Modbus extends System
             if ($response['error']) self::setSlaverActivity($modbusRegister->slaver_id, 0);
             elseif (isset($response['response'])) self::setValue($modbusRegisterId, $response['response']);
 
-            return $response;
+            return $response['response'];
         }
     }
 }

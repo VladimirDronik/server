@@ -1371,8 +1371,9 @@ class Views extends System
                 }
             }
             else $elements = null;
-            
 
+
+            var_dump($page->handle);
             if ($page->handle == 'ch_setpoint_temp')
             {
                 $boilerHeatingModeSql = "   SELECT `heating_mode` FROM `boilers`
@@ -1382,7 +1383,7 @@ class Views extends System
                 if($queryBoilerHeatingMode->rowCount() > 0)
                 {
                     $boilerHeatingMode = $queryBoilerHeatingMode->fetch(PDO::FETCH_OBJ)->heating_mode;
-                    
+                    var_dump($boilerHeatingMode);
                     if ($boilerHeatingMode == 'manual')
                     {
                         $manualValueSQL = " SELECT `ch_current_temp`, `ch_setpoint_temp` 
@@ -1417,12 +1418,11 @@ class Views extends System
                                 'pages' => $items
                             ]);
 
-                            // echo $json;
                             return $json;   
                         }
                     }
 
-                    if ($boilerHeatingMode == 'auto')
+                    if ($boilerHeatingMode == 'wc')
                     {
                         // Извлекаем значения температуры для котла
                         $valuesSQL = "  SELECT `id`, `t_out`, `t_water`
@@ -1452,83 +1452,50 @@ class Views extends System
                                 'idPage' => (string)$page->intpage,
                                 'pages' => $items
                             ]);
-                            // echo $json;
+
                             return $json;
                         }
                     }
-                }
-
-                // if ($boilerHeatingMode == 'auto')
-                // {
-                //     // Извлекаем значения температуры для котла
-                //     $valuesSQL = "SELECT id, t_out, t_water FROM boiler_auto WHERE id_object = {$page->idObject}
-                //     ORDER BY `t_out`";
-                //     $queryValues = parent::$db->query($valuesSQL);
-
-                //     while ($element = $queryValues->fetch(PDO::FETCH_OBJ)) {
-
-                //     $values[] = array('id' => (string)$element->id, 't_out' => (string)$element->t_out, 't_water' => (string)$element->t_water);
-                //     }
-                //     $items[] = array('elements' => $elements, 'values' => $values);
-
-                //     $json = json_encode(array('status'=>'internalPage', 'type' => 'BoilerAuto',
-                //     'idPage' => (string)$page->intpage, 'pages' => $items));
-                //     echo $json;
-                //     return $json;
-                // }
-                
+                }  
             }
-            // } elseif($page->handle == 'ch_setpoint_temp') {
 
-            //     $manualValueSQL = "SELECT set_value, min_value, max_value, feed_heat_temp FROM boiler_manual 
-            //                         INNER JOIN boiler ON boiler.id_object = boiler_manual.id_object 
-            //                         WHERE boiler_manual.id_object = {$page->idObject}";
-            //     $queryManValue = parent::$db->query($manualValueSQL);
+            if ($page->handle == 'dhw_setpoint_temp')
+            {
+                $sqlQueryString = " SELECT `dhw_current_temp`, `dhw_setpoint_temp` 
+                                    FROM `boilers_params` 
+                                    JOIN `boilers` ON `boilers`.`id` = `boilers_params`.`boiler_id`
+                                    WHERE `boilers`.`id_object` = {$page->idObject}";
+                $queryDhw = parent::$db->query($sqlQueryString);
 
-            //     if ($queryManValue->rowCount() != 0) {
-            //         $manualValue = $queryManValue->fetch(PDO::FETCH_OBJ);
+                if ($queryDhw->rowCount() > 0)
+                {
+                    $dhwParams = $queryDhw->fetch(PDO::FETCH_OBJ);
 
-            //         $cur_value = round($manualValue->feed_heat_temp);
-            //         $set_value = round($manualValue->set_value);
+                    $currentValue = round($dhwParams->dhw_current_temp);
+                    $setPoint = round($dhwParams->dhw_setpoint_temp);
 
-            //         $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
-            //             'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
+                $values[] = [
+                    'cur_value' => (string)$currentValue,
+                    'set_value' => (string)$setPoint,
+                    'min' => '20',
+                    'max' => '80'
+                ];
 
+                $items[] = [
+                    'elements' => $elements,
+                    'valuesManual' => $values
+                ];
 
-            //         $items[] = array('elements' => $elements, 'valuesManual' => $values);
+                $json = json_encode([
+                    'status' => 'internalPage',
+                    'type' => 'BoilerManual',
+                    'idPage' => (string)$page->intpage,
+                    'pages' => $items
+                ]);
 
-            //         $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerManual',
-            //             'idPage' => (string)$page->intpage, 'pages' => $items));
-
-            //         echo $json;
-            //         return $json;
-            //     }
-            // } else {
-
-            //     $waterValueSQL = "SELECT set_value, min_value, max_value, water_temp, target_water_temp FROM boiler_water 
-            //                         INNER JOIN boiler ON boiler.id_object = boiler_water .id_object 
-            //                         WHERE boiler_water.id_object = {$page->idObject}";
-            //     $queryWaterValue = parent::$db->query($waterValueSQL);
-
-            //     if ($queryWaterValue->rowCount() != 0) {
-            //         $manualValue = $queryWaterValue->fetch(PDO::FETCH_OBJ);
-
-            //         $cur_value = round($manualValue->water_temp);
-            //         $set_value = round($manualValue->target_water_temp);
-
-            //         $values[] = array('cur_value' => (string)$cur_value, 'set_value' => (string)$set_value,
-            //             'min' => (string)$manualValue->min_value, 'max' => (string)$manualValue->max_value);
-
-
-            //         $items[] = array('elements' => (string)$elements, 'valuesManual' => (string)$values);
-
-            //         $json = json_encode(array('status' => 'internalPage', 'type' => 'BoilerWaterManual',
-            //             'idPage' => (string)$page->intpage, 'pages' => (string)$items));
-
-            //         echo $json;
-            //         return $json;
-            //     }
-            // }
+                return $json;   
+                }
+            }
         }
     }
 

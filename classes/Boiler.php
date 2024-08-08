@@ -10,7 +10,7 @@ class Boiler extends System
     private $paramsList = [];
     public $debug = false;
 
-    function __construct(int $idObject)
+    function __construct($idObject)
     {
         if (isset($idObject))
         {
@@ -39,7 +39,16 @@ class Boiler extends System
                     $this->paramsList = $this->getParamsList();
                 }
             }
-            else echo "Котел с ID объекта $idObject не найден" . PHP_EOL;
+            else
+            {
+                echo "[Error] Котел с ID объекта $idObject не найден" . PHP_EOL;
+                exit;
+            }
+        }
+        else
+        {
+            echo "[Error] Не определен ID котла" . PHP_EOL;
+            exit;
         }
     }
 
@@ -174,12 +183,10 @@ class Boiler extends System
      */
     public function setMode($mode)
     {
-        var_dump($mode);
         parent::$db->query("UPDATE `boilers`
                             SET `heating_mode` = '$mode'
                             WHERE `id_object` = {$this->boiler->id_object}");
         $this->boiler->heating_mode = $mode;
         if ($mode == 'wc') $this->weatherCompensation();
-        // if ($mode == 'manual')
     }
 }

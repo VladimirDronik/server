@@ -164,18 +164,9 @@ class Modbus extends System
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
-                $response = self::modbusRtu($register->id, 'read', null, true, 5);
+                $response = self::modbusRtu($register->id, 'read', null, true);
 
-                if ($response['error'])
-                {
-                    echo "FAIL" . PHP_EOL;
-                    if (isset($modbusSlaverId))
-                    {
-                        echo 'false';
-                        return false;
-                    }
-                }
-                else
+                if (isset($response))
                 {
                     echo "OK" . PHP_EOL;
                     self::setSlaverActivity($register->slaver_id, 1);
@@ -183,6 +174,15 @@ class Modbus extends System
                     {
                         echo 'true';
                         return true;
+                    }
+                }
+                else
+                {
+                    echo "FAIL" . PHP_EOL;
+                    if (isset($modbusSlaverId))
+                    {
+                        echo 'false';
+                        return false;
                     }
                 }
             }

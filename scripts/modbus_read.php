@@ -2,7 +2,7 @@
 
 require_once '../include.php';
 
-$value = Modbus::modbusRtu($argv[1], 'read');
+$value = Modbus::modbusRtu($argv[1], 'read', null, true);
 
 if (isset($value))
 {

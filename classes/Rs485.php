@@ -153,7 +153,9 @@ class Rs485 extends System
                 // Give a modbus device time to respond. 
                 // This is crucial for some serial devices and delay needs to be even longer (100ms) 
                 //or you will experience read errors or invalid CRCs
-                usleep(150000);
+                // usleep(150000);
+                usleep(500000);
+                // usleep(500000);
                 $binaryData = fread($this->fd, 255);
             } 
             while ($binaryData === '' && (microtime(true) - $start) < 3);
@@ -225,6 +227,7 @@ class Rs485 extends System
         {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
+            
             if ($task->protocol == 'raw') $binRequest = base64_decode($task->raw_data);
             if ($task->protocol == 'rtu') $binRequest = modbusFunction($task);
 

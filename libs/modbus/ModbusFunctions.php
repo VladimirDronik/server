@@ -144,7 +144,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32();
             if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
             if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-            // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+            if ($task->format == 'f8.8') $result = Boiler::convertToF88($response->getWordAt($task->starting_address)->getUInt16());
             if ($task->scale) $result = $result * $task->scale;
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
             echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $result . " " . $task->units . PHP_EOL;
@@ -190,7 +190,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
             if ($task->format == 's32') $result = $response->getDoubleWordAt($task->starting_address)->getInt32(Endian::BIG_ENDIAN);
             if ($task->format == 'u16') $result = $response->getWordAt($task->starting_address)->getUInt16();
             if ($task->format == 's16') $result = $response->getWordAt($task->starting_address)->getInt16();
-            // if ($task->format == 'f8.8') $result = $response->getWordAt($task->starting_address)->getUInt16() / 256;
+            if ($task->format == 'f8.8') $result = Boiler::convertToF88($response->getWordAt($task->starting_address)->getUInt16());
             if ($task->scale) $result = $result * $task->scale;
 
             if ($task->format == 'raw') $result = unpack('H*', mb_strcut($binaryData, 3, mb_strlen($binaryData, '8bit')-4))[1];
@@ -230,6 +230,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
     function writeSingleRegisterRequest($task)
     {
         if ($task->scale) $task->value = $task->value / $task->scale;
+        if ($task->format == 'f8.8') $task->value = Boiler::convertFromF88($task->value);
         $tcpPacket = new WriteSingleRegisterRequest($task->starting_address, $task->value, $task->slave_address);
         $rtuPacket = RtuConverter::toRtu($tcpPacket);
         return $rtuPacket;

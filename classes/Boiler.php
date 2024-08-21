@@ -110,8 +110,12 @@ class Boiler extends System
                                             AND `t_out` <= $outdoorTemp
                                             OR `t_out` = (SELECT MIN(`boiler_auto`.`t_out`) FROM `boiler_auto`)
                                             ORDER BY `boiler_auto`.`t_out` DESC LIMIT 1");
-                $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
-                $this->setParam('ch_setpoint_temp', $newSetpoint);
+
+                if($sql->rowCount() > 0)
+                {
+                    $newSetpoint = $sql->fetch(PDO::FETCH_OBJ)->t_water;
+                    $this->setParam('ch_setpoint_temp', $newSetpoint);
+                }
             }
         }
         
@@ -163,6 +167,12 @@ class Boiler extends System
     {
         if ($paramName != 'indoor_temp' && $paramName != 'outdoor_temp')
         {
+            if(!is_numeric($value) || $value < 0)
+            {
+            echo "Некорректное значение температуры: " . $value . PHP_EOL;
+            $value = 'NULL';
+            }
+
             parent::$db->query("UPDATE `boilers_params`
                                 SET `$paramName` = $value
                                 WHERE `boiler_id` = {$this->boiler->id}");
@@ -189,4 +199,17 @@ class Boiler extends System
         $this->boiler->heating_mode = $mode;
         if ($mode == 'wc') $this->weatherCompensation();
     }
+
+    public static function convertToF88($value)
+    {
+        if (0x8000 & $value) return ($value - 0x10000) / 0x100;
+        else return $value / 0x100;
+    }
+
+    public static function convertFromF88($value)
+    {
+        if ($value >= 0) return $value * 0x100;
+        else return 0x10000 + ($value * 0x100);
+    }
+
 }

@@ -1234,7 +1234,7 @@ class Views extends System
             unset($elements);
 
             //Запрашиваем данные для компонентов страницы
-            $queryElement = parent::$db->query("SELECT `id`, `name`, `type`, `image`,
+            $queryElement = parent::$db->query("SELECT `id`, `name`, `type`,
                                                        `status`, `units`, `position`,
                                                        `handle`, `settings`, `wh_color`, `bl_color`
                                                 FROM `elements`
@@ -1245,7 +1245,7 @@ class Views extends System
             {
                 while ($element = $queryElement->fetch(PDO::FETCH_OBJ))
                 {
-                    $image = explode('.', $element->image)[0];
+                    // $image = explode('.', $element->image)[0];
 
                     //Если тип - аккордеон, то ищем еще дочерние элементы
                 //     if($element->type == 'accordeon')
@@ -1300,8 +1300,18 @@ class Views extends System
                 // else
                 // {
                     
-                    if ($element->settings == 0) $element->settings = 'false';
-                    else $element->settings = 'true';
+                    if ($element->settings == 0)
+                    {
+                        $element->settings = 'false';
+                        $image = 'noimage';
+                    }
+                    else
+                    {
+                        $element->settings = 'true';
+                        $image = 'settings';
+                    }
+
+
                     $status = "$element->status";
                     if ($element->units) $status .= " $element->units";
                     $value = [
@@ -1352,28 +1362,27 @@ class Views extends System
                                             WHERE `idelement` = $idElement ORDER BY `sort`");
         while ($page = $queryPage->fetch(PDO::FETCH_OBJ))
         {
-            $elementsSQL = "SELECT `id`, `name`, `type`, `value` 
-                            FROM `elements` WHERE `page` = {$page->idpage}
-                            AND `position` = 1 ORDER BY `sort`";
+            // $elementsSQL = "SELECT `id`, `name`, `type`, `value` 
+            //                 FROM `elements` WHERE `page` = {$page->idpage}
+            //                 AND `position` = 1 ORDER BY `sort`";
 
-            $queryElements = parent::$db->query($elementsSQL);
-            if($queryElements->rowCount() > 0)
-            {
-                while ($element = $queryElements->fetch(PDO::FETCH_OBJ))
-                {
-                    $elements[] = [
-                        'id' => (string)$element->id,
-                        'title'=>$element->name,
-                        'type'=>$element->type,
-                        'position' => "1",
-                        'value'=>json_decode($element->value)
-                    ];
-                }
-            }
-            else $elements = null;
+            // $queryElements = parent::$db->query($elementsSQL);
+            // if($queryElements->rowCount() > 0)
+            // {
+            //     while ($element = $queryElements->fetch(PDO::FETCH_OBJ))
+            //     {
+            //         $elements[] = [
+            //             'id' => (string)$element->id,
+            //             'title'=>$element->name,
+            //             'type'=>$element->type,
+            //             'position' => "1",
+            //             'value'=>json_decode($element->value)
+            //         ];
+            //     }
+            // }
+            // else $elements = null;
+            $elements = null;
 
-
-            var_dump($page->handle);
             if ($page->handle == 'ch_setpoint_temp')
             {
                 $boilerHeatingModeSql = "   SELECT `heating_mode` FROM `boilers`
@@ -1383,7 +1392,7 @@ class Views extends System
                 if($queryBoilerHeatingMode->rowCount() > 0)
                 {
                     $boilerHeatingMode = $queryBoilerHeatingMode->fetch(PDO::FETCH_OBJ)->heating_mode;
-                    var_dump($boilerHeatingMode);
+                    
                     if ($boilerHeatingMode == 'manual')
                     {
                         $manualValueSQL = " SELECT `ch_current_temp`, `ch_setpoint_temp` 
@@ -1430,31 +1439,28 @@ class Views extends System
                                         ORDER BY `t_out`";
                         $queryValues = parent::$db->query($valuesSQL);
                         
-                        if ($queryValues->rowCount() > 0)
+                        while ($element = $queryValues->fetch(PDO::FETCH_OBJ))
                         {
-                            while ($element = $queryValues->fetch(PDO::FETCH_OBJ))
-                            {
-                                $values[] = [
-                                    'id' => (string)$element->id,
-                                    't_out' => (string)$element->t_out,
-                                    't_water' => (string)$element->t_water
-                                ];
-                            }
-                            
-                            $items[] = [
-                                'elements' => $elements,
-                                'values' => $values
+                            $values[] = [
+                                'id' => (string)$element->id,
+                                't_out' => (string)$element->t_out,
+                                't_water' => (string)$element->t_water
                             ];
-        
-                            $json = json_encode([
-                                'status'=>'internalPage',
-                                'type' => 'BoilerAuto',
-                                'idPage' => (string)$page->intpage,
-                                'pages' => $items
-                            ]);
-
-                            return $json;
                         }
+                        
+                        $items[] = [
+                            'elements' => $elements,
+                            'values' => $values
+                        ];
+    
+                        $json = json_encode([
+                            'status'=>'internalPage',
+                            'type' => 'BoilerAuto',
+                            'idPage' => (string)$page->intpage,
+                            'pages' => $items
+                        ]);
+
+                        return $json;
                     }
                 }  
             }

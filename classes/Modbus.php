@@ -165,7 +165,7 @@ class Modbus extends System
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
                 $response = self::modbusRtu($register->id, 'read', null, true);
-
+var_dump($response);
                 if (isset($response))
                 {
                     echo "OK" . PHP_EOL;
@@ -262,10 +262,16 @@ class Modbus extends System
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("rs485/{$modbusRegister->bus_id}/response", $uid);
 
-            if ($response['error']) self::setSlaverActivity($modbusRegister->slaver_id, 0);
-            elseif (isset($response['response'])) self::setValue($modbusRegisterId, $response['response']);
-
-            return $response['response'];
+            if ($response['error'])
+            {
+                self::setSlaverActivity($modbusRegister->slaver_id, 0);
+                return null;
+            }
+            else 
+            {
+                self::setValue($modbusRegisterId, $response['response']);
+                return $response['response'];
+            }
         }
     }
 }

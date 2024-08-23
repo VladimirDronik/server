@@ -165,25 +165,17 @@ class Modbus extends System
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
                 $response = self::modbusRtu($register->id, 'read', null, true);
-var_dump($response);
+
                 if (isset($response))
                 {
                     echo "OK" . PHP_EOL;
                     self::setSlaverActivity($register->slaver_id, 1);
-                    if (isset($modbusSlaverId))
-                    {
-                        echo 'true';
-                        return true;
-                    }
+                    if (isset($modbusSlaverId)) return true;
                 }
                 else
                 {
                     echo "FAIL" . PHP_EOL;
-                    if (isset($modbusSlaverId))
-                    {
-                        echo 'false';
-                        return false;
-                    }
+                    if (isset($modbusSlaverId)) return false;
                 }
             }
         }

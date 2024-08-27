@@ -4,7 +4,8 @@
 use Beanstalk\Client;
 use PhpMqtt\Client\MqttClient;
 
-class Modbus extends System {
+class Modbus extends System
+{
     
     private static $response = null;
     public static $_busConnection = null;
@@ -163,26 +164,18 @@ class Modbus extends System {
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
-                $response = self::modbusRtu($register->id, 'read', null, true, 5);
+                $response = self::modbusRtu($register->id, 'read', null, true);
 
-                if ($response['error'])
-                {
-                    echo "FAIL" . PHP_EOL;
-                    if (isset($modbusSlaverId))
-                    {
-                        echo 'false';
-                        return false;
-                    }
-                }
-                else
+                if (isset($response))
                 {
                     echo "OK" . PHP_EOL;
                     self::setSlaverActivity($register->slaver_id, 1);
-                    if (isset($modbusSlaverId))
-                    {
-                        echo 'true';
-                        return true;
-                    }
+                    if (isset($modbusSlaverId)) return true;
+                }
+                else
+                {
+                    echo "FAIL" . PHP_EOL;
+                    if (isset($modbusSlaverId)) return false;
                 }
             }
         }
@@ -261,10 +254,16 @@ class Modbus extends System {
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribe("rs485/{$modbusRegister->bus_id}/response", $uid);
 
-            if ($response['error']) self::setSlaverActivity($modbusRegister->slaver_id, 0);
-            elseif (isset($response['response'])) self::setValue($modbusRegisterId, $response['response']);
-
-            return $response;
+            if ($response['error'])
+            {
+                self::setSlaverActivity($modbusRegister->slaver_id, 0);
+                return null;
+            }
+            else 
+            {
+                self::setValue($modbusRegisterId, $response['response']);
+                return $response['response'];
+            }
         }
     }
 }

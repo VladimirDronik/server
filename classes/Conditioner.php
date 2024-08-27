@@ -64,7 +64,7 @@ class Conditioner extends Device
         if (isset($registerId))
         {
             $response = Modbus::modbusRtu($registerId, 'write', $cmd);
-            if ($response && !$response['error'])
+            if (isset($response))
             {
                 $object = new Objects();
                 $object->select($this->ac->id_object);
@@ -91,7 +91,7 @@ class Conditioner extends Device
             if (isset($registerId)) 
             {
                 $response = Modbus::modbusRtu($registerId, 'write', $temperature);
-                if ($response && !$response['error'])
+                if (isset($response))
                 {
                     parent::$db->query("UPDATE `conditioners`
                                         SET `temp` = $temperature
@@ -119,7 +119,7 @@ class Conditioner extends Device
             if (isset($registerId)) 
             {
                 $response = Modbus::modbusRtu($registerId, 'write', $acModes[$mode]);
-                if ($response && !$response['error'])
+                if (isset($response))
                 {
                     parent::$db->query("UPDATE `conditioners`
                                         SET `mode` = '$mode'
@@ -147,7 +147,7 @@ class Conditioner extends Device
             if (isset($registerId)) 
             {
                 $response = Modbus::modbusRtu($registerId, 'write', $acFanSpeeds[$speed]);
-                if ($response && !$response['error'])
+                if (isset($response))
                 {
                     parent::$db->query("UPDATE `conditioners`
                                         SET `fan` = '$speed'
@@ -179,7 +179,7 @@ class Conditioner extends Device
                 if (isset($registerId))
                 {
                     $response = Modbus::modbusRtu($registerId, 'write', $acVDirs[$vDir]);
-                    if ($response && !$response['error'])
+                    if (isset($response))
                     {
                         parent::$db->query("UPDATE `conditioners`
                                             SET `vdir` = '$vDir'
@@ -212,7 +212,7 @@ class Conditioner extends Device
                 if (isset($registerId))
                 {
                     $response = Modbus::modbusRtu($registerId, 'write', $acHDirs[$hDir]);
-                    if ($response && !$response['error'])
+                    if (isset($response))
                     {
                         parent::$db->query("UPDATE `conditioners`
                                             SET `hdir` = '$hDir'
@@ -220,57 +220,6 @@ class Conditioner extends Device
                         return true;
                     }
                     else return false;
-                }
-            }
-        }
-    }
-
-    public function updateAcParams()
-    {
-        $acRegistersAliases = ['ac_power', 'ac_temp', 'ac_mode', 'ac_fan', 'ac_vdir', 'ac_hdir'];
-
-        foreach ($acRegistersAliases as $alias)
-        {
-            $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, $alias);
-            if (isset($registerId))
-            {
-                $response = Modbus::modbusRtu($registerId, 'read');
-                if ($response && !$response['error'])
-                {
-                    $paramName = str_replace('ac_', '', $alias);
-                        
-                    switch($paramName)
-                    {
-                        case 'power':
-                            if ($response['response'] == 'true') $state = 'on';
-                            else $state = 'off';
-                            $object = new Objects();
-                            $object->select($this->ac->id_object);
-                            $object->setStatus($state, true, false);
-                            break;
-                        
-                        case 'temp':
-                            $value = $response['response'];
-                            break;
-
-                        default:
-                            $acParamJsonQuery = parent::$db->query(
-                                "   SELECT `conditioner_types`.`$paramName`
-                                    FROM `conditioner_types`
-                                    INNER JOIN `conditioners`
-                                    ON `conditioner_types`.`id` = `conditioners`.`type`
-                                    WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-                                    AND `conditioners`.`id_object` = {$this->ac->id_object}"
-                            );
-
-                            $acParamJson = $acParamJsonQuery->fetch(PDO::FETCH_OBJ)->$paramName;
-                            $value = (string)array_search($response['response'], json_decode($acParamJson, true));
-                            break;
-                    }
-                    if (isset($value) && $paramName != 'power') 
-                        parent::$db->query("UPDATE `conditioners`
-                                            SET `$paramName` = '$value'
-                                            WHERE id_object = {$this->ac->id_object}");
                 }
             }
         }

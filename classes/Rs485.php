@@ -141,6 +141,8 @@ class Rs485 extends System
 
     public function send($rtuPacket, $needResponse = true)
     {
+        usleep(500000);
+        echo PHP_EOL;
         echo 'RTU Binary to sent (in hex):   ' . unpack('H*', $rtuPacket)[1] . PHP_EOL;
         fwrite($this->fd, $rtuPacket);
         fflush($this->fd);
@@ -154,6 +156,7 @@ class Rs485 extends System
                 // This is crucial for some serial devices and delay needs to be even longer (100ms) 
                 //or you will experience read errors or invalid CRCs
                 usleep(150000);
+                // usleep(500000);
                 $binaryData = fread($this->fd, 255);
             } 
             while ($binaryData === '' && (microtime(true) - $start) < 3);
@@ -162,20 +165,17 @@ class Rs485 extends System
             {
                 echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                 echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                echo PHP_EOL;
                 return $binaryData;
             }
             else
             {
                 echo "No response from device" . PHP_EOL;
-                echo PHP_EOL;
                 return false;
             }
         }
         else 
         {
             echo 'Response is not needed' . PHP_EOL;
-            echo PHP_EOL;
             return true;
         }
     }
@@ -225,6 +225,7 @@ class Rs485 extends System
         {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
+            
             if ($task->protocol == 'raw') $binRequest = base64_decode($task->raw_data);
             if ($task->protocol == 'rtu') $binRequest = modbusFunction($task);
 

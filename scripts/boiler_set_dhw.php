@@ -5,5 +5,11 @@
 
 require_once '../include.php';
 
-$boiler = new Boiler($argv[1]);
-$boiler->setParam('dhw_setpoint_temp', $argv[2]);
+$id = (isset($argv[1]) ? $argv[1] : null);
+$boiler = new Boiler($id);
+if (isset($boiler))
+{
+    if ($boiler->setParam('dhw_setpoint_temp', $argv[2])) exit(0);
+    else exit(1);
+}
+else exit(1);

@@ -3,6 +3,7 @@
         "workerman/workerman": "^4.1",
         "aldas/modbus-tcp-client": "^3.5",
         "davidpersson/beanstalk": "^2.0",
-        "workerman/mqtt": "^1.5"
+        "workerman/mqtt": "^1.5",
+        "php-mqtt/client": "^2.1"
     }
 }

@@ -209,7 +209,7 @@ class Modbus extends System
     public static function modbusRtu(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
     {
         $uid = uniqid();
-
+var_dump($value);
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         $isSlaverActive = self::getSlaverActivity($modbusRegister->slaver_id);
         if ($force) $isSlaverActive = true;

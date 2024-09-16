@@ -245,6 +245,7 @@ function modbusFunction($task, bool $response = false, $binaryData = null)
         echo (new datetime())->format('Y-m-d H:i:s.v') . "   " . $task->title . ': ' . $task->value . PHP_EOL;
         echo PHP_EOL;
         if ($task->scale) $result = $task->value * $task->scale;
+        elseif ($task->format == 'f8.8') $result = Boiler::convertToF88($task->value);
         else $result = $task->value;
         return $result;
     }

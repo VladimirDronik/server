@@ -170,7 +170,7 @@ class Boiler extends System
             if(!is_numeric($value) || $value < 0)
             {
             echo "Некорректное значение температуры: " . $value . PHP_EOL;
-            $value = 'NULL';
+            $value = 0;
             }
 
             parent::$db->query("UPDATE `boilers_params`

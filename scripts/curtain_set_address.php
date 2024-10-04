@@ -20,5 +20,5 @@ require_once '../include.php';
 
 $id = (isset($argv[1]) ? $argv[1] : null);
 
-$curtain = new Curtain($id);
+$curtain = new Curtain($id, true);
 if (isset($curtain)) $curtain->setAddress();

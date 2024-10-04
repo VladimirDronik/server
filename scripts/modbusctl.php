@@ -2,7 +2,7 @@
 
 include_once "../include.php";
 
-$modbusRtuBuses = Modbus::getModbusRtuBuses();
+$modbusRtuBuses = Rs485::getBuses();
 $daliBuses = Dali::getDaliBuses();
 
 function startQueue($bus_id)

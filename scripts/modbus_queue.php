@@ -4,4 +4,5 @@ include_once "../include.php";
 
 // $queue = new ModbusQueue($argv[1]);
 // $queue->runClient();
-Rs485::queue($argv[1]);
+$queue = new Rs485($argv[1]);
+$queue->queue();

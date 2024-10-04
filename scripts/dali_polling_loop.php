@@ -27,7 +27,7 @@ $devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
 while (true)
 {
     // Получаем текущее количество изменений на шине DALI
-    $changesRequest = Modbus::modbusRtu($changesAmountRegister, 'read', 150);
+    $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', 150);
     if (isset($changesRequest) && !$changesRequest['error']) $changesAmount = (int)$changesRequest['response'];
     else $changesAmount = null;
 
@@ -36,7 +36,7 @@ while (true)
         echo " [ Изменений : $changesAmount ] " . PHP_EOL;
             foreach ($devicesChangesRegisters as $key => $registerId)
             {
-                $flagsRequest = Modbus::modbusRtu($registerId, 'read');
+                $flagsRequest = Modbus::sendModbus($registerId, 'read');
                 if (isset($flagsRequest) && !$flagsRequest['error'] && $flagsRequest['response'] != 0)
                     $flags = $flagsRequest['response'];
                 else $flags = null;
@@ -76,13 +76,13 @@ while (true)
                 }
             }
 
-        $changesRequest = Modbus::modbusRtu($changesAmountRegister, 'read', 150);
+        $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', 150);
         if (isset($changesRequest) && !$changesRequest['error']) $changesAmountAck = (int)$changesRequest['response'];
         else $changesAmountAck = null;
 
         if (isset($changesAmountAck))
         {
-            $isCounterReset = Modbus::modbusRtu($changesAmountRegister, 'write', null, 0);
+            $isCounterReset = Modbus::sendModbus($changesAmountRegister, 'write', null, 0);
             if (isset($isCounterReset) && !$isCounterReset['error']) echo " [ Counter reset ]" . PHP_EOL;
         }
     }

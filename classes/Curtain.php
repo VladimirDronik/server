@@ -77,28 +77,28 @@ class Curtain extends Device
      */
     private function sendCmd (string $packet, bool $needResponse, $targetByte = null)
 	{
-	    if ($this->curtain->bus_type == "tcp")
-        {
-            // TODO: Переделать реализацию для ModbusTCP
-            $modbus = new ModbusTcp();
-            $modbus->debug = false;
-            $modbus->socketCreate();
-            $modbus->socketSetOption();
-            $modbus->socketConnect($this->curtain->gateway_ip, $this->curtain->gateway_port);
-            $f = $modbus->modbusTcpTransactionId()."\x00\x00".pack('n', strlen($packet)).$packet;
-            $modbus->socketWrite($f);
-            $result = $modbus->socketRead();
-            $result = unpack('C*', $result);
-            $result = $result[count($result)];
-            $modbus->socketClose();
-        }
+	    // if ($this->curtain->bus_type == "tcp")
+        // {
+        //     // TODO: Переделать реализацию для ModbusTCP
+        //     $modbus = new ModbusTcp();
+        //     $modbus->debug = false;
+        //     $modbus->socketCreate();
+        //     $modbus->socketSetOption();
+        //     $modbus->socketConnect($this->curtain->gateway_ip, $this->curtain->gateway_port);
+        //     $f = $modbus->modbusTcpTransactionId()."\x00\x00".pack('n', strlen($packet)).$packet;
+        //     $modbus->socketWrite($f);
+        //     $result = $modbus->socketRead();
+        //     $result = unpack('C*', $result);
+        //     $result = $result[count($result)];
+        //     $modbus->socketClose();
+        // }
         
-        if ($this->curtain->bus_type == "rtu")
-        {
-            $bus = new Rs485();
-            $response = $bus->rawCmd($packet, $this->curtain->bus_id, $needResponse, $targetByte);
+        // if ($this->curtain->bus_type == "rtu")
+        // {
+            $bus = new Rs485($this->curtain->bus_id);
+            $response = $bus->sendRaw($packet, $needResponse, $targetByte);
             return $response;
-        }
+        // }
 	}
 
     /**

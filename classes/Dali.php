@@ -84,7 +84,7 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_get_brightness_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
             
-        $response = Modbus::modbusRtu($registerId, 'read');
+        $response = Modbus::sendModbus($registerId, 'read');
         if ($response && !$response['error'] && isset($response['response']))
         {
             $brightness = (int)$response['response'];
@@ -119,7 +119,7 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_get_temperature_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
 
-        $response = Modbus::modbusRtu($registerId, 'read');
+        $response = Modbus::sendModbus($registerId, 'read');
 
         if ($response && !$response['error'])
         {
@@ -143,7 +143,7 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_device_status_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
 
-        $response = Modbus::modbusRtu($registerId, 'read');
+        $response = Modbus::sendModbus($registerId, 'read');
 
         if ($response && !$response['error'] && isset($response['response']))
         {
@@ -180,7 +180,7 @@ class Dali extends Device
 
         if ($this->object->status == 'on')
         {
-            $response = Modbus::modbusRtu($registerId, 'write', self::percentToArcpower($brightness));
+            $response = Modbus::sendModbus($registerId, 'write', self::percentToArcpower($brightness));
             if (!isset($response) || $response['error']) return false;
         }
         
@@ -199,7 +199,7 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_set_temperature_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
         
-        $response = Modbus::modbusRtu($registerId, 'write', $cct);
+        $response = Modbus::sendModbus($registerId, 'write', $cct);
         if ($response && !$response['error'])
         {
             parent::$db->query("UPDATE `dali_devices`
@@ -218,7 +218,7 @@ class Dali extends Device
                                     AND `alias` LIKE 'dali_send_cmd_a{$this->daliDevice->address}'");
         $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
             
-        $response = Modbus::modbusRtu($registerId, 'write', $daliCmd);
+        $response = Modbus::sendModbus($registerId, 'write', $daliCmd);
         if ($response && !$response['error']) return true;
         else return false;
     }

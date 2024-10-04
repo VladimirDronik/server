@@ -11,7 +11,7 @@ require_once 'include.php';
 $script = new Scripts();
 $script->cron($argv[1]); //Ищем в БД скрипт, который подходит по периоду к вызвываемому и запускаем.
 
-// $modbusRtuBuses = Modbus::getModbusRtuBuses();
+// $modbusRtuBuses = Rs485::getBuses();
 // foreach ($modbusRtuBuses AS $bus_id) 
 // {
 //     $output=null;

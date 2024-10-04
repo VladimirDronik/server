@@ -134,7 +134,7 @@ class Boiler extends System
             $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $paramName);
             if (isset($registerId))
             {
-                $response = Modbus::modbusRtu($registerId, 'read');
+                $response = Modbus::sendModbus($registerId, 'read');
                 if (isset($response)) return $response;
                 else return null;
             }
@@ -152,7 +152,7 @@ class Boiler extends System
             $registerId = Modbus::getRegisterIdByAlias($this->boiler->gateway_id, $paramName);
             if (isset($registerId))
             {
-                $response = Modbus::modbusRtu($registerId, 'write', $value);
+                $response = Modbus::sendModbus($registerId, 'write', $value);
                 if (isset($response)) 
                 {
                     $this->writeToDb($paramName, $value);

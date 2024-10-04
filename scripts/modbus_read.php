@@ -2,11 +2,11 @@
 
 require_once '../include.php';
 
-$value = Modbus::modbusRtu($argv[1], 'read', null, true);
+$response = Modbus::sendModbus($argv[1], 'read', null, true);
 
-if (isset($value))
+if (isset($response))
 {
-    echo $value . PHP_EOL;
+    echo $response . PHP_EOL;
     exit(0);
 }
 

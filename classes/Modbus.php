@@ -7,38 +7,38 @@ use PhpMqtt\Client\MqttClient;
 class Modbus extends System
 {
     
-    private static $response = null;
-    public static $_busConnection = null;
+    // private static $response = null;
+    // public static $_busConnection = null;
 
     /**
      * Создание модбас устройства, на основе данных из БД по id
      */
-    public static function getModbusDevice($idModbusDevice)
-    {
-        $sql = parent::$db->query(" SELECT `modbus_slavers`.`id` AS 'id',
-                                           `modbus_slavers`.`name` AS 'name',
-                                           `modbus_slavers_types`.`type` 'AS type',
-                                           `modbus_slavers`.`address` AS 'address',
-                                           `modbus_buses`.`device` AS 'busdevice',
-                                           `modbus_buses`.`type` AS 'bustype',
-                                           `modbus_buses`.`baudrate` AS 'baudrate',
-                                           `modbus_buses`.`parity` AS 'parity',
-                                           `modbus_buses`.`stopbits` AS 'stopbits',
-                                           `modbus_buses`.`ip` AS 'ip',
-                                           `modbus_buses`.`port` AS 'port' 
-                                    FROM `modbus_slavers`
-                                    INNER JOIN `modbus_slavers_types`
-                                    ON `modbus_slavers`.`type` = `modbus_slavers_types`.`id`
-                                    INNER JOIN `modbus_buses`
-                                    ON `modbus_slavers`.`bus` = `modbus_buses`.`id`
-                                    WHERE `modbus_slavers`.`id`= $idModbusDevice");
-        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
-        else 
-        {
-            echo "Modbus устройств с ID $idModbusDevice не найдено" . PHP_EOL;
-            exit;
-        }
-    }
+    // public static function getModbusDevice($idModbusDevice)
+    // {
+    //     $sql = parent::$db->query(" SELECT `modbus_slavers`.`id` AS 'id',
+    //                                        `modbus_slavers`.`name` AS 'name',
+    //                                        `modbus_slavers_types`.`type` 'AS type',
+    //                                        `modbus_slavers`.`address` AS 'address',
+    //                                        `modbus_buses`.`device` AS 'busdevice',
+    //                                        `modbus_buses`.`type` AS 'bustype',
+    //                                        `modbus_buses`.`baudrate` AS 'baudrate',
+    //                                        `modbus_buses`.`parity` AS 'parity',
+    //                                        `modbus_buses`.`stopbits` AS 'stopbits',
+    //                                        `modbus_buses`.`ip` AS 'ip',
+    //                                        `modbus_buses`.`port` AS 'port' 
+    //                                 FROM `modbus_slavers`
+    //                                 INNER JOIN `modbus_slavers_types`
+    //                                 ON `modbus_slavers`.`type` = `modbus_slavers_types`.`id`
+    //                                 INNER JOIN `modbus_buses`
+    //                                 ON `modbus_slavers`.`bus` = `modbus_buses`.`id`
+    //                                 WHERE `modbus_slavers`.`id`= $idModbusDevice");
+    //     if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+    //     else 
+    //     {
+    //         echo "Modbus устройств с ID $idModbusDevice не найдено" . PHP_EOL;
+    //         exit;
+    //     }
+    // }
 
     /**
      * Получение параметров регистров устройств ModBus по их id
@@ -72,37 +72,20 @@ class Modbus extends System
     }
 
     /**
-     * Получение списка ModbusRTU шин из БД
-     */
-    public static function getModbusRtuBuses()
-    {
-        $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id'
-                                    FROM `modbus_buses`
-                                    WHERE `modbus_buses`.`type` = 'rtu'");
-        
-        if($sql->rowCount() > 0)
-        {
-            $modbusRtuBuses = $sql->fetchAll(PDO::FETCH_OBJ);
-            foreach ($modbusRtuBuses AS $modbusRtuBus) $modbusRtuBusesArray[] = $modbusRtuBus->bus_id;
-            return $modbusRtuBusesArray;
-        }
-    }
-
-    /**
      * Получение всех модбас устройств, которые есть на шине по её номеру
      * Возвращает массив модбас устройств, в котором содержится адрес устройства на шине
      */
-    public static function getAllDevicesOnBus($busId)
-    {
-        $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= $busId");
+    // public static function getAllDevicesOnBus($busId)
+    // {
+    //     $sql = parent::$db->query("SELECT id, address FROM `modbus_slavers` WHERE `bus`= $busId");
 
-        if($sql->rowCount() > 0)
-        {
-            $devices = $sql->fetchAll(PDO::FETCH_OBJ);
-            foreach ($devices AS $device) $modbusArray[$device->id] = $device->address;
-            return $modbusArray;
-        }
-    }
+    //     if($sql->rowCount() > 0)
+    //     {
+    //         $devices = $sql->fetchAll(PDO::FETCH_OBJ);
+    //         foreach ($devices AS $device) $modbusArray[$device->id] = $device->address;
+    //         return $modbusArray;
+    //     }
+    // }
 
     /**
      * Запись значения регистра в БД
@@ -164,7 +147,7 @@ class Modbus extends System
             while ($register = $sql->fetch(PDO::FETCH_OBJ))
             {
                 echo "Checking slaver ID $register->slaver_id:  ";
-                $response = self::modbusRtu($register->id, 'read', null, true);
+                $response = self::sendModbus($register->id, 'read', null, true);
 
                 if (isset($response))
                 {
@@ -206,10 +189,10 @@ class Modbus extends System
      * Постановка задания на чтение/запись регистра(ов) в очередь
      * $force=true для принудительного опроса, даже если устройство неактивно
      */
-    public static function modbusRtu(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
+    public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
     {
+        Mqtt::connectRs485();
         $uid = uniqid();
-var_dump($value);
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         $isSlaverActive = self::getSlaverActivity($modbusRegister->slaver_id);
         if ($force) $isSlaverActive = true;
@@ -235,7 +218,7 @@ var_dump($value);
             }
     
             $task = array (
-                'protocol' => 'rtu',
+                'protocol' => 'modbus',
                 'register_id' => $modbusRegisterId,                         // ID регистра
                 'slaver_id' => $modbusRegister->slaver_id,                  // ID устройства
                 'function_code' => $modbusFunction,                         // Функция Modbus
@@ -252,7 +235,7 @@ var_dump($value);
             );
 
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
-            $response = Mqtt::subscribe("rs485/{$modbusRegister->bus_id}/response", $uid);
+            $response = Mqtt::subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
 
             if ($response['error'])
             {
@@ -262,6 +245,7 @@ var_dump($value);
             else 
             {
                 self::setValue($modbusRegisterId, $response['response']);
+                
                 return $response['response'];
             }
         }

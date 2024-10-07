@@ -92,13 +92,15 @@ class Rs485 extends System
         return (($this->bus->stopbits == 1) ? "-" : "") . "cstopb";
     }
 
-    public function sendRawPacket($rawPacket, $connection)
+    private function sendRawPacket($rawPacket, $connection)
     {
-        $stream = $connection->connect()->getStream();
-        fwrite($stream, $rawPacket);
-        fflush($stream);
+        fwrite($connection->connect()->getStream(), $rawPacket);
+    }
+
+    private function recieveRawPacket($connection)
+    {
         usleep($connection->getDelayRead());
-        return fread($stream, 256);
+        return fread($connection->getStream(), 256);
     }
 
     public function sendRaw(string $cmd, bool $needResponse = true, $targetByte = null, int $priority = null)
@@ -128,7 +130,6 @@ class Rs485 extends System
         else return null;
     }
 
-
     public function queue()
     {
         function arrayFormat($item) {
@@ -139,33 +140,31 @@ class Rs485 extends System
 
         $queue = BeanstalkQueue::startQueue($this->bus->id);
 
-        while (true)
-        {
+        while (true) {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
             $connection = $this->busConnection();
-
-            // if ($task->protocol == 'raw') $packet = base64_decode($task->raw_data);
-            // if ($task->protocol == 'modbus') $packet = $this->getPacket($task);
-
             $packet = $this->getPacket($task);
             $request = unpack('H*', $packet)[1];
-            var_dump($packet, $request);
+
             try {
                 echo PHP_EOL . 'Packet to sent (in hex):   ' . $request . PHP_EOL;
+
+                if ($this->bus->type == 'rtu' && $task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
+                else $connection->connect()->send($packet);
+
                 if (!$task->needResponse) {
-                    if ($task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
-                    if ($task->protocol == 'modbus') $connection->connect()->send($packet);
                     $rawResponse = "Response is not needed";
                     $response = null;
                     $error = false;
                 }
                 else {
                     $start = microtime(true);
-                    if ($task->protocol == 'raw') $binaryData = $this->sendRawPacket($packet, $connection);
-                    if ($task->protocol == 'modbus') $binaryData = $connection->connect()->sendAndReceive($packet);
-                    if ($binaryData)
-                    {
+                    if ($this->bus->type == 'rtu' && $task->protocol == 'raw')
+                        $binaryData = $this->recieveRawPacket($connection);
+                    else $binaryData = $connection->receive();
+
+                    if ($binaryData) {
                         $end = (microtime(true) - $start) * 1000;
                         echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                         echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
@@ -177,8 +176,7 @@ class Rs485 extends System
                         if (isset($task->scale)) $response = $response * $task->scale;
                         if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
                     }
-                    else 
-                    {
+                    else {
                         echo 'No response from device' . PHP_EOL;
                         $rawResponse = null;
                         $response = null;
@@ -211,10 +209,8 @@ class Rs485 extends System
         }
     }
 
-    public function busConnection() {
+    private function busConnection() {
         if ($this->bus->type == 'rtu') {
-            // $this->rtuDeviceInit();
-            // $this->fd = $this->rtuDeviceOpen();
             return BinaryStreamConnection::getBuilder()
                 ->setUri($this->bus->device)
                 ->setProtocol('serial')
@@ -232,18 +228,17 @@ class Rs485 extends System
                 ->setPort($this->bus->port)
                 ->setHost($this->bus->ip_address)
                 ->build();
-            
         }
     }
 
-    public function getPacket($task) {
+    private function getPacket($task) {
         if ($task->protocol == 'raw') {
             $rawPacket = base64_decode($task->raw_data);
             if ($this->bus->type == 'rtu') return $rawPacket;
             if ($this->bus->type == 'tcp')
             {
                 $rawPacket = substr($rawPacket, 0, -2);
-                return random_bytes(2) . "\x00" . pack('n', strlen($rawPacket)) . $rawPacket;
+                return random_bytes(2) . "\x00\x00" . pack('n', strlen($rawPacket)) . $rawPacket;
             }
         }
 

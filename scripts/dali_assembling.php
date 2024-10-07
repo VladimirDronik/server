@@ -12,12 +12,12 @@ $sql = System::$db->query(" SELECT `id`
 $assemblingRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
 
 // Записываем команду запуска сборки шины
-$response = Modbus::modbusRtu($assemblingRegister, 'write', null, 0x01);
+$response = Modbus::sendModbus($assemblingRegister, 'write', null, 0x01);
 if (!isset($response) || $response['error']) exit(1);
 
 // Ждем окончания процесса сборки шины
 echo "Выполняется поиск устройств на шине";
-while ($registerValue = (int)Modbus::modbusRtu($assemblingRegister, 'read')['response'] == 0x11) echo ".";
+while ($registerValue = (int)Modbus::sendModbus($assemblingRegister, 'read')['response'] == 0x11) echo ".";
 if ((int)$registerValue == 0x06)
 {
     echo "[FAIL]" . PHP_EOL;
@@ -31,7 +31,7 @@ $sql = System::$db->query(" SELECT `id`
                             WHERE `slaver_id` = $daliGatewayId
                             AND `alias` = 'dali_devices_quantity'");
 $daliDevicesAmountRegister = $sql->fetch(PDO::FETCH_OBJ)->id;
-$daliDevicesAmount = Modbus::modbusRtu($daliDevicesAmountRegister, 'read')['response'];
+$daliDevicesAmount = Modbus::sendModbus($daliDevicesAmountRegister, 'read')['response'];
 echo "Найдено устройств:   $daliDevicesAmount" . PHP_EOL;
     
 if ($daliDevicesAmount > 0)
@@ -61,7 +61,7 @@ if ($daliDevicesAmount > 0)
             $daliAddressRegistersArray[$daliAddressRegister->alias] = (int)$daliAddressRegister->id;
 
         // Проверяем есть ли на шине устройство с адресом $address
-        $response = Modbus::modbusRtu($daliAddressRegistersArray["dali_is_on_bus_a$address"], 'read');
+        $response = Modbus::sendModbus($daliAddressRegistersArray["dali_is_on_bus_a$address"], 'read');
 
         if (isset($response['response']) && !$response['error']) $daliDeviceType = $response['response'];
         else $daliDeviceType = null;
@@ -72,7 +72,7 @@ if ($daliDevicesAmount > 0)
             echo "Устройство А$address:" . PHP_EOL;
             // Получаем данные устройства
             // Регистр 3003+A*5 - Статус устройства
-            $daliStatus = Modbus::modbusRtu($daliAddressRegistersArray["dali_device_status_a$address"], 'read')['response'];
+            $daliStatus = Modbus::sendModbus($daliAddressRegistersArray["dali_device_status_a$address"], 'read')['response'];
             // bit 1 - неисправность устройства. 0 = ОК; 1 = неисправность
             $failure = Dali::nbit($daliStatus,1);
             // bit 2 - состояние устройства. 0 = off; 1 = on
@@ -80,11 +80,11 @@ if ($daliDevicesAmount > 0)
             else $status = "on";
             
             // Регистр 3004+A*5 - Текущий уровень яркости
-            $daliBrightness = Modbus::modbusRtu($daliAddressRegistersArray["dali_get_brightness_a$address"], 'read')['response'];
+            $daliBrightness = Modbus::sendModbus($daliAddressRegistersArray["dali_get_brightness_a$address"], 'read')['response'];
             $daliBrightness = Dali::arcpowerTopercent($daliBrightness);
 
             // Регистр 3322+A*5 - Варианты управления цветом
-            $daliCctVariants = Modbus::modbusRtu($daliAddressRegistersArray["dali_cct_variants_a$address"], 'read')['response'];
+            $daliCctVariants = Modbus::sendModbus($daliAddressRegistersArray["dali_cct_variants_a$address"], 'read')['response'];
             // bit 1 - управление цветовой температурой. 0 = не поддерживается; 1 = поддерживается
             $cctControl = Dali::nbit($daliCctVariants,1);
 
@@ -96,7 +96,7 @@ if ($daliDevicesAmount > 0)
             // Если устройство поддерживает управление цветовой температурой, то можем считать значение 
             if ($cctControl)
             {
-                $daliCctValue = Modbus::modbusRtu($daliAddressRegistersArray["dali_get_temperature_a$address"], 'read')['response'];
+                $daliCctValue = Modbus::sendModbus($daliAddressRegistersArray["dali_get_temperature_a$address"], 'read')['response'];
                 echo "      Поддержка управления цветовой температурой: Да" . PHP_EOL;
                 echo "      Цветовая температура: $daliCctValue" . PHP_EOL;
             }

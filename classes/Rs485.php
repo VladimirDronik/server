@@ -1,187 +1,111 @@
 <?php
 
+use ModbusTcpClient\Network\BinaryStreamConnection;
+use ModbusTcpClient\Packet\RtuConverter;
+use ModbusTcpClient\Packet\ModbusFunction\ReadCoilsRequest;
+use ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesRequest;
+use ModbusTcpClient\Packet\ModbusFunction\ReadHoldingRegistersRequest;
+use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersRequest;
+use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse;
+use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterRequest;
+use ModbusTcpClient\Packet\ResponseFactory;
+use ModbusTcpClient\Utils\Packet;
+use ModbusTcpClient\Utils\Endian;
+
 class Rs485 extends System
 {
-    public $debug = false;
-    public $fd = null;
-    private $sttyModes = array();
-    private $device = null;
+    private $bus;
 
-    public function deviceInit($device, $baudrate, $parity, $char, $sbits, $flow)
-    {
-        $this->device = $device;
-        if (!$this->confBaudrate($baudrate)) echo 'Error: Invalid baudrate' . PHP_EOL;
-        if (!$this->confParity($parity)) echo 'Error: Invalid parity' . PHP_EOL;
-        if (!$this->confCharacterLength($char)) echo 'Error: Invalid number of data bits' . PHP_EOL;
-        if (!$this->confStopBits($sbits)) echo 'Error: Invalid number of stop bits' . PHP_EOL;
-        if (!$this->confFlowControl($flow)) echo 'Error: Invalid flow control' . PHP_EOL;
-
-        $this->confOtherSettings();
-
-        $modes = implode(' ', $this->sttyModes);
-        $sttyResult = exec("stty -F $device $modes");
-        if ($sttyResult === false) echo 'stty command failed' . PHP_EOL;
-    }
-
-    private function confBaudrate($baudrate)
-    {
-        $validBauds = array
-        (
-            110    => 110,
-            150    => 150,
-            300    => 300,
-            600    => 600,
-            1200   => 1200,
-            2400   => 2400,
-            4800   => 4800,
-            9600   => 9600,
-            19200  => 19200,
-            38400  => 38400,
-            57600  => 57600,
-            115200 => 115200
-        );
-        if (isset($validBauds[$baudrate])) {
-            array_push($this->sttyModes, $baudrate); 
-            return true;
+    function __construct($busId) {
+        if (isset($busId)) {
+            $sql = parent::$db->query(" SELECT `modbus_buses`.`id`,
+                                               `modbus_buses`.`device`,
+                                               `modbus_buses`.`type`,
+                                               `modbus_buses`.`baudrate`,
+                                               `modbus_buses`.`length`,
+                                               `modbus_buses`.`parity`,
+                                               `modbus_buses`.`stopbits`,
+                                               `modbus_buses`.`ip_address`,
+                                               `modbus_buses`.`port`
+                                        FROM `modbus_buses`
+                                        WHERE `modbus_buses`.`id`= $busId");
+            
+            if ($sql->rowCount() > 0) {
+                $this->bus = $sql->fetch(PDO::FETCH_OBJ);
+            }
+            else {
+                echo "Modbus шина с ID $busId не найдена" . PHP_EOL;
+                exit;
+            }
         }
-        else return false;
+        else {
+            echo "[Error] Не определен ID шины" . PHP_EOL;
+            exit;
+        }
     }
 
-    private function confParity($parity)
-    {
-        $args = array
-        (
+    public function setSerialParams() {
+        return [ 
+            'sttyModes' =>
+                [
+                    $this->setCharacterSize(), // set character size
+                    $this->bus->baudrate, // set baud rate
+                    $this->setStopBits(), // set stop bits
+                    $this->setParity(), // set parity
+                    '-icanon', // disable enable special characters: erase, kill, werase, rprnt
+                    'min 0', // with -icanon, set N characters minimum for a completed read
+                    'ignbrk', // enable ignore break characters
+                    '-brkint', // disable breaks cause an interrupt signal
+                    '-icrnl', // disable translate carriage return to newline
+                    '-imaxbel', // disable beep and do not flush a full input buffer on a character
+                    '-opost', // disable postprocess output
+                    '-onlcr', // disable translate newline to carriage return-newline
+                    '-isig', // disable interrupt, quit, and suspend special characters
+                    '-iexten', // disable non-POSIX special characters
+                    '-echo', // disable echo input characters
+                    '-echoe', // disable echo erase characters as backspace-space-backspace
+                    '-echok', // disable echo a newline after a kill character
+                    '-echoctl', // disable same as [-]ctlecho
+                    '-echoke', // disable kill all line by obeying the echoprt and echoe settings
+                    '-noflsh', // disable flushing after interrupt and quit special characters
+                    '-ixon', // disable XON/XOFF flow control
+                    '-crtscts', // disable RTS/CTS handshaking
+                ]
+        ];
+    }
+
+    private function setParity() {
+        $args = [
             "none" => "-parenb",
             "odd"  => "parenb parodd",
-            "even" => "parenb -parodd",
-        );
-        
-        if (isset($args[$parity])) {
-            array_push ($this->sttyModes, $args[$parity]);
-            return true;
-        }
-        else return false;
+            "even" => "parenb -parodd"
+        ];
+        return $args[$this->bus->parity];
     }
 
-    private function confCharacterLength($int)
-    {
-        $int = (int) $int;
-        if ($int < 5) $int = 5;
-        elseif ($int > 8) $int = 8;
-        array_push ($this->sttyModes, "cs" . $int);
-        return true;
+    private function setCharacterSize() {
+        return "cs" . $this->bus->length;
     }
 
-    private function confStopBits($length)
-    {
-        if ($length == 1 || $length == 2) {
-            array_push ($this->sttyModes, (($length == 1) ? "-" : "") . "cstopb");
-            return true;
-        }
-        else return false;
+    private function setStopBits() {
+        return (($this->bus->stopbits == 1) ? "-" : "") . "cstopb";
     }
 
-    private function confFlowControl($mode)
+    private function sendRawPacket($rawPacket, $connection)
     {
-        $modes = array
-        (
-            "none"     => "clocal -crtscts -ixon -ixoff",
-            "rts/cts"  => "-clocal crtscts -ixon -ixoff",
-            "xon/xoff" => "-clocal -crtscts ixon ixoff"
-        );
-
-        if (isset($modes[$mode])) {
-            array_push ($this->sttyModes, $modes[$mode]);
-            return true;
-        }
-        else return false;
+        fwrite($connection->connect()->getStream(), $rawPacket);
     }
 
-    private function confOtherSettings()
+    private function recieveRawPacket($connection)
     {
-        $otherSettings = array
-        (
-            "-icanon", // disable enable special characters: erase, kill, werase, rprnt
-            "min 0", // with -icanon, set N characters minimum for a completed read
-            "ignbrk", // enable ignore break characters
-            "-brkint", // disable breaks cause an interrupt signal
-            "-icrnl", // disable translate carriage return to newline
-            "-imaxbel", // disable beep and do not flush a full input buffer on a character
-            "-opost", // disable postprocess output
-            "-onlcr", // disable translate newline to carriage return-newline
-            "-isig", // disable interrupt, quit, and suspend special characters
-            "-iexten", // disable non-POSIX special characters
-            "-echo", // disable echo input characters
-            "-echoe", // disable echo erase characters as backspace-space-backspace
-            "-echok", // disable echo a newline after a kill character
-            "-echoctl", // disable same as [-]ctlecho
-            "-echoke", // disable kill all line by obeying the echoprt and echoe settings
-            "-noflsh" // disable flushing after interrupt and quit special characters
-        );
-
-        $this->sttyModes = array_merge($this->sttyModes, $otherSettings);
+        usleep($connection->getDelayRead());
+        return fread($connection->getStream(), 256);
     }
 
-    public function deviceOpen()
+    public function sendRaw(string $cmd, bool $needResponse = true, $targetByte = null, int $priority = null)
     {
-        $this->fd = fopen($this->device, 'w+b');
-        // return $this->fd;
-    }
-
-    public function deviceClose()
-    {
-        fclose($this->fd);
-
-    }
-
-    public function deviceStatus()
-    {
-        return $this->fd;
-    }
-
-    public function send($rtuPacket, $needResponse = true)
-    {
-        usleep(500000);
-        echo PHP_EOL;
-        echo 'RTU Binary to sent (in hex):   ' . unpack('H*', $rtuPacket)[1] . PHP_EOL;
-        fwrite($this->fd, $rtuPacket);
-        fflush($this->fd);
-        if ($needResponse)
-        {
-            $binaryData = '';
-            $start = microtime(true);
-            do 
-            {
-                // Give a modbus device time to respond. 
-                // This is crucial for some serial devices and delay needs to be even longer (100ms) 
-                //or you will experience read errors or invalid CRCs
-                usleep(150000);
-                // usleep(500000);
-                $binaryData = fread($this->fd, 255);
-            } 
-            while ($binaryData === '' && (microtime(true) - $start) < 3);
-            $end = (microtime(true) - $start) * 1000;
-            if ($binaryData)
-            {
-                echo 'Response in: ' . $end . ' ms' . PHP_EOL;
-                echo 'RTU Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                return $binaryData;
-            }
-            else
-            {
-                echo "No response from device" . PHP_EOL;
-                return false;
-            }
-        }
-        else 
-        {
-            echo 'Response is not needed' . PHP_EOL;
-            return true;
-        }
-    }
-
-    public function rawCmd(string $cmd, int $busId, bool $needResponse = true, $targetByte = null, int $priority = null)
-    {
+        Mqtt::connectRs485();
         $uid = uniqid();
         $rawData = pack ('c*', ...array_map('hexdec', str_split(str_replace(' ', '', $cmd), 2)));
         $task = [
@@ -194,9 +118,9 @@ class Rs485 extends System
         if (isset($targetByte)) $task['targetByte'] = $targetByte;
 
         if (!isset($priority)) $priority = 50;
-        BeanstalkQueue::putTask($busId, $task, $priority);
+        BeanstalkQueue::putTask($this->bus->id, $task, $priority);
 
-        $response = Mqtt::subscribe("rs485/$busId/response", $uid);
+        $response = Mqtt::subscribeRs485("rs485/{$this->bus->id}/response", $uid);
 
         if ($response && !$response['error'])
         {
@@ -206,115 +130,196 @@ class Rs485 extends System
         else return null;
     }
 
-
-    public static function queue(int $busId)
+    public function queue()
     {
-        function arrayFormat($item)
-        {
+        function arrayFormat($item) {
             $result = dechex($item);
             if (strlen($result) < 2) $result = '0' . $result;
             return $result;
         }
 
-        $queue = BeanstalkQueue::startQueue($busId);
-        $bus = self::busConnection($busId);
-        
-        $writeFunctionCodesArray = [5, 6, 15, 16];
+        $queue = BeanstalkQueue::startQueue($this->bus->id);
 
-        while (true)
-        {
+        while (true) {
             $job = $queue->reserve(); // Block until job is available.
             $task = json_decode($job['body']);
-            
-            if ($task->protocol == 'raw') $binRequest = base64_decode($task->raw_data);
-            if ($task->protocol == 'rtu') $binRequest = modbusFunction($task);
+            $connection = $this->busConnection();
+            $packet = $this->getPacket($task);
+            $request = unpack('H*', $packet)[1];
 
-            $request = array_map('arrayFormat', unpack('C*', $binRequest));
-            $request = implode(" ", $request);
+            try {
+                echo PHP_EOL . 'Packet to sent (in hex):   ' . $request . PHP_EOL;
 
-            $binaryData = $bus->send($binRequest, $task->needResponse);
+                if ($this->bus->type == 'rtu' && $task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
+                else $connection->connect()->send($packet);
 
-            if ($task->needResponse)
-            {
-                if ($binaryData)
-                {
-                    $rawResponse = unpack('C*', $binaryData);
-                    $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
-                    // $rawResponse = implode(" ", $rawResponse);
-                    $error = false;
-                    if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
-                    if ($task->protocol == 'rtu') $response = modbusFunction($task, true, $binaryData);
-                }
-                else 
-                {
-                    $rawResponse = null;
+                if (!$task->needResponse) {
+                    $rawResponse = "Response is not needed";
                     $response = null;
-                    $error = true;
-                    $errorCode = "No response from device";
+                    $error = false;
                 }
+                else {
+                    $start = microtime(true);
+                    if ($this->bus->type == 'rtu' && $task->protocol == 'raw')
+                        $binaryData = $this->recieveRawPacket($connection);
+                    else $binaryData = $connection->receive();
+
+                    if ($binaryData) {
+                        $end = (microtime(true) - $start) * 1000;
+                        echo 'Response in: ' . $end . ' ms' . PHP_EOL;
+                        echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                        if ($task->protocol == 'raw') $binaryData = substr((string)$binaryData, 6);
+                        $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
+                        $error = false;
+                        if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
+                        if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
+                        if (isset($task->scale)) $response = $response * $task->scale;
+                        if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
+                    }
+                    else {
+                        echo 'No response from device' . PHP_EOL;
+                        $rawResponse = null;
+                        $response = null;
+                        $error = true;
+                        $errorCode = "No response from device";
+                    }
+                }
+                
+                $topic = "rs485/{$this->bus->id}/response";
+                $payload = [
+                    'uid' => $task->uid,
+                    'error' => $error,
+                    'protocol' => $task->protocol,
+                    'request' => $request,
+                    'raw_response' => $rawResponse,
+                ];
+                if (isset($response)) $payload += ['response' => $response,];
+                if ($error) $payload += ['error_code' => $errorCode,];
+                Mqtt::publish($topic, $payload);
             }
-            else
-            {
-                $rawResponse = "Response is not needed";
-                $response = null;
-                $error = false;
-                usleep(100000);
+            catch (Exception $exception) {
+                echo 'An exception occurred' . PHP_EOL;
+                echo $exception->getMessage() . PHP_EOL;
+                echo $exception->getTraceAsString() . PHP_EOL;
             }
-
-            $topic = "rs485/$busId/response";
-
-            $queue->delete($job['id']);
-            $payload = [
-                'uid' => $task->uid,
-                'error' => $error,
-                'protocol' => $task->protocol,
-                'request' => $request,
-                'raw_response' => $rawResponse,
-            ];
-            if (isset($response)) $payload += ['response' => $response,];
-            if ($error) $payload += ['error_code' => $errorCode,];
-
-            Mqtt::publish($topic, $payload);
+            finally {
+                $connection->close();
+                $queue->delete($job['id']);
+            }
         }
     }
 
-    public static function busConnection(int $busId)
-    {
-            $bus = self::getRs485BusSettings($busId);
-            if ($bus)
-            {
-                $modbus = new Rs485();
-                $modbus->deviceInit($bus->busdevice, $bus->baudrate, $bus->parity,
-                                    $bus->length, $bus->stopbits, 'none');
-                $modbus->deviceOpen();
-                $modbus->debug = true;
-                return $modbus;
-            }
-            else return false;
+    private function busConnection() {
+        if ($this->bus->type == 'rtu') {
+            return BinaryStreamConnection::getBuilder()
+                ->setUri($this->bus->device)
+                ->setProtocol('serial')
+                ->setFromOptions($this->setSerialParams())
+                ->setIsCompleteCallback(static function ($binaryData, $streamIndex): bool {
+                    return Packet::isCompleteLengthRTU($binaryData);
+                })
+                // delay this is crucial for some serial devices and delay needs to be long as 100ms (depending on the quantity)
+                // or you will experience read errors ("stream_select interrupted") or invalid CRCs
+                ->setDelayRead(100_000) // 100 milliseconds, serial devices may need delay between sending and received
+                ->build();
+        }
+        if ($this->bus->type == 'tcp') {
+            return BinaryStreamConnection::getBuilder()
+                ->setPort($this->bus->port)
+                ->setHost($this->bus->ip_address)
+                ->build();
+        }
     }
 
-     /**
-     * Получение настроек шины из БД
+    private function getPacket($task) {
+        if ($task->protocol == 'raw') {
+            $rawPacket = base64_decode($task->raw_data);
+            if ($this->bus->type == 'rtu') return $rawPacket;
+            if ($this->bus->type == 'tcp') {
+                $rawPacket = substr($rawPacket, 0, -2);
+                return random_bytes(2) . "\x00\x00" . pack('n', strlen($rawPacket)) . $rawPacket;
+            }
+        }
+
+        if ($task->protocol == 'modbus') {
+            switch ($task->function_code) {
+                case 1:
+                    $modbusPacket = new ReadCoilsRequest($task->starting_address, $task->quantity, $task->slave_address);
+                    break;
+                case 2:
+                    $modbusPacket = new ReadInputDiscretesRequest($task->starting_address, $task->quantity, $task->slave_address);
+                    break;
+                case 3:
+                    $modbusPacket = new ReadHoldingRegistersRequest($task->starting_address, $task->quantity, $task->slave_address);
+                    break;
+                case 4:
+                    $modbusPacket = new ReadInputRegistersRequest($task->starting_address, $task->quantity, $task->slave_address);
+                    break;
+                case 5:
+                    $modbusPacket = new WriteSingleCoilRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
+                case 6:
+                    $modbusPacket = new WriteSingleRegisterRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
+            }
+
+            if ($this->bus->type == 'tcp') return $modbusPacket;
+            if ($this->bus->type == 'rtu') return RtuConverter::toRtu($modbusPacket);
+        }
+    }
+
+    public function getResponse($binaryData, $task) {
+        Endian::$defaultEndian = Endian::BIG_ENDIAN;
+        if ($this->bus->type == 'tcp') $response = ResponseFactory::parseResponseOrThrow($binaryData);
+        if ($this->bus->type == 'rtu') $response = RtuConverter::fromRtu($binaryData);
+
+        switch ($task->function_code) {
+            case 1:
+            case 2:
+                return $response->getCoils()[0] ? '1' : '0';
+                break;
+            case 3:
+            case 4:
+                $result = $response->getWordAt(0);
+                if ($task->format == 'double') return $result->getDouble();
+                if ($task->format == 'u64') return $result->getUInt64();
+                if ($task->format == 's64') return $result->getInt64();
+                if ($task->format == 'float') return $result->getFloat();
+                if ($task->format == 'u32') return $result->getUInt32();
+                if ($task->format == 's32') return $result->getInt32();
+                if ($task->format == 'u16') return $result->getUInt16();
+                if ($task->format == 's16') return $result->getInt16();
+                if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
+                if ($task->format == 'raw') return unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
+                break;
+            case 5:
+                return $response->isCoil() ? '1' : '0';
+                break;
+            case 6:
+                $result = $response->getWord();
+                if ($task->format == 'double') return $result->getDouble();
+                if ($task->format == 'u64') return $result->getUInt64();
+                if ($task->format == 's64') return $result->getInt64();
+                if ($task->format == 'float') return $result->getFloat();
+                if ($task->format == 'u32') return $result->getUInt32();
+                if ($task->format == 's32') return $result->getInt32();
+                if ($task->format == 'u16') return $result->getUInt16();
+                if ($task->format == 's16') return $result->getInt16();
+                if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
+                break;
+        }
+    }
+
+    /**
+     * Получение списка шин RS485 из БД
      */
-    public static function getRs485BusSettings(int $idBus)
-    {
-        $sql = parent::$db->query(" SELECT `modbus_buses`.`device` AS 'busdevice',
-                                           `modbus_buses`.`type` AS 'bustype',
-                                           `modbus_buses`.`baudrate` AS 'baudrate',
-                                           `modbus_buses`.`length` AS 'length',
-                                           `modbus_buses`.`parity` AS 'parity',
-                                           `modbus_buses`.`stopbits` AS 'stopbits',
-                                           `modbus_buses`.`ip_address` AS 'ip',
-                                           `modbus_buses`.`port` AS 'port'
-                                    FROM `modbus_buses`
-                                    WHERE `modbus_buses`.`id`= $idBus");
-        
-        if ($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
-        else
-        {
-            echo "Modbus шина с ID $modbusRegisterId не найдена" . PHP_EOL;
-            exit;
+    public static function getBuses() {
+        $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id'
+                                    FROM `modbus_buses`");
+        if($sql->rowCount() > 0) {
+            $buses = $sql->fetchAll(PDO::FETCH_OBJ);
+            foreach ($buses AS $bus) $busesArray[] = $bus->bus_id;
+            return $busesArray;
         }
     }
-
 }

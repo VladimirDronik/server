@@ -2,6 +2,6 @@
 
 require_once '../include.php';
 
-Device::checkAvailible('devices');
 Modbus::checkModbusAvailible();
 Curtain::checkRsMotorAvailible();
+Device::checkAvailible('devices');

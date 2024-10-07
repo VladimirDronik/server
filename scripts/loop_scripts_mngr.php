@@ -69,7 +69,7 @@ function checkSupervisorCfg(string $subject)
 function getIdArrayFromDb(string $subject)
 {
     $idArrayFromDb = [];
-    if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Modbus::getModbusRtuBuses();
+    if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Rs485::getBuses();
     if ($subject == 'dali_polling') $idArrayFromDb = Dali::getDaliBuses();
     // if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
 

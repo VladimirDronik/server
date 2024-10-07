@@ -77,10 +77,6 @@ require_once __DIR__ . '/classes/Scriptlang/MyObject.php';
 require_once __DIR__ . '/classes/Scriptlang/MyRelay.php';
 require_once __DIR__ . '/classes/Scriptlang/MySocket.php';
 
-// ModbusTCP library
-require_once __DIR__.'/libs/modbus/ModbusTcp.php';
-require_once __DIR__. '/libs/modbus/ModbusFunctions.php';
-
 require_once  __DIR__.'/vendor/autoload.php';
 
 System::dbConnect($host, $dbname, $dbuser, $dbpass);

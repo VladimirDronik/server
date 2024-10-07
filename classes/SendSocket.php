@@ -340,16 +340,18 @@ class SendSocket
 
             //Если передаем яркость
             if ($instance == 'brightness') $dimmer->setValue($status);
-            elseif ($instance == 'on') $dimmer->setValue($status);
-        
+            elseif ($instance == 'on') {
+                if ($status == 'on') $dimmer->setValue($dimmer->getValue());
+                if ($status == 'off') $dimmer->setValue(0);
+            }
         } elseif ($object->type == 'conditioner') {
 
-           $value = $data_array->items[0]->value;
-           $oper = $data_array->items[0]->params->oper;
-           $fan = $data_array->items[0]->params->fan;
+            $value = $data_array->items[0]->value;
+            $oper = $data_array->items[0]->params->oper;
+            $fan = $data_array->items[0]->params->fan;
         
-           $conditioner = new Conditioner($idObject);
-           $conditioner->setValue($value, $status, $oper, $fan);
+            $conditioner = new Conditioner($idObject);
+            $conditioner->setValue($value, $status, $oper, $fan);
 
         } elseif ($object->type == 'curtain') {
             if ($status == 'on') {

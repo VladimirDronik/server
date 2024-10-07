@@ -168,7 +168,7 @@ class Rs485 extends System
                         $end = (microtime(true) - $start) * 1000;
                         echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                         echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                        $rawResponse = unpack('C*', $binaryData);
+                        if ($task->protocol == 'raw') $binaryData = substr((string)$binaryData, 6);
                         $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
@@ -235,8 +235,7 @@ class Rs485 extends System
         if ($task->protocol == 'raw') {
             $rawPacket = base64_decode($task->raw_data);
             if ($this->bus->type == 'rtu') return $rawPacket;
-            if ($this->bus->type == 'tcp')
-            {
+            if ($this->bus->type == 'tcp') {
                 $rawPacket = substr($rawPacket, 0, -2);
                 return random_bytes(2) . "\x00\x00" . pack('n', strlen($rawPacket)) . $rawPacket;
             }
@@ -314,13 +313,10 @@ class Rs485 extends System
     /**
      * Получение списка шин RS485 из БД
      */
-    public static function getBuses()
-    {
+    public static function getBuses() {
         $sql = parent::$db->query(" SELECT `modbus_buses`.`id` AS 'bus_id'
                                     FROM `modbus_buses`");
-        
-        if($sql->rowCount() > 0)
-        {
+        if($sql->rowCount() > 0) {
             $buses = $sql->fetchAll(PDO::FETCH_OBJ);
             foreach ($buses AS $bus) $busesArray[] = $bus->bus_id;
             return $busesArray;

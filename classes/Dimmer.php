@@ -46,7 +46,6 @@ class Dimmer extends Device
      */
     public function setValue($value)
     {
-
         $object = new Objects();
         $object->select(self::$idObject);
 
@@ -68,8 +67,18 @@ class Dimmer extends Device
             //Заносим текущее состояние в таблицу
             parent::$db->query("UPDATE `".self::$deviceTable."` SET `value` = $value WHERE `id_object` =".self::$idObject);
             $object->setStatus('on', true, false);
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.range",
+                "state" => [
+                    "instance" => "brightness",
+                    "value" => $value
+                ]
+            ];
+            Device::aliceCallbackState(self::$idObject, $aliceCapabilities, null);
         }
-        else $object->setStatus('off', true, false);     
+        else $object->setStatus('off', true, false);
+        
+        
     }
 
     public function setEasy($command)

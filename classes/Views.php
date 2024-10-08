@@ -749,7 +749,6 @@ class Views extends System
 
                     
                     case 'customizable_light':
-                        
                         $status = $itemStatus;
 
                         $deviceTables = ['lamps', 'dimmers', 'dali_devices', 'tapes'];

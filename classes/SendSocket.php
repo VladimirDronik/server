@@ -320,10 +320,10 @@ class SendSocket
         $instance = $data_array->items[0]->instance;
 
 
-        if($status == 1)
-            $status = 'on';
-        elseif($status == 0)
-            $status = 'off';
+        // if($status == 1)
+        //     $status = 'on';
+        // elseif($status == 0)
+        //     $status = 'off';
 
 
         $object = new Objects();
@@ -335,14 +335,11 @@ class SendSocket
             //TODO: вместо этого сделать реализацию конкретного объекта и его метода, например лампы.
 
         } elseif ($object->type == 'dimmer') {
-
             $dimmer = new Dimmer($idObject);
-
-            //Если передаем яркость
             if ($instance == 'brightness') $dimmer->setValue($status);
-            elseif ($instance == 'on') {
-                if ($status == 'on') $dimmer->setValue($dimmer->getValue());
-                if ($status == 'off') $dimmer->setValue(0);
+            if ($instance == 'on') {
+                if ($status) $dimmer->setValue($dimmer->getValue());
+                else $dimmer->setValue(0);
             }
         } elseif ($object->type == 'conditioner') {
 
@@ -354,7 +351,7 @@ class SendSocket
             $conditioner->setValue($value, $status, $oper, $fan);
 
         } elseif ($object->type == 'curtain') {
-            if ($status == 'on') {
+            if ($status) {
                 $curtain = new Curtain($idObject);
                 $curtain->open();
             }
@@ -365,8 +362,19 @@ class SendSocket
         } elseif ($object->type == 'virtual') {
 
             $virtual = new Virtuals($idObject);
-            if ($status == 'on') $virtual->on('view',$idObject);
-            elseif ($status == 'off') $virtual->off('view',$idObject);
+            if ($status) $virtual->on('view',$idObject);
+            else $virtual->off('view',$idObject);
+        }
+        elseif ($object->type == 'tape') {
+            $tape = new Tape($idObject);
+            if ($instance == 'brightness') $tape->tapeSetBrightness($status);
+            if ($instance == 'on') {
+                if ($status) $tape->tapeOn();
+                else $tape->tapeOff();
+            }
+            if ($instance == 'hsv') {
+                $tape->tapeSetColor($status->h, $status->s);
+            }
         }
     }
 

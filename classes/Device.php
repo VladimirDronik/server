@@ -8,6 +8,15 @@
 class Device extends System
 {
 
+    private $devicesCapabilitiesOn_off = [
+        'type' => 'devices.capabilities.on_off',
+        'parameters' => [
+            'instance' => 'on'
+        ],
+        'retrievable' => true,
+        'reportable' => true
+    ];
+
 
     /**
      * Определение на каком контроллере находится устройство
@@ -120,7 +129,7 @@ class Device extends System
 
             foreach ($devices AS $device) {
 
-                $attributes = $this->deviceAttributesToAlice($device->type, $device->status);
+                $attributes = $this->deviceAttributesToAlice($device->type, $device->id);
 
                 $name = $device->name;
                 $deviceId = $device->id;
@@ -144,43 +153,201 @@ class Device extends System
     /**
      * Формирование атрибутов для устройства Алисы в зависимости от типа
      */
-    private function deviceAttributesToAlice($type, $status)
+    private function deviceAttributesToAlice($type, $objectId)
     {
-
         switch ($type) {
-
-
             case 'lamp':
                 $type = 'devices.types.light';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                $capabilities = [ $this->devicesCapabilitiesOn_off ];
+                $properties = null;
                 break;
 
             case 'socket':
             case 'relay':
             case 'virtual':
                 $type = 'devices.types.socket';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                $capabilities = [ $this->devicesCapabilitiesOn_off ];
+                $properties = null;
                 break;
 
             case 'lock':
                 $type = 'devices.types.openable';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                $capabilities = [ $this->devicesCapabilitiesOn_off ];
+                $properties = null;
                 break;
 
             case 'dimmer':
                 $type = 'devices.types.light';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"on"},"retrievable":true},
-                {"type":"devices.capabilities.range","parameters":{"unit":"unit.percent","range":{"min":1,"max":100,"precision":1},
-                "instance":"brightness"},"retrievable":true}]';
+                $capabilities = [
+                    $this->devicesCapabilitiesOn_off,
+                    [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                            'unit' => 'unit.percent',
+                            'range' => [
+                                'min' => 1,
+                                'max' => 100,
+                                'precision' => 1
+                            ],
+                            'instance' => 'brightness'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ]
+                ];
+                $properties = null;
+                break;
+
+            case 'tape':
+                $tape = new Tape($objectId);
+
+                $type = 'devices.types.light.strip';
+                $capabilities = [
+                    $this->devicesCapabilitiesOn_off,
+                    [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                            'unit' => 'unit.percent',
+                            'range' => [
+                                'min' => 1,
+                                'max' => 100,
+                                'precision' => 1
+                            ],
+                            'instance' => 'brightness'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ]
+                ];
+                
+                // if ($tape->getType() == 'W') {
+                //     $capabilities[] = [
+                //         'type' => 'devices.capabilities.range',
+                //         'parameters' => [
+                //             'unit' => 'unit.percent',
+                //             'range' => [
+                //                 'min' => 1,
+                //                 'max' => 100,
+                //                 'precision' => 1
+                //             ],
+                //             'instance' => 'brightness'
+                //         ],
+                //         'retrievable' => true,
+                //         'reportable' => true
+                //     ];
+                // }
+               
+                if ($tape->getType() == 'RGB') {
+
+                    $capabilities[] = [
+                        'type' => 'devices.capabilities.color_setting',
+                        'retrievable' => true,
+                        'reportable' => true,
+                        'parameters' => [
+                            'color_model' => 'hsv',
+                            'instance' => 'hsv'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ];
+                }
+
+                $properties = null;
                 break;
 
             case 'curtain':
                 $type = 'devices.types.openable.curtain';
-                $capabilities = '[{"type":"devices.capabilities.on_off","parameters":{"instance":"'.$status.'"},"retrievable":true}]';
+                $capabilities = [ $this->devicesCapabilitiesOn_off ];
+                $properties = null;
+                break;
+            
+            case 'conditioner':
+                $type = 'devices.types.thermostat.ac';
+                $capabilities = [
+                    $this->devicesCapabilitiesOn_off,
+                    [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                        'unit' => 'unit.temperature.celsius',
+                            'range' => [
+                                'min' => 15,
+                                'max' => 35,
+                                'precision' => 1
+                            ],
+                            'instance' => 'temperature'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ],
+                    [
+                        'type' => 'devices.capabilities.mode',
+                        'parameters' => [
+                            'instance' => 'fan_speed',
+                            'modes' => [
+                                [ 'value' => 'auto' ],
+                                [ 'value' => 'low' ],
+                                [ 'value' => 'medium' ],
+                                [ 'value' => 'high' ]
+                            ]
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ],
+                    [
+                        'type' => 'devices.capabilities.mode',
+                        'parameters' => [
+                            'instance' => 'thermostat',
+                            'modes' => [
+                                [ 'value' => 'auto' ],
+                                [ 'value' => 'cool' ],
+                                [ 'value' => 'heat' ]
+                            ]
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ]
+                ];
+                $properties = null;
+                break;
+            
+            case 'climate_sensor':
+                $type = 'devices.types.sensor.climate';
+                $capabilities = null;
+                $properties = [
+                    [
+                        'type' => 'devices.properties.float',
+                        'parameters' => [
+                            'instance' => 'temperature',
+                            'unit' => 'unit.temperature.celsius'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ]
+                ];
+                break;
+            
+            case 'termostat':
+                $type = 'devices.types.thermostat';
+                $capabilities = [
+                    [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                            'instance' => 'temperature',
+                            'unit' => 'unit.temperature.celsius'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ]
+                ];
+                $properties = null;
                 break;
         }
 
-        return ['type' => $type, 'capabilities' => $capabilities];
+        return [
+            'type' => $type, 
+            'capabilities' => json_encode($capabilities),
+            'properties' => json_encode($properties)
+        ];
 
     }
 
@@ -203,17 +370,86 @@ class Device extends System
         else
             $on = null;
 
-        if (($device->type == 'lamp') || ($device->type == 'relay') || ($device->type == 'socket') )
-            $status = array('on' => $on);
-
-        if (($device->type == 'curtain'))
+        if (
+            ($device->type == 'lamp') || 
+            ($device->type == 'relay') || 
+            ($device->type == 'socket') ||
+            ($device->type == 'curtain')
+            )
             $status = array('on' => $on);
 
         if ($device->type == 'dimmer') {
             $dimmer = new Dimmer($idDevice);
-            $status = array('on' => $on, 'brightness' => $dimmer->getValue());
+            $status = [
+                'on' => $on,
+                'brightness' => $dimmer->getValue()
+            ];
+        }
+
+        if ($device->type == 'tape') {
+
+            $tape = new Tape($idDevice);
+
+
+            $status = [
+                'on' => $on,
+                'brightness' => $tape->getBrightness()
+            ];
+
+            // if ($tape->getType() == 'W') {
+            //     $status['brightness'] = $tape->getBrightness();
+            // }
+
+            if ($tape->getType() == 'RGB') {
+                $color = $tape->getColor();
+                $status['hsv'] = [
+                    'h' => $color->h,
+                    's' => $color->s,
+                    'v' => $color->v
+                ];
+            }
+        }
+
+        if ($device->type == 'conditioner') {
+            $ac = new Conditioner($idDevice);
+            $status = [
+                'on' => $on,
+                'temperature' => $ac->getAcTemperature(),
+                'fan_speed' => $ac->getAcFanSpeed(),
+                'thermostat' => $ac->getAcMode()
+            ];
+        }
+
+        if ($device->type == 'termostat') {
+            $sensor = new Thermostats($idDevice);
+            $status = [
+                'temperature' => $sensor->getCurrentTemperature()
+            ];
         }
 
         return json_encode(array('mode' => 'get_status', 'status' => $status));
+    }
+
+    public static function aliceCallbackState($objectId, $capabilities, $properties) {
+        $ydrHost = 'https://server1.touchon.tech';
+        $ydrScript = 'ydr.php';
+
+        $sql = parent::$db->query(" SELECT `id_object`
+                                    FROM `alice_devices` 
+                                    WHERE `id_object` = $objectId
+                                    AND `active` = 1");
+        if ($sql->rowCount() > 0) {
+            $sql = parent::$db->query(" SELECT `value`
+                                        FROM `settings`
+                                        WHERE `name` = 'server_id'");
+            $serverUid = $sql->fetch(PDO::FETCH_OBJ)->value;
+            $queryString = "$ydrHost/$ydrScript?suid=$serverUid&object_id=$objectId";
+
+            if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
+            if (isset($properties)) $queryString .= "&properties=" . json_encode($properties);
+            var_dump($queryString);
+            file_get_contents($queryString);
+        }
+
     }
 }

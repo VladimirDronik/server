@@ -1,6 +1,7 @@
 <?php
 
 use ModbusTcpClient\Network\BinaryStreamConnection;
+use ModbusTcpClient\Network\SerialStreamCreator;
 use ModbusTcpClient\Packet\RtuConverter;
 use ModbusTcpClient\Packet\ModbusFunction\ReadCoilsRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesRequest;
@@ -47,31 +48,28 @@ class Rs485 extends System
 
     public function setSerialParams() {
         return [ 
-            'sttyModes' =>
-                [
-                    $this->setCharacterSize(), // set character size
-                    $this->bus->baudrate, // set baud rate
-                    $this->setStopBits(), // set stop bits
-                    $this->setParity(), // set parity
-                    '-icanon', // disable enable special characters: erase, kill, werase, rprnt
-                    'min 0', // with -icanon, set N characters minimum for a completed read
-                    'ignbrk', // enable ignore break characters
-                    '-brkint', // disable breaks cause an interrupt signal
-                    '-icrnl', // disable translate carriage return to newline
-                    '-imaxbel', // disable beep and do not flush a full input buffer on a character
-                    '-opost', // disable postprocess output
-                    '-onlcr', // disable translate newline to carriage return-newline
-                    '-isig', // disable interrupt, quit, and suspend special characters
-                    '-iexten', // disable non-POSIX special characters
-                    '-echo', // disable echo input characters
-                    '-echoe', // disable echo erase characters as backspace-space-backspace
-                    '-echok', // disable echo a newline after a kill character
-                    '-echoctl', // disable same as [-]ctlecho
-                    '-echoke', // disable kill all line by obeying the echoprt and echoe settings
-                    '-noflsh', // disable flushing after interrupt and quit special characters
-                    '-ixon', // disable XON/XOFF flow control
-                    '-crtscts', // disable RTS/CTS handshaking
-                ]
+            $this->setCharacterSize(), // set character size
+            $this->bus->baudrate, // set baud rate
+            $this->setStopBits(), // set stop bits
+            $this->setParity(), // set parity
+            '-icanon', // disable enable special characters: erase, kill, werase, rprnt
+            'min 0', // with -icanon, set N characters minimum for a completed read
+            'ignbrk', // enable ignore break characters
+            '-brkint', // disable breaks cause an interrupt signal
+            '-icrnl', // disable translate carriage return to newline
+            '-imaxbel', // disable beep and do not flush a full input buffer on a character
+            '-opost', // disable postprocess output
+            '-onlcr', // disable translate newline to carriage return-newline
+            '-isig', // disable interrupt, quit, and suspend special characters
+            '-iexten', // disable non-POSIX special characters
+            '-echo', // disable echo input characters
+            '-echoe', // disable echo erase characters as backspace-space-backspace
+            '-echok', // disable echo a newline after a kill character
+            '-echoctl', // disable same as [-]ctlecho
+            '-echoke', // disable kill all line by obeying the echoprt and echoe settings
+            '-noflsh', // disable flushing after interrupt and quit special characters
+            '-ixon', // disable XON/XOFF flow control
+            '-crtscts', // disable RTS/CTS handshaking
         ];
     }
 
@@ -151,7 +149,10 @@ class Rs485 extends System
                 echo PHP_EOL . 'Packet to sent (in hex):   ' . $request . PHP_EOL;
 
                 if ($this->bus->type == 'rtu' && $task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
-                else $connection->connect()->send($packet);
+                else {
+                    $connection->connect()->send($packet);
+                    // var_dump($connection);
+                }
 
                 if (!$task->needResponse) {
                     $rawResponse = "Response is not needed";
@@ -211,10 +212,14 @@ class Rs485 extends System
 
     private function busConnection() {
         if ($this->bus->type == 'rtu') {
+            $sttyModes = $this->setSerialParams();
             return BinaryStreamConnection::getBuilder()
                 ->setUri($this->bus->device)
                 ->setProtocol('serial')
-                ->setFromOptions($this->setSerialParams())
+                ->setCreateStreamCallback(static function (BinaryStreamConnection $conn) use ($sttyModes) {
+                    $streamCreator = new SerialStreamCreator(['sttyModes' => $sttyModes]);
+                    return $streamCreator->createStream($conn);
+                })
                 ->setIsCompleteCallback(static function ($binaryData, $streamIndex): bool {
                     return Packet::isCompleteLengthRTU($binaryData);
                 })

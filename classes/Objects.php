@@ -200,10 +200,10 @@ class Objects extends System
                 $view = new Views();
                 $view->updateItem($item->id, $status);
             }
-            var_dump($status);
+
             if ($status == "on") $status = true;
             elseif ($status == "off") $status = false;
-            var_dump($status);
+
             $aliceCapabilities = [
                 "type" => "devices.capabilities.on_off",
                 "state" => [

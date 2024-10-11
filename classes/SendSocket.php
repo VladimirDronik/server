@@ -320,17 +320,12 @@ class SendSocket
         $instance = $data_array->items[0]->instance;
 
 
-        // if($status == 1)
-        //     $status = 'on';
-        // elseif($status == 0)
-        //     $status = 'off';
-
-
         $object = new Objects();
         $object->select($idObject);
 
         if (($object->type == 'lamp') || ($object->type == 'socket') || ($object->type == 'relay')) {
-
+            if($status == 1) $status = 'on';
+            elseif($status == 0) $status = 'off';
             $object->setStatus($status);
             //TODO: вместо этого сделать реализацию конкретного объекта и его метода, например лампы.
 

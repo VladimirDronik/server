@@ -153,7 +153,7 @@ class Device extends System
     /**
      * Формирование атрибутов для устройства Алисы в зависимости от типа
      */
-    private function deviceAttributesToAlice($type, $objectId)
+    public function deviceAttributesToAlice($type, $objectId)
     {
         switch ($type) {
             case 'lamp':
@@ -200,7 +200,6 @@ class Device extends System
 
             case 'tape':
                 $tape = new Tape($objectId);
-
                 $type = 'devices.types.light.strip';
                 $capabilities = [
                     $this->devicesCapabilitiesOn_off,
@@ -219,24 +218,6 @@ class Device extends System
                         'reportable' => true
                     ]
                 ];
-                
-                // if ($tape->getType() == 'W') {
-                //     $capabilities[] = [
-                //         'type' => 'devices.capabilities.range',
-                //         'parameters' => [
-                //             'unit' => 'unit.percent',
-                //             'range' => [
-                //                 'min' => 1,
-                //                 'max' => 100,
-                //                 'precision' => 1
-                //             ],
-                //             'instance' => 'brightness'
-                //         ],
-                //         'retrievable' => true,
-                //         'reportable' => true
-                //     ];
-                // }
-               
                 if ($tape->getType() == 'RGB') {
 
                     $capabilities[] = [
@@ -262,6 +243,8 @@ class Device extends System
                 break;
             
             case 'conditioner':
+                $ac = new Conditioner($objectId);
+                var_dump($ac);
                 $type = 'devices.types.thermostat.ac';
                 $capabilities = [
                     $this->devicesCapabilitiesOn_off,

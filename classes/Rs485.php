@@ -177,7 +177,7 @@ class Rs485 extends System
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
                         if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
-                        if (isset($task->scale) && $task->function_code < 15) $response = $response * $task->scale;
+                        if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
                         if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
                     }
                     else {
@@ -275,7 +275,7 @@ class Rs485 extends System
                 case 16:
                     foreach ($task->value as &$value) 
                     {
-                        if (isset($task->scale)) $value = $value / $task->scale;
+                        if (isset($task->scale)) $value /= $task->scale;
                         switch ($task->format) {
                             case 's8':
                             case 'u8':

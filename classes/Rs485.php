@@ -10,9 +10,12 @@ use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse;
 use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilRequest;
 use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteMultipleCoilsRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteMultipleRegistersRequest;
 use ModbusTcpClient\Packet\ResponseFactory;
 use ModbusTcpClient\Utils\Packet;
 use ModbusTcpClient\Utils\Endian;
+use ModbusTcpClient\Utils\Types;
 
 class Rs485 extends System
 {
@@ -174,7 +177,7 @@ class Rs485 extends System
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
                         if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
-                        if (isset($task->scale)) $response = $response * $task->scale;
+                        if (isset($task->scale) && $task->function_code < 15) $response = $response * $task->scale;
                         if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
                     }
                     else {
@@ -266,6 +269,37 @@ class Rs485 extends System
                 case 6:
                     $modbusPacket = new WriteSingleRegisterRequest($task->starting_address, $task->value, $task->slave_address);
                     break;
+                case 15:
+                    $modbusPacket = new WriteMultipleCoilsRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
+                case 16:
+                    foreach ($task->value as &$value) 
+                    {
+                        if (isset($task->scale)) $value = $value / $task->scale;
+                        switch ($task->format) {
+                            case 's8':
+                            case 'u8':
+                                $value = Types::toByte($value);
+                                break;
+                            case 's16':
+                                $value = Types::toInt16($value);
+                                break;
+                            case 'u16':
+                                $value = Types::toUint16($value);
+                                break;
+                            case 's32':
+                                $value = Types::toInt32($value);
+                                break;
+                            case 'u32':
+                                $value = Types::toUint32($value);
+                                break;
+                            case 'double':
+                                $value = Types::toDouble($value);
+                                break;
+                        }
+                    }
+                    $modbusPacket = new WriteMultipleRegistersRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
             }
 
             if ($this->bus->type == 'tcp') return $modbusPacket;
@@ -311,6 +345,12 @@ class Rs485 extends System
                 if ($task->format == 'u16') return $result->getUInt16();
                 if ($task->format == 's16') return $result->getInt16();
                 if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
+                break;
+            case 15:
+                return $response->getCoilCount();
+                break;
+            case 16:
+                return $response->getRegistersCount();
                 break;
         }
     }

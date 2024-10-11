@@ -191,6 +191,10 @@ class Modbus extends System
      */
     public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
     {
+        if (isset($value)) {
+            if (!is_array($value)) $value = [ $value ];
+        }
+
         Mqtt::connectRs485();
         $uid = uniqid();
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
@@ -211,10 +215,8 @@ class Modbus extends System
             if ($action == 'write')
             {
                 if (!isset($priopity)) $priopity = 50;
-                if ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity == 1) $modbusFunction = 5;
-                elseif ($modbusRegister->register_type == 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 15;
-                elseif ($modbusRegister->register_type != 'coil' && $modbusRegister->registers_quantity > 1) $modbusFunction = 16;
-                else $modbusFunction = 6;
+                if ($modbusRegister->register_type == 'coil') $modbusFunction = 15;
+                else $modbusFunction = 16;
             }
     
             $task = array (
@@ -225,7 +227,7 @@ class Modbus extends System
                 'slave_address' => $modbusRegister->address,                // Адрес ведомого устройства на шине Modbus
                 'starting_address' => $modbusRegister->starting_register,   // Адрес первого регистра
                 'quantity' => $modbusRegister->registers_quantity,          // Количество регистров для операций чтения
-                'value' => (int)$value,                                     // Данные для операций записи
+                'value' => $value,                                          // Данные для операций записи
                 'format' => $modbusRegister->data_format,                   // Формат считываемых данных
                 'title' => $modbusRegister->register_name,                  // Название регистра
                 'units' => $modbusRegister->units,                          // Единицы имерения
@@ -237,16 +239,20 @@ class Modbus extends System
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
 
-            if ($response['error'])
-            {
+            if ($response['error']) {
                 self::setSlaverActivity($modbusRegister->slaver_id, 0);
                 return null;
             }
-            else 
-            {
-                self::setValue($modbusRegisterId, $response['response']);
-                
-                return $response['response'];
+            else {
+                if ($action == 'read') {
+                    self::setValue($modbusRegisterId, $response['response']);
+                    $response = $response['response'];
+                }
+                else {
+                    if ($response['response'] > 0) $response = 1;
+                    else $response = null;
+                } 
+                return $response;
             }
         }
     }

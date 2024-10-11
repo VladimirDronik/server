@@ -83,97 +83,76 @@ class Conditioner extends Device
 
     public function setAcTemperature(int $temperature)
     {
-        // $sql = parent::$db->query(" SELECT `conditioner_types`.`temperature`
-        //                             FROM `conditioner_types`
-        //                             INNER JOIN `conditioners`
-        //                             ON `conditioner_types`.`id` = `conditioners`.`type`
-        //                             WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-        //                             AND `conditioners`.`id_object` = {$this->ac->id_object}");
-        $acTemperatureRange = json_decode($this->ac->temps, true);
+        if(isset($this->ac->temps)) {
+            $acTemperatureRange = json_decode($this->ac->temps, true);
 
-        if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
-        {
-            $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
-            if (isset($registerId)) 
+            if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
             {
-                $response = Modbus::sendModbus($registerId, 'write', $temperature);
-                if (isset($response))
+                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
+                if (isset($registerId)) 
                 {
-                    parent::$db->query("UPDATE `conditioners`
-                                        SET `temp` = $temperature
-                                        WHERE id_object = {$this->ac->id_object}");
-                    return true;
+                    $response = Modbus::sendModbus($registerId, 'write', $temperature);
+                    if (isset($response))
+                    {
+                        parent::$db->query("UPDATE `conditioners`
+                                            SET `temp` = $temperature
+                                            WHERE id_object = {$this->ac->id_object}");
+                        return true;
+                    }
+                    else return false;
                 }
-                else return false;
             }
         }
     }
     
     public function setAcMode(string $mode)
     {
-        // $sql = parent::$db->query(" SELECT `conditioner_types`.`mode`
-        //                             FROM `conditioner_types`
-        //                             INNER JOIN `conditioners`
-        //                             ON `conditioner_types`.`id` = `conditioners`.`type`
-        //                             WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-        //                             AND `conditioners`.`id_object` = {$this->ac->id_object}");
-        $acModes = json_decode($this->ac->modes, true);
-        if (array_key_exists($mode, $acModes))
-        {
-            $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
-            if (isset($registerId)) 
+        if(isset($this->ac->modes)) {
+            $acModes = json_decode($this->ac->modes, true);
+            if (array_key_exists($mode, $acModes))
             {
-                $response = Modbus::sendModbus($registerId, 'write', $acModes[$mode]);
-                if (isset($response))
+                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
+                if (isset($registerId)) 
                 {
-                    parent::$db->query("UPDATE `conditioners`
-                                        SET `mode` = '$mode'
-                                        WHERE id_object = {$this->ac->id_object}");
-                    return true;
+                    $response = Modbus::sendModbus($registerId, 'write', $acModes[$mode]);
+                    if (isset($response))
+                    {
+                        parent::$db->query("UPDATE `conditioners`
+                                            SET `mode` = '$mode'
+                                            WHERE id_object = {$this->ac->id_object}");
+                        return true;
+                    }
+                    else return false;
                 }
-                else return false;
             }
         }
     }
 
     public function setAcFanSpeed(string $speed)
     {
-        // $sql = parent::$db->query(" SELECT `conditioner_types`.`fan`
-        //                             FROM `conditioner_types`
-        //                             INNER JOIN `conditioners`
-        //                             ON `conditioner_types`.`id` = `conditioners`.`type`
-        //                             WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-        //                             AND `conditioners`.`id_object` = {$this->ac->id_object}");
-        $acFanSpeeds = json_decode($this->ac->fans, true);
-
-        if (array_key_exists($speed, $acFanSpeeds))
-        {
-            $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
-            if (isset($registerId)) 
+        if(isset($this->ac->fans)) {
+            $acFanSpeeds = json_decode($this->ac->fans, true);
+            if (array_key_exists($speed, $acFanSpeeds))
             {
-                $response = Modbus::sendModbus($registerId, 'write', $acFanSpeeds[$speed]);
-                if (isset($response))
+                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
+                if (isset($registerId)) 
                 {
-                    parent::$db->query("UPDATE `conditioners`
-                                        SET `fan` = '$speed'
-                                        WHERE id_object = {$this->ac->id_object}");
-                    return true;
+                    $response = Modbus::sendModbus($registerId, 'write', $acFanSpeeds[$speed]);
+                    if (isset($response))
+                    {
+                        parent::$db->query("UPDATE `conditioners`
+                                            SET `fan` = '$speed'
+                                            WHERE id_object = {$this->ac->id_object}");
+                        return true;
+                    }
+                    else return false;
                 }
-                else return false;
             }
         }
     }
 
     public function setAcVDir(string $vDir)
     {
-        // $sql = parent::$db->query(" SELECT `conditioner_types`.`vdir`
-        //                             FROM `conditioner_types`
-        //                             INNER JOIN `conditioners`
-        //                             ON `conditioner_types`.`id` = `conditioners`.`type`
-        //                             WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-        //                             AND `conditioners`.`id_object` = {$this->ac->id_object}");
-        // $queryResult = $sql->fetch(PDO::FETCH_OBJ);
-
         if(isset($this->ac->vdirs))
         {
             $acVDirs = json_decode($this->ac->vdirs, true);
@@ -199,13 +178,6 @@ class Conditioner extends Device
 
     public function setAcHDir(string $hDir)
     {
-        // $sql = parent::$db->query(" SELECT `conditioner_types`.`hdir`
-        //                             FROM `conditioner_types`
-        //                             INNER JOIN `conditioners`
-        //                             ON `conditioner_types`.`id` = `conditioners`.`type`
-        //                             WHERE `conditioners`.`modbus_slaver_id` = {$this->ac->modbus_slaver_id}
-        //                             AND `conditioners`.`id_object` = {$this->ac->id_object}");
-        // $queryResult = $sql->fetch(PDO::FETCH_OBJ);
         if(isset($this->ac->hdirs))
         {
             $acHDirs = json_decode($this->ac->hdirs, true);
@@ -227,6 +199,30 @@ class Conditioner extends Device
                 }
             }
         }
+    }
+
+    public function getAcPower() {
+        return $this->ac->state;
+    }
+
+    public function getAcTemperature() {
+        return $this->ac->temp;
+    }
+
+    public function getAcMode() {
+        return $this->ac->mode;
+    }
+
+    public function getAcFanSpeed() {
+        return $this->ac->fan;
+    }
+
+    public function getAcVDir() {
+        return $this->ac->vdir;
+    }
+
+    public function getAcHDir() {
+        return $this->ac->hdir;
     }
 
     public function updateAcParams() {

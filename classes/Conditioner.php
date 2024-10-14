@@ -97,6 +97,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `temp` = $temperature
                                             WHERE id_object = {$this->ac->id_object}");
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.range",
+                            "state" => [
+                                "instance" => "temperature",
+                                "value" => $temperature
+                            ]
+                        ];
+                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;
@@ -120,6 +128,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `mode` = '$mode'
                                             WHERE id_object = {$this->ac->id_object}");
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.mode",
+                            "state" => [
+                                "instance" => "thermostat",
+                                "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
+                            ]
+                        ];
+                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;
@@ -143,6 +159,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `fan` = '$speed'
                                             WHERE id_object = {$this->ac->id_object}");
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.mode",
+                            "state" => [
+                                "instance" => "fan_speed",
+                                "value" => Device::ALICE_AC_MODES_MAPPING[$speed]
+                            ]
+                        ];
+                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;
@@ -225,6 +249,18 @@ class Conditioner extends Device
         return $this->ac->hdir;
     }
 
+    public function getMinMaxTemps() {
+        return json_decode($this->ac->temps, true);
+    }
+
+    public function getFans() {
+        return json_decode($this->ac->fans, true);
+    }
+
+    public function getModes() {
+        return json_decode($this->ac->modes, true);
+    }
+
     public function updateAcParams() {
         $sql = parent::$db->query(" SELECT `id`, `alias`
                                     FROM `modbus_registers`
@@ -252,6 +288,36 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `$column` = '$value'
                                             WHERE id_object = {$this->ac->id_object}");
+                        if ($column == 'mode' || $column == 'fan' || $column == 'temp') {
+                            if ($column == 'mode') {
+                                $aliceCapabilities = [
+                                    "type" => "devices.capabilities.mode",
+                                    "state" => [
+                                        "instance" => "thermostat",
+                                        "value" => Device::ALICE_AC_MODES_MAPPING[$value]
+                                    ]
+                                ];
+                            }
+                            if ($column == 'fan') {
+                                $aliceCapabilities = [
+                                    "type" => "devices.capabilities.mode",
+                                    "state" => [
+                                        "instance" => "fan_speed",
+                                        "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$value]
+                                    ]
+                                ];
+                            }
+                            if ($column == 'temp') {
+                                $aliceCapabilities = [
+                                    "type" => "devices.capabilities.range",
+                                    "state" => [
+                                        "instance" => "temperature",
+                                        "value" => $value
+                                    ]
+                                ];
+                            }
+                            Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        } 
                     }
                 }
             }

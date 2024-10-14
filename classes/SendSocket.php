@@ -338,12 +338,17 @@ class SendSocket
             }
         } elseif ($object->type == 'conditioner') {
 
-            $value = $data_array->items[0]->value;
-            $oper = $data_array->items[0]->params->oper;
-            $fan = $data_array->items[0]->params->fan;
-        
             $conditioner = new Conditioner($idObject);
-            $conditioner->setValue($value, $status, $oper, $fan);
+            if ($instance == 'on') $conditioner->setAcPower($status);
+            if ($instance == 'temperature') $conditioner->setAcTemperature($status);
+            if ($instance == 'fan_speed') {
+                $status = array_search($status, Device::ALICE_AC_FAN_MODES_MAPPING);
+                $conditioner->setAcFanSpeed($status);
+            }
+            if ($instance == 'thermostat') {
+                $status = array_search($status, Device::ALICE_AC_MODES_MAPPING);
+                $conditioner->setAcMode($status);
+            }
 
         } elseif ($object->type == 'curtain') {
             if ($status) {

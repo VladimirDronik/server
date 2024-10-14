@@ -7,6 +7,28 @@
 
 class Device extends System
 {
+    const ALICE_AC_FAN_MODES_MAPPING = [
+        'auto' => 'auto',
+        'turbo' => 'turbo',
+        'silent' => 'quiet',
+        'low' => 'low',
+        'medium' => 'medium',
+        'high' => 'high',
+        1 => 'one',
+        2 => 'two',
+        3 => 'three',
+        4 => 'four',
+        5 => 'five',
+        6 => 'six'
+    ];
+
+    const ALICE_AC_MODES_MAPPING = [
+        'auto' => 'auto',
+        'cool' => 'cool',
+        'heat' => 'heat',
+        'dry' => 'dry',
+        'fan' => 'fan_only'
+    ];
 
     private $devicesCapabilitiesOn_off = [
         'type' => 'devices.capabilities.on_off',
@@ -244,8 +266,13 @@ class Device extends System
             
             case 'conditioner':
                 $ac = new Conditioner($objectId);
-                var_dump($ac);
                 $type = 'devices.types.thermostat.ac';
+                foreach ($ac->getFans() as $key => $value) {
+                    $fanModes[] = [ 'value' => self::ALICE_AC_FAN_MODES_MAPPING[$key] ];
+                }
+                foreach ($ac->getModes() as $key => $value) {
+                    $modes[] = [ 'value' => self::ALICE_AC_MODES_MAPPING[$key] ];
+                }
                 $capabilities = [
                     $this->devicesCapabilitiesOn_off,
                     [
@@ -253,8 +280,8 @@ class Device extends System
                         'parameters' => [
                         'unit' => 'unit.temperature.celsius',
                             'range' => [
-                                'min' => 15,
-                                'max' => 35,
+                                'min' => $ac->getMinMaxTemps()['min'],
+                                'max' => $ac->getMinMaxTemps()['max'],
                                 'precision' => 1
                             ],
                             'instance' => 'temperature'
@@ -266,12 +293,7 @@ class Device extends System
                         'type' => 'devices.capabilities.mode',
                         'parameters' => [
                             'instance' => 'fan_speed',
-                            'modes' => [
-                                [ 'value' => 'auto' ],
-                                [ 'value' => 'low' ],
-                                [ 'value' => 'medium' ],
-                                [ 'value' => 'high' ]
-                            ]
+                            'modes' => $fanModes
                         ],
                         'retrievable' => true,
                         'reportable' => true
@@ -280,11 +302,7 @@ class Device extends System
                         'type' => 'devices.capabilities.mode',
                         'parameters' => [
                             'instance' => 'thermostat',
-                            'modes' => [
-                                [ 'value' => 'auto' ],
-                                [ 'value' => 'cool' ],
-                                [ 'value' => 'heat' ]
-                            ]
+                            'modes' => $modes
                         ],
                         'retrievable' => true,
                         'reportable' => true
@@ -398,8 +416,8 @@ class Device extends System
             $status = [
                 'on' => $on,
                 'temperature' => $ac->getAcTemperature(),
-                'fan_speed' => $ac->getAcFanSpeed(),
-                'thermostat' => $ac->getAcMode()
+                'fan_speed' => self::ALICE_AC_FAN_MODES_MAPPING[$ac->getAcFanSpeed()],
+                'thermostat' => self::ALICE_AC_MODES_MAPPING[$ac->getAcMode()]
             ];
         }
 
@@ -433,6 +451,5 @@ class Device extends System
             var_dump($queryString);
             file_get_contents($queryString);
         }
-
     }
 }

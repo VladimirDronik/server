@@ -258,6 +258,43 @@ class Device extends System
                 $properties = null;
                 break;
 
+                case 'dali':
+                    $tape = new Dali($objectId);
+                    $type = 'devices.types.light';
+                    $capabilities = [
+                        $this->devicesCapabilitiesOn_off,
+                        [
+                            'type' => 'devices.capabilities.range',
+                            'parameters' => [
+                                'unit' => 'unit.percent',
+                                'range' => [
+                                    'min' => 1,
+                                    'max' => 100,
+                                    'precision' => 1
+                                ],
+                                'instance' => 'brightness'
+                            ],
+                            'retrievable' => true,
+                            'reportable' => true
+                        ],
+                        [
+                            'type' => 'devices.capabilities.color_setting',
+                            'retrievable' => true,
+                            'reportable' => true,
+                            'parameters' => [
+                                'temperature_k' => [
+                                    "min" => 1000,
+                                    "max" => 10000
+                                ],
+                                'instance' => 'temperature_k'
+                            ],
+                            'retrievable' => true,
+                            'reportable' => true
+                        ]
+                    ];
+                    $properties = null;
+                    break;
+
             case 'curtain':
                 $type = 'devices.types.openable.curtain';
                 $capabilities = [ $this->devicesCapabilitiesOn_off ];
@@ -411,6 +448,18 @@ class Device extends System
             }
         }
 
+        if ($device->type == 'dali') {
+
+            $dali = new Dali($idDevice);
+
+            $status = [
+                'on' => $on,
+                'brightness' => $dali->getBrightness(),
+                'temperature_k' => $dali->getColorTemperature()
+            ];
+        }
+
+
         if ($device->type == 'conditioner') {
             $ac = new Conditioner($idDevice);
             $status = [
@@ -448,7 +497,7 @@ class Device extends System
 
             if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
             if (isset($properties)) $queryString .= "&properties=" . json_encode($properties);
-            var_dump($queryString);
+            // var_dump($queryString);
             file_get_contents($queryString);
         }
     }

@@ -376,6 +376,15 @@ class SendSocket
                 $tape->tapeSetColor($status->h, $status->s);
             }
         }
+        elseif ($object->type == 'dali') {
+            $dali = new Dali($idObject);
+            if ($instance == 'brightness') $dali->setBrightness($status);
+            if ($instance == 'on') {
+                if ($status) $dali->daliOn();
+                else $dali->daliOff();
+            }
+            if ($instance == 'temperature_k') $dali->setColorTemperature($status);
+        }
     }
 
     /**

@@ -16,6 +16,7 @@ class Tape extends Device
                                             `tapes`.`s` AS 'saturation',
                                             `tapes`.`v` AS 'value',
                                             `tapes`.`w` AS 'brightness',
+                                            `tapes`.`cct`,
                                             `tapes`.`channel` AS 'channel',
                                             `tapes`.`controller_id` AS 'controller',
                                             `modbus_slavers`.`active`
@@ -169,7 +170,7 @@ class Tape extends Device
      * @param int $temperature - значение цветовой температуры, 0 до 100 %
      * 0 - тёплый цвет, 100 - холодный цвет
      */
-    public function tapeSetTemperature (int $temperature)
+    public function tapeSetTemperature(int $temperature)
     {
         if (isset($temperature))
         {
@@ -219,12 +220,12 @@ class Tape extends Device
     }
 
     public function getBrightness() {
-        if ($this->tape->type == 'RGB') $column = 'v';
-        else $column = 'w';
-        $sql = parent::$db->query(" SELECT $column AS 'brightness'
-                                    FROM `tapes`
-                                    WHERE `id_object` = {$this->object->id}");
-        return $sql->fetch(PDO::FETCH_OBJ)->brightness;
+        if ($this->tape->type == 'RGB') return $this->tape->value;
+        else return $this->tape->brightness;
+    }
+
+    public function getCct() {
+        return $this->tape->cct;
     }
 
 }

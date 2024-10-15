@@ -249,9 +249,23 @@ class Device extends System
                         'parameters' => [
                             'color_model' => 'hsv',
                             'instance' => 'hsv'
-                        ],
+                        ]
+                    ];
+                }
+
+                if ($tape->getType() == 'RGB') {
+
+                    $capabilities[] = [
+                        'type' => 'devices.capabilities.color_setting',
                         'retrievable' => true,
-                        'reportable' => true
+                        'reportable' => true,
+                        'parameters' => [
+                                'temperature_k' => [
+                                    "min" => 0,
+                                    "max" => 100
+                                ],
+                                'instance' => 'temperature_k'
+                            ]
                     ];
                 }
 
@@ -287,9 +301,7 @@ class Device extends System
                                     "max" => 10000
                                 ],
                                 'instance' => 'temperature_k'
-                            ],
-                            'retrievable' => true,
-                            'reportable' => true
+                            ]
                         ]
                     ];
                     $properties = null;
@@ -425,19 +437,11 @@ class Device extends System
         }
 
         if ($device->type == 'tape') {
-
             $tape = new Tape($idDevice);
-
-
             $status = [
                 'on' => $on,
                 'brightness' => $tape->getBrightness()
             ];
-
-            // if ($tape->getType() == 'W') {
-            //     $status['brightness'] = $tape->getBrightness();
-            // }
-
             if ($tape->getType() == 'RGB') {
                 $color = $tape->getColor();
                 $status['hsv'] = [
@@ -446,19 +450,19 @@ class Device extends System
                     'v' => $color->v
                 ];
             }
+            if ($tape->getType() == 'CCT') {
+                $status['temperature_k'] = $tape->getCct();
+            }
         }
 
         if ($device->type == 'dali') {
-
             $dali = new Dali($idDevice);
-
             $status = [
                 'on' => $on,
                 'brightness' => $dali->getBrightness(),
                 'temperature_k' => $dali->getColorTemperature()
             ];
         }
-
 
         if ($device->type == 'conditioner') {
             $ac = new Conditioner($idDevice);

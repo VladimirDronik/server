@@ -365,6 +365,7 @@ class SendSocket
             if ($status) $virtual->on('view',$idObject);
             else $virtual->off('view',$idObject);
         }
+
         elseif ($object->type == 'tape') {
             $tape = new Tape($idObject);
             if ($instance == 'brightness') $tape->tapeSetBrightness($status);
@@ -375,7 +376,11 @@ class SendSocket
             if ($instance == 'hsv') {
                 $tape->tapeSetColor($status->h, $status->s);
             }
+            if ($instance == 'temperature_k') {
+                $tape->tapeSetTemperature($status);
+            }
         }
+
         elseif ($object->type == 'dali') {
             $dali = new Dali($idObject);
             if ($instance == 'brightness') $dali->setBrightness($status);

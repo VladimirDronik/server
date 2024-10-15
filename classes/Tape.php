@@ -16,6 +16,7 @@ class Tape extends Device
                                             `tapes`.`s` AS 'saturation',
                                             `tapes`.`v` AS 'value',
                                             `tapes`.`w` AS 'brightness',
+                                            `tapes`.`cct`,
                                             `tapes`.`channel` AS 'channel',
                                             `tapes`.`controller_id` AS 'controller',
                                             `modbus_slavers`.`active`
@@ -94,16 +95,20 @@ class Tape extends Device
         return $registersIds;
     }
 
+    public function getType() {
+        return $this->tape->type;
+    }
+
     public function tapeOn()
     {
         $response = Modbus::sendModbus($this->registersIds['state'], 'write', 1);
-        if ($response && !$response['error']) $this->object->setStatus('on',true,false);
+        if (isset($response)) $this->object->setStatus('on',true,false);
     }
 
     public function tapeOff()
     {
         $response = Modbus::sendModbus($this->registersIds['state'], 'write', 0);
-        if ($response && !$response['error']) $this->object->setStatus('off',true,false);
+        if (isset($response)) $this->object->setStatus('off',true,false);
     }
 
     public function tapeSw()
@@ -125,34 +130,54 @@ class Tape extends Device
             if ($this->tape->type == 'RGB')
             {
                 $response = Modbus::sendModbus($this->registersIds['h_component'], 'write', $hue);
-                if ($response && !$response['error'])
+                if (isset($response))
                     parent::$db->query("UPDATE `tapes`
                                         SET `h` = $hue
                                         WHERE `id_object` = {$this->object->id}");
 
                 $response = Modbus::sendModbus($this->registersIds['s_component'], 'write', $saturation);
-                if ($response && !$response['error'])
+                if (isset($response))
                     parent::$db->query("UPDATE `tapes`
                                         SET `s` = $saturation
                                         WHERE `id_object` = {$this->object->id}");
+                
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.color_setting",
+                    "state" => [
+                        "instance" => "hsv",
+                        "value" => [
+                            "h" => $hue,
+                            "s" => $saturation,
+                            "v" => 100
+                        ]
+                    ]
+                ];
+                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
             }
             else echo "[Error] Устройство не поддерживает настройку цвета" . PHP_EOL;
         }
         else echo "[Error] Не указаны значения оттенка и/или насыщенности" . PHP_EOL;
     }
 
+    public function getColor() {
+        $sql = parent::$db->query(" SELECT `h`, `s`, `v`
+                                    FROM `tapes`
+                                    WHERE `id_object` = {$this->object->id}");
+        return $sql->fetch(PDO::FETCH_OBJ);
+    }
+
     /**
      * @param int $temperature - значение цветовой температуры, 0 до 100 %
      * 0 - тёплый цвет, 100 - холодный цвет
      */
-    public function tapeSetTemperature (int $temperature)
+    public function tapeSetTemperature(int $temperature)
     {
         if (isset($temperature))
         {
             if ($this->tape->type == 'CCT')
             {
                 $response = Modbus::sendModbus($this->registersIds['temperature'], 'write', $temperature);
-                if ($response && !$response['error'])
+                if (isset($response))
                     parent::$db->query("UPDATE `tapes`
                                         SET `cct` = $temperature
                                         WHERE `id_object` = {$this->object->id}");
@@ -171,17 +196,36 @@ class Tape extends Device
         {
             if ($brightness > 0)
             {
-                Modbus::sendModbus($this->registersIds['brightness'], 'write', $brightness);
-                if ($response && !$response['error'])
+                $response = Modbus::sendModbus($this->registersIds['brightness'], 'write', $brightness);
+                if (isset($response))
                 {
                     if ($this->tape->type == 'RGB') $column = 'v';
                     else $column = 'w';
                     parent::$db->query("UPDATE `tapes`
                                         SET `$column` = $brightness
                                         WHERE `id_object` = {$this->object->id}");
+
+                    $aliceCapabilities = [
+                        "type" => "devices.capabilities.range",
+                        "state" => [
+                            "instance" => "brightness",
+                            "value" => $brightness
+                        ]
+                    ];
+                    Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
                 }
             }
         }
         else echo "[Error] Не указано значение яркости" . PHP_EOL;
     }
+
+    public function getBrightness() {
+        if ($this->tape->type == 'RGB') return $this->tape->value;
+        else return $this->tape->brightness;
+    }
+
+    public function getCct() {
+        return $this->tape->cct;
+    }
+
 }

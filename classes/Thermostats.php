@@ -317,7 +317,7 @@ class Thermostats extends Objects
             //Заносим температуру в таблицу элементов
             $temperature = '[{"status":"' . $termometr_value . '°С"}]';
             parent::$db->exec("UPDATE elements
-                               SET `value` = '$temperature' 
+                               SET `status` = '$temperature' 
                                WHERE `id_object` = {$this->idObject}
                                AND handle = 'temperature'");
             

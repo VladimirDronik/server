@@ -320,39 +320,38 @@ class SendSocket
         $instance = $data_array->items[0]->instance;
 
 
-        if($status == 1)
-            $status = 'on';
-        elseif($status == 0)
-            $status = 'off';
-
-
         $object = new Objects();
         $object->select($idObject);
 
         if (($object->type == 'lamp') || ($object->type == 'socket') || ($object->type == 'relay')) {
-
+            if($status == 1) $status = 'on';
+            elseif($status == 0) $status = 'off';
             $object->setStatus($status);
             //TODO: вместо этого сделать реализацию конкретного объекта и его метода, например лампы.
 
         } elseif ($object->type == 'dimmer') {
-
             $dimmer = new Dimmer($idObject);
-
-            //Если передаем яркость
             if ($instance == 'brightness') $dimmer->setValue($status);
-            elseif ($instance == 'on') $dimmer->setValue($status);
-        
+            if ($instance == 'on') {
+                if ($status) $dimmer->setValue($dimmer->getValue());
+                else $dimmer->setValue(0);
+            }
         } elseif ($object->type == 'conditioner') {
 
-           $value = $data_array->items[0]->value;
-           $oper = $data_array->items[0]->params->oper;
-           $fan = $data_array->items[0]->params->fan;
-        
-           $conditioner = new Conditioner($idObject);
-           $conditioner->setValue($value, $status, $oper, $fan);
+            $conditioner = new Conditioner($idObject);
+            if ($instance == 'on') $conditioner->setAcPower($status);
+            if ($instance == 'temperature') $conditioner->setAcTemperature($status);
+            if ($instance == 'fan_speed') {
+                $status = array_search($status, Device::ALICE_AC_FAN_MODES_MAPPING);
+                $conditioner->setAcFanSpeed($status);
+            }
+            if ($instance == 'thermostat') {
+                $status = array_search($status, Device::ALICE_AC_MODES_MAPPING);
+                $conditioner->setAcMode($status);
+            }
 
         } elseif ($object->type == 'curtain') {
-            if ($status == 'on') {
+            if ($status) {
                 $curtain = new Curtain($idObject);
                 $curtain->open();
             }
@@ -363,8 +362,33 @@ class SendSocket
         } elseif ($object->type == 'virtual') {
 
             $virtual = new Virtuals($idObject);
-            if ($status == 'on') $virtual->on('view',$idObject);
-            elseif ($status == 'off') $virtual->off('view',$idObject);
+            if ($status) $virtual->on('view',$idObject);
+            else $virtual->off('view',$idObject);
+        }
+
+        elseif ($object->type == 'tape') {
+            $tape = new Tape($idObject);
+            if ($instance == 'brightness') $tape->tapeSetBrightness($status);
+            if ($instance == 'on') {
+                if ($status) $tape->tapeOn();
+                else $tape->tapeOff();
+            }
+            if ($instance == 'hsv') {
+                $tape->tapeSetColor($status->h, $status->s);
+            }
+            if ($instance == 'temperature_k') {
+                $tape->tapeSetTemperature($status);
+            }
+        }
+
+        elseif ($object->type == 'dali') {
+            $dali = new Dali($idObject);
+            if ($instance == 'brightness') $dali->setBrightness($status);
+            if ($instance == 'on') {
+                if ($status) $dali->daliOn();
+                else $dali->daliOff();
+            }
+            if ($instance == 'temperature_k') $dali->setColorTemperature($status);
         }
     }
 

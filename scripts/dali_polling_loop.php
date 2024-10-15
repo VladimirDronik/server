@@ -27,21 +27,19 @@ $devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
 while (true)
 {
     // Получаем текущее количество изменений на шине DALI
-    $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', 150);
-    if (isset($changesRequest) && !$changesRequest['error']) $changesAmount = (int)$changesRequest['response'];
-    else $changesAmount = null;
+    $changesAmount = Modbus::sendModbus($changesAmountRegister, 'read', null, false, 150);
+    // if (isset($changesRequest)) $changesAmount = (int)$changesRequest;
+    // else $changesAmount = null;
 
     if (isset($changesAmount) && $changesAmount > 0)
     {
         echo " [ Изменений : $changesAmount ] " . PHP_EOL;
             foreach ($devicesChangesRegisters as $key => $registerId)
             {
-                $flagsRequest = Modbus::sendModbus($registerId, 'read');
-                if (isset($flagsRequest) && !$flagsRequest['error'] && $flagsRequest['response'] != 0)
-                    $flags = $flagsRequest['response'];
-                else $flags = null;
-                if (isset($flags))
+                $flags = Modbus::sendModbus($registerId, 'read');
+                if (isset($flags) && $flags != 0)
                 {
+                    
                     for ($bit = 0; $bit<16; $bit++)
                     {
                         if ($isDeviceChanges = Dali::nbit($flags, $bit))
@@ -60,12 +58,12 @@ while (true)
                                 if (isset($dali))
                                 {
                                     $status = $dali->getDeviceStatus();
-                                    $brightness = $dali->getBrightness();
+                                    $brightness = $dali->getBrightnessFromDevice();
                                     $sql = System::$db->query(" SELECT `is_cct`
                                                                 FROM `dali_devices`
                                                                 WHERE `dali_gateway` = $daliGatewayId
                                                                 AND `address` = $address");
-                                    if ($sql->fetch(PDO::FETCH_OBJ)->is_cct) $cct = $dali->getColorTemperature();
+                                    if ($sql->fetch(PDO::FETCH_OBJ)->is_cct) $cct = $dali->getColorTemperatureFromDevice();
                                     echo " [ OK ] ->";
                                 }
                                 else echo " [ FAIL ] ->";
@@ -76,14 +74,14 @@ while (true)
                 }
             }
 
-        $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', 150);
-        if (isset($changesRequest) && !$changesRequest['error']) $changesAmountAck = (int)$changesRequest['response'];
+        $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', null, false, 150);
+        if (isset($changesRequest)) $changesAmountAck = (int)$changesRequest;
         else $changesAmountAck = null;
 
         if (isset($changesAmountAck))
         {
-            $isCounterReset = Modbus::sendModbus($changesAmountRegister, 'write', null, 0);
-            if (isset($isCounterReset) && !$isCounterReset['error']) echo " [ Counter reset ]" . PHP_EOL;
+            $isCounterReset = Modbus::sendModbus($changesAmountRegister, 'write', 0);
+            if (isset($isCounterReset)) echo " [ Counter reset ]" . PHP_EOL;
         }
     }
 }

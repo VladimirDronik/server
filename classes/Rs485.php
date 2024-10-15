@@ -1,6 +1,7 @@
 <?php
 
 use ModbusTcpClient\Network\BinaryStreamConnection;
+use ModbusTcpClient\Network\SerialStreamCreator;
 use ModbusTcpClient\Packet\RtuConverter;
 use ModbusTcpClient\Packet\ModbusFunction\ReadCoilsRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadInputDiscretesRequest;
@@ -9,9 +10,12 @@ use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersRequest;
 use ModbusTcpClient\Packet\ModbusFunction\ReadInputRegistersResponse;
 use ModbusTcpClient\Packet\ModbusFunction\WriteSingleCoilRequest;
 use ModbusTcpClient\Packet\ModbusFunction\WriteSingleRegisterRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteMultipleCoilsRequest;
+use ModbusTcpClient\Packet\ModbusFunction\WriteMultipleRegistersRequest;
 use ModbusTcpClient\Packet\ResponseFactory;
 use ModbusTcpClient\Utils\Packet;
 use ModbusTcpClient\Utils\Endian;
+use ModbusTcpClient\Utils\Types;
 
 class Rs485 extends System
 {
@@ -47,31 +51,28 @@ class Rs485 extends System
 
     public function setSerialParams() {
         return [ 
-            'sttyModes' =>
-                [
-                    $this->setCharacterSize(), // set character size
-                    $this->bus->baudrate, // set baud rate
-                    $this->setStopBits(), // set stop bits
-                    $this->setParity(), // set parity
-                    '-icanon', // disable enable special characters: erase, kill, werase, rprnt
-                    'min 0', // with -icanon, set N characters minimum for a completed read
-                    'ignbrk', // enable ignore break characters
-                    '-brkint', // disable breaks cause an interrupt signal
-                    '-icrnl', // disable translate carriage return to newline
-                    '-imaxbel', // disable beep and do not flush a full input buffer on a character
-                    '-opost', // disable postprocess output
-                    '-onlcr', // disable translate newline to carriage return-newline
-                    '-isig', // disable interrupt, quit, and suspend special characters
-                    '-iexten', // disable non-POSIX special characters
-                    '-echo', // disable echo input characters
-                    '-echoe', // disable echo erase characters as backspace-space-backspace
-                    '-echok', // disable echo a newline after a kill character
-                    '-echoctl', // disable same as [-]ctlecho
-                    '-echoke', // disable kill all line by obeying the echoprt and echoe settings
-                    '-noflsh', // disable flushing after interrupt and quit special characters
-                    '-ixon', // disable XON/XOFF flow control
-                    '-crtscts', // disable RTS/CTS handshaking
-                ]
+            $this->setCharacterSize(), // set character size
+            $this->bus->baudrate, // set baud rate
+            $this->setStopBits(), // set stop bits
+            $this->setParity(), // set parity
+            '-icanon', // disable enable special characters: erase, kill, werase, rprnt
+            'min 0', // with -icanon, set N characters minimum for a completed read
+            'ignbrk', // enable ignore break characters
+            '-brkint', // disable breaks cause an interrupt signal
+            '-icrnl', // disable translate carriage return to newline
+            '-imaxbel', // disable beep and do not flush a full input buffer on a character
+            '-opost', // disable postprocess output
+            '-onlcr', // disable translate newline to carriage return-newline
+            '-isig', // disable interrupt, quit, and suspend special characters
+            '-iexten', // disable non-POSIX special characters
+            '-echo', // disable echo input characters
+            '-echoe', // disable echo erase characters as backspace-space-backspace
+            '-echok', // disable echo a newline after a kill character
+            '-echoctl', // disable same as [-]ctlecho
+            '-echoke', // disable kill all line by obeying the echoprt and echoe settings
+            '-noflsh', // disable flushing after interrupt and quit special characters
+            '-ixon', // disable XON/XOFF flow control
+            '-crtscts', // disable RTS/CTS handshaking
         ];
     }
 
@@ -151,7 +152,10 @@ class Rs485 extends System
                 echo PHP_EOL . 'Packet to sent (in hex):   ' . $request . PHP_EOL;
 
                 if ($this->bus->type == 'rtu' && $task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
-                else $connection->connect()->send($packet);
+                else {
+                    $connection->connect()->send($packet);
+                    // var_dump($connection);
+                }
 
                 if (!$task->needResponse) {
                     $rawResponse = "Response is not needed";
@@ -173,7 +177,7 @@ class Rs485 extends System
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
                         if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
-                        if (isset($task->scale)) $response = $response * $task->scale;
+                        if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
                         if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
                     }
                     else {
@@ -211,16 +215,20 @@ class Rs485 extends System
 
     private function busConnection() {
         if ($this->bus->type == 'rtu') {
+            $sttyModes = $this->setSerialParams();
             return BinaryStreamConnection::getBuilder()
                 ->setUri($this->bus->device)
                 ->setProtocol('serial')
-                ->setFromOptions($this->setSerialParams())
+                ->setCreateStreamCallback(static function (BinaryStreamConnection $conn) use ($sttyModes) {
+                    $streamCreator = new SerialStreamCreator(['sttyModes' => $sttyModes]);
+                    return $streamCreator->createStream($conn);
+                })
                 ->setIsCompleteCallback(static function ($binaryData, $streamIndex): bool {
                     return Packet::isCompleteLengthRTU($binaryData);
                 })
                 // delay this is crucial for some serial devices and delay needs to be long as 100ms (depending on the quantity)
                 // or you will experience read errors ("stream_select interrupted") or invalid CRCs
-                ->setDelayRead(100_000) // 100 milliseconds, serial devices may need delay between sending and received
+                ->setDelayRead(250_000) // 100 milliseconds, serial devices may need delay between sending and received
                 ->build();
         }
         if ($this->bus->type == 'tcp') {
@@ -260,6 +268,37 @@ class Rs485 extends System
                     break;
                 case 6:
                     $modbusPacket = new WriteSingleRegisterRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
+                case 15:
+                    $modbusPacket = new WriteMultipleCoilsRequest($task->starting_address, $task->value, $task->slave_address);
+                    break;
+                case 16:
+                    foreach ($task->value as &$value) 
+                    {
+                        if (isset($task->scale)) $value /= $task->scale;
+                        switch ($task->format) {
+                            case 's8':
+                            case 'u8':
+                                $value = Types::toByte($value);
+                                break;
+                            case 's16':
+                                $value = Types::toInt16($value);
+                                break;
+                            case 'u16':
+                                $value = Types::toUint16($value);
+                                break;
+                            case 's32':
+                                $value = Types::toInt32($value);
+                                break;
+                            case 'u32':
+                                $value = Types::toUint32($value);
+                                break;
+                            case 'double':
+                                $value = Types::toDouble($value);
+                                break;
+                        }
+                    }
+                    $modbusPacket = new WriteMultipleRegistersRequest($task->starting_address, $task->value, $task->slave_address);
                     break;
             }
 
@@ -306,6 +345,12 @@ class Rs485 extends System
                 if ($task->format == 'u16') return $result->getUInt16();
                 if ($task->format == 's16') return $result->getInt16();
                 if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
+                break;
+            case 15:
+                return $response->getCoilCount();
+                break;
+            case 16:
+                return $response->getRegistersCount();
                 break;
         }
     }

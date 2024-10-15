@@ -132,8 +132,8 @@ class Messages
 
             while ($message = $sql->fetch(PDO::FETCH_OBJ)) {
 
-                $MessageLog[] = array('id' => $message->id, 'text' => $message->text,
-                    'priority' => $message->priority, 'date' => $message->date, 'is_read' => $message->is_read);
+                $MessageLog[] = array('id' => (string)$message->id, 'text' => $message->text,
+                    'priority' => (string)$message->priority, 'date' => $message->date, 'is_read' => (string)$message->is_read);
             }
 
             return $json = json_encode(array('status'=>'messagesLoad', 'messages'=>$MessageLog));

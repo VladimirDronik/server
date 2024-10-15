@@ -46,7 +46,6 @@ class Dimmer extends Device
      */
     public function setValue($value)
     {
-
         $object = new Objects();
         $object->select(self::$idObject);
 
@@ -64,16 +63,21 @@ class Dimmer extends Device
             $mega->setValueToDimmerExt($object->device, $object->port, $value);
         }
 
-        if($value > 0)
-        {
+        if($value > 0) {
             //Заносим текущее состояние в таблицу
             parent::$db->query("UPDATE `".self::$deviceTable."` SET `value` = $value WHERE `id_object` =".self::$idObject);
             $object->setStatus('on', true, false);
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.range",
+                "state" => [
+                    "instance" => "brightness",
+                    "value" => $value
+                ]
+            ];
+            Device::aliceCallbackState(self::$idObject, $aliceCapabilities, null);
         }
         else $object->setStatus('off', true, false);
-
-
-
+        
         
     }
 
@@ -119,20 +123,7 @@ class Dimmer extends Device
         return $dimer->value;
     }
 
-    /**
-     * Получение значения предыдущего состояния диммера
-     * @return mixed
-     */
-    public function getOldValue()
-    {
-        $sql = parent::$db->query('SELECT `oldvalue` FROM `".self::$deviceTable."` WHERE id_object ='.self::$idObject);
-        $dimer = $sql->fetch(PDO::FETCH_OBJ);
-        return $dimer->oldvalue;
-    }
-
-
-    public function getValueFromCtr()
-    {
+    public function getValueFromCtr() {
 
 	$object = new Objects();
 	$object->select(self::$idObject);
@@ -156,13 +147,4 @@ class Dimmer extends Device
         else $object->setStatus('off', true, false);
 
     }
-
-    /**
-     * Включить диммер на предыдущем занчении
-     */
-    public function on()
-    {
-
-    }
-
 }

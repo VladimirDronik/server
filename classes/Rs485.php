@@ -106,7 +106,6 @@ class Rs485 extends System
 
     public function sendRaw(string $cmd, bool $needResponse = true, $targetByte = null, int $priority = null)
     {
-        Mqtt::connectRs485();
         $uid = uniqid();
         $rawData = pack ('c*', ...array_map('hexdec', str_split(str_replace(' ', '', $cmd), 2)));
         $task = [
@@ -152,10 +151,7 @@ class Rs485 extends System
                 echo PHP_EOL . 'Packet to sent (in hex):   ' . $request . PHP_EOL;
 
                 if ($this->bus->type == 'rtu' && $task->protocol == 'raw') $this->sendRawPacket($packet, $connection);
-                else {
-                    $connection->connect()->send($packet);
-                    // var_dump($connection);
-                }
+                else $connection->connect()->send($packet);
 
                 if (!$task->needResponse) {
                     $rawResponse = "Response is not needed";
@@ -172,7 +168,8 @@ class Rs485 extends System
                         $end = (microtime(true) - $start) * 1000;
                         echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                         echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                        if ($this->bus->type == 'tcp') $binaryData = substr((string)$binaryData, 6);
+                        if ($this->bus->type == 'tcp' && $task->protocol == 'raw')
+                            $binaryData = substr((string)$binaryData, 6);
                         $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
@@ -205,6 +202,8 @@ class Rs485 extends System
                 echo 'An exception occurred' . PHP_EOL;
                 echo $exception->getMessage() . PHP_EOL;
                 echo $exception->getTraceAsString() . PHP_EOL;
+                System::addLog("Modbus", "[Error] Не получен ответ от Modbus устройства ID $task->slaver_id: $task->function_code - $task->register_id: $task->starting_address", "port");
+                Modbus::setSlaverActivity($task->slaver_id, 0);
             }
             finally {
                 $connection->close();
@@ -319,32 +318,19 @@ class Rs485 extends System
                 break;
             case 3:
             case 4:
-                $result = $response->getWordAt(0);
-                if ($task->format == 'double') return $result->getDouble();
-                if ($task->format == 'u64') return $result->getUInt64();
-                if ($task->format == 's64') return $result->getInt64();
-                if ($task->format == 'float') return $result->getFloat();
-                if ($task->format == 'u32') return $result->getUInt32();
-                if ($task->format == 's32') return $result->getInt32();
-                if ($task->format == 'u16') return $result->getUInt16();
-                if ($task->format == 's16') return $result->getInt16();
-                if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
-                if ($task->format == 'raw') return unpack('H*', mb_strcut($binaryData, 3, $task->quantity*2))[1];
+            case 6:
+                if ($task->format == 'u64') return $response->getQuadWordAt(0)->getUInt64();
+                if ($task->format == 's64') return $response->getQuadWordAt(0)->getInt64();
+                if ($task->format == 'double') return $response->getQuadWordAt(0)->getDouble();
+                if ($task->format == 'float') return $response->getDoubleWordAt(0)->getFloat();
+                if ($task->format == 's32') return $response->getDoubleWordAt(0)->getInt32();
+                if ($task->format == 'u32') return $response->getDoubleWordAt(0)->getUInt32();
+                if ($task->format == 'u16') return $response->getWordAt(0)->getUInt16();
+                if ($task->format == 's16') return $response->getWordAt(0)->getInt16();
+                if ($task->format == 'f8.8') return Boiler::convertToF88($response->getWordAt(0)->getUInt16());
                 break;
             case 5:
                 return $response->isCoil() ? '1' : '0';
-                break;
-            case 6:
-                $result = $response->getWord();
-                if ($task->format == 'double') return $result->getDouble();
-                if ($task->format == 'u64') return $result->getUInt64();
-                if ($task->format == 's64') return $result->getInt64();
-                if ($task->format == 'float') return $result->getFloat();
-                if ($task->format == 'u32') return $result->getUInt32();
-                if ($task->format == 's32') return $result->getInt32();
-                if ($task->format == 'u16') return $result->getUInt16();
-                if ($task->format == 's16') return $result->getInt16();
-                if ($task->format == 'f8.8') return Boiler::convertToF88($result->getUInt16());
                 break;
             case 15:
                 return $response->getCoilCount();

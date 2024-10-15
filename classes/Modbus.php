@@ -142,7 +142,6 @@ class Modbus extends System {
     public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
     {
         if (isset($value)) if (!is_array($value)) $value = [ $value ];
-        Mqtt::connectRs485();
         $uid = uniqid();
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         $isSlaverActive = self::getSlaverActivity($modbusRegister->slaver_id);
@@ -186,8 +185,8 @@ class Modbus extends System {
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
 
-            if ($response['error']) {
-                self::setSlaverActivity($modbusRegister->slaver_id, 0);
+            // var_dump($response['error']);
+            if ($response['error'] === true) {
                 return null;
             }
             else {

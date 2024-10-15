@@ -7,24 +7,6 @@ class Mqtt extends System
     const MQTT_HOST = 'localhost';
     const MQTT_PORT = 1883;
 
-    // static $response = null;
-
-
-    // public static function connectRs485() {
-    //     $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
-        
-    //     // pcntl_async_signals(true);
-    //     // pcntl_signal(SIGINT, function () use ($client) {
-    //     //     $client->interrupt();
-    //     // });
-
-        
-
-    //     $client->connect(null, true);
-    //     self::$client = $client;
-    //     // echo (new datetime())->format('Y-m-d H:i:s.v') . ":   Connected" . PHP_EOL;
-    // }
-
     public static function subscribeRs485(string $topic, $uid) {
         $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
         $client->connect(null, true);
@@ -53,7 +35,6 @@ class Mqtt extends System
         $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
         $client->connect(null, true);
         $client->publish($topic, json_encode($payload), $qos, $retained);
-        // echo (new datetime())->format('Y-m-d H:i:s.v') . ":   Published" . PHP_EOL;
         $client->disconnect(); 
     }
 }

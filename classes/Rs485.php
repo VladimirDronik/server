@@ -123,7 +123,7 @@ class Rs485 extends System
 
         $response = Mqtt::subscribeRs485("rs485/{$this->bus->id}/response", $uid);
 
-        if ($response && !$response['error'])
+        if (isset($response) && !$response['error'])
         {
             if (isset($targetByte)) return $response['response'];
             return $response['raw_response'];
@@ -172,7 +172,7 @@ class Rs485 extends System
                         $end = (microtime(true) - $start) * 1000;
                         echo 'Response in: ' . $end . ' ms' . PHP_EOL;
                         echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                        if ($task->protocol == 'raw') $binaryData = substr((string)$binaryData, 6);
+                        if ($this->bus->type == 'tcp') $binaryData = substr((string)$binaryData, 6);
                         $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
                         $error = false;
                         if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];

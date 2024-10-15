@@ -42,7 +42,7 @@ class Curtain extends Device
             if($sql->rowCount() > 0)
             {
                 $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-                if (!$this->curtain->active && !$force)
+                if ($this->curtain->place == 'rs485' && !$this->curtain->active && !$force)
                 {
                     
                     $motorId = $this->curtain->id_object;

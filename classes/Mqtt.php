@@ -49,10 +49,10 @@ class Mqtt extends System
     }
 
 
-    public static function publish(string $topic, array $payload) {
+    public static function publish(string $topic, array $payload, $qos = MqttClient::QOS_AT_MOST_ONCE, $retained = true) {
         $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
         $client->connect(null, true);
-        $client->publish($topic, json_encode($payload), MqttClient::QOS_AT_MOST_ONCE, true);
+        $client->publish($topic, json_encode($payload), $qos, $retained);
         // echo (new datetime())->format('Y-m-d H:i:s.v') . ":   Published" . PHP_EOL;
         $client->disconnect(); 
     }

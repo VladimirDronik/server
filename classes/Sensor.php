@@ -4,18 +4,20 @@
  * Класс работы с датчиками
  */
 
-class Sensors extends System
+class Sensor extends System
 {
-    public function __construct($idObject)
+    function __construct($idObject)
     {
         if(isset($idObject))
         {
-            $sql = parent::$db->query(" SELECT `id`, `name` FROM `objects`
+            $sql = parent::$db->query(" SELECT `id`, `name`, `type`, `status` FROM `objects`
                                         WHERE `id` = $idObject AND `type` = 'sensor'");
             if($sql->rowCount() > 0) {
                 $result = $sql->fetch(PDO::FETCH_OBJ);
                 $this->objectId = $result->id;
                 $this->name = $result->name;
+                $this->type = $result->type;
+                $this->status = $result->status;
             }
             else {
                 echo "[Error] Не найден датчик (ID $idObject)" . PHP_EOL;
@@ -26,7 +28,7 @@ class Sensors extends System
                                         WHERE `object_id` = {$this->objectId}");
             if($sql->rowCount() > 0) {
                 while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $props[$row['name']] = $row['value'];
-                $this->properties = $props;
+                $this->properties = (object)$props;
             }
             else {
                 echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
@@ -69,7 +71,7 @@ class Sensors extends System
 
     public function checkSensor()
     {
-        switch($this->properties['source'])
+        switch($this->properties->source)
         {
             case 'megad': $this->getFromMegad();
                 break;
@@ -89,18 +91,18 @@ class Sensors extends System
     {
         foreach ($this->params as $key => &$param)
         {
-            if ($this->properties['connection'] == 'i2c')
-                $query = "pt={$this->properties['sda']}&scl={$this->properties['scl']}&" . $param['get_param'];
+            if ($this->properties->connection == 'i2c')
+                $query = "pt={$this->properties->sda}&scl={$this->properties->scl}&" . $param['get_param'];
             
-            if ($this->properties['connection'] == '1w')
-                $query = "pt={$this->properties['port']}&{$param['get_param']}";
+            if ($this->properties->connection == '1w')
+                $query = "pt={$this->properties->port}&{$param['get_param']}";
 
-            if ($this->properties['connection'] == '1wbus')
-                $query = "pt={$this->properties['port']}&{$param['get_param']}{$this->properties['address']}";
+            if ($this->properties->connection == '1wbus')
+                $query = "pt={$this->properties->port}&{$param['get_param']}{$this->properties->address}";
             
-            $param['value'] = Megad::getPortValue($this->properties['source_id'], $query);
+            $param['value'] = Megad::getPortValue($this->properties->source_id, $query);
             
-            if ($this->properties['connection'] == '1w')
+            if ($this->properties->connection == '1w')
                 $param['value'] = explode(':', $param['value'])[1];
         }
     }
@@ -119,7 +121,7 @@ class Sensors extends System
         {
             parent::$db->query(
                 "UPDATE `sensors_params` SET `value` = {$param['value']}
-                WHERE `object_id` = {$this->objectId} AND `id` = {$param['param_id']}"
+                WHERE `object_id` = {$this->objectId} AND `param_id` = {$param['param_id']}"
             );
         }
     }
@@ -179,7 +181,6 @@ class Sensors extends System
                 parent::$db->query("INSERT INTO sensors_graphs (`object_id`, `param_id`, `datetime`, `value`)
                     VALUES ({$this->objectId}, {$param['param_id']}, CONCAT(CURRENT_DATE,' ',CURRENT_TIME), {$param['value']} )");
             }
-            
         }
     }
 }

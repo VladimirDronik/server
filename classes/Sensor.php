@@ -179,8 +179,22 @@ class Sensor extends System
             if ($param['graph'])
             {
                 parent::$db->query("INSERT INTO sensors_graphs (`object_id`, `param_id`, `datetime`, `value`)
-                    VALUES ({$this->objectId}, {$param['param_id']}, CONCAT(CURRENT_DATE,' ',CURRENT_TIME), {$param['value']} )");
+                    VALUES ({$this->objectId}, {$param['param_id']}, CONCAT(CURRENT_DATE,' ',CURRENT_TIME), {$param['value']})");
             }
+        }
+    }
+
+    public function setSensorStatus()
+    {
+        foreach ($this->params as $key => &$param)
+        {
+            // if ($param['value'] == 'NULL')
+            // {
+                $sql = parent::$db->query("SELECT `datetime` FROM `sensors_graphs`
+                    WHERE `value` IS NOT NULL AND `object_id` = {$this->objectId} ORDER BY `datetime` DESC LIMIT 1");
+                $row = $sql->fetch(PDO::FETCH_COLUMN);
+                var_dump(strtotime($row));
+            // }
         }
     }
 }

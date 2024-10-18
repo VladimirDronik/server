@@ -4,26 +4,45 @@
  * Класс работы с датчиками
  */
 
-class Sensors extends Objects
+class Sensors extends System
 {
-    private $sensor = null;
-    private $source = null;
-
     public function __construct($idObject)
     {
         if(isset($idObject))
         {
-            $sql = parent::$db->query(" SELECT *
-                                        FROM `sensors` 
-                                        WHERE `id_object` = $idObject");
-            if($sql->rowCount() > 0)
-            {
-                $this->sensor = $sql->fetch(PDO::FETCH_OBJ);
-                var_dump($this->sensor);
+            $sql = parent::$db->query(" SELECT `id`, `name` FROM `objects`
+                                        WHERE `id` = $idObject AND `type` = 'sensor'");
+            if($sql->rowCount() > 0) {
+                $result = $sql->fetch(PDO::FETCH_OBJ);
+                $this->objectId = $result->id;
+                $this->name = $result->name;
             }
-            else 
-            {
-                echo "[Error] Датчик (ID $idObject) не найден" . PHP_EOL;
+            else {
+                echo "[Error] Не найден датчик (ID $idObject)" . PHP_EOL;
+                exit(1);
+            }
+
+            $sql = parent::$db->query(" SELECT `name`, `value` FROM `sensors_properties`
+                                        WHERE `object_id` = {$this->objectId}");
+            if($sql->rowCount() > 0) {
+                while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $props[$row['name']] = $row['value'];
+                $this->properties = $props;
+            }
+            else {
+                echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
+                exit(1);
+            }
+
+            $sql = parent::$db->query(" SELECT `param_id`, `name`, `get_param`, `value`, `units`, `graph`,
+                                        `min_range`, `max_range`, `min_alarm`, `max_alarm`
+                                        FROM `sensors_params`
+                                        WHERE `object_id` = {$this->objectId}");
+            if($sql->rowCount() > 0) {
+                while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $param[] = $row;
+                $this->params = $param;
+            }
+            else {
+                echo "[Error] Не найдены значения параметров датчика (ID {$this->objectId})" . PHP_EOL;
                 exit(1);
             }
         }
@@ -34,113 +53,133 @@ class Sensors extends Objects
         }
     }
 
-    public function getValue()
+    public function getParam($paramId)
     {
-        switch($this->sensor->source)
+        if(isset($paramId))
         {
-            case '1w_port':
-                $value = $this->get1WPortValue();
-                break;
-            
-            case 'i2c':
-                $value = $this->getI2cValue($this->sensor->parameter);
-                break;
-
-            case 'modbus':
-                $value = $this->getModbusValue();
-                break;
-
-        }
-
-        $this->writeValueToDb($value);
-        return $value;
-    }
-
-    private function writeValueToDb($value)
-    {
-        parent::$db->query("UPDATE `sensors`
-                            SET `value` = $value
-                            WHERE id_object = {$this->sensor->id_object}");
-    }
-
-    private function get1WPortValue()
-    {
-        $sql = parent::$db->query(" SELECT `id_device`, `num_port`
-                                    FROM `ports` 
-                                    WHERE `object` = {$this->sensor->id_object}");
-        if($sql->rowCount() > 0)
-        {
-            $this->source = $sql->fetch(PDO::FETCH_OBJ);
-            $value = Megad::status($this->source->num_port, 'get', $this->source->id_device);
-            $value = explode(':', $value)[1];
-            echo "Показания датчика (ID {$this->sensor->id_object}): $value {$this->sensor->units}" . PHP_EOL;
-            return $value;
+            foreach ($this->params as $param)
+                if ($param['param_id'] == $paramId) return $param['value'];
         }
         else
         {
-            echo "[Error] Не найден порт подключения датчика (ID {$this->sensor->id_object})" . PHP_EOL;
+            echo "[Error] Не определен ID параметра датчика" . PHP_EOL;
             exit(1);
         }
     }
 
-    private function getI2cValue(string $parameter)
+    public function checkSensor()
     {
-        $value = Usensors::checkI2C($this->sensor->source_id)[$this->sensor->parameter];
-        echo "Показания датчика (ID {$this->sensor->id_object}): $value {$this->sensor->units}" . PHP_EOL;
-        return $value;
+        switch($this->properties['source'])
+        {
+            case 'megad': $this->getFromMegad();
+                break;
+            
+            case 'modbus': $this->getFromModbus();
+                break;
+            
+            case 'mqtt': $this->getFromMqtt();
+                break;
+        }
+        $this->validateValues();
+        $this->writeValuesToDb();
+        $this->writeValuesToGraphs();
     }
 
-    private function getModbusValue()
+    private function getFromMegad()
     {
-        $value = Modbus::modbusRtu($this->sensor->source_id, 'read')['response'];
-        echo "Показания датчика (ID {$this->sensor->id_object}): $value {$this->sensor->units}" . PHP_EOL;
-        return $value;
+        foreach ($this->params as $key => &$param)
+        {
+            if ($this->properties['connection'] == 'i2c')
+                $query = "pt={$this->properties['sda']}&scl={$this->properties['scl']}&" . $param['get_param'];
+            
+            if ($this->properties['connection'] == '1w')
+                $query = "pt={$this->properties['port']}&{$param['get_param']}";
+
+            if ($this->properties['connection'] == '1wbus')
+                $query = "pt={$this->properties['port']}&{$param['get_param']}{$this->properties['address']}";
+            
+            $param['value'] = Megad::getPortValue($this->properties['source_id'], $query);
+            
+            if ($this->properties['connection'] == '1w')
+                $param['value'] = explode(':', $param['value'])[1];
+        }
     }
 
-    private function validateValue($value)
+    private function getFromModbus()
     {
-        //Проверяем является ли значение числом
-        if(!is_numeric($value))
+        foreach ($this->params as $key => &$param)
         {
-            // System::addLog('error', 
-            //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-            //     '). Некорректное значение ' . $termometr_value . '.',
-            //     'sensor');
-            // Messages::send(1,
-            //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-            //     '). Некорректное значение: ' . $termometr_value . '°C.');
-            return $error = true;
+            $param['value'] = Modbus::sendModbus($param['get_param'], 'read');
         }
+    }
 
-        //Проверяем входит ли значение в диапазон измерений
-        elseif (($value < $this->sensor->min_threshold) || ($value > $this->sensor->max_threshold))
+    private function writeValuesToDb()
+    {
+        foreach ($this->params as $key => $param)
         {
-            // System::addLog('error', 
-            //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-            //     '). Значение ' . $termometr_value . ' выходит за пределы измерения.',
-            //     'sensor');
-            return $error = true;
+            parent::$db->query(
+                "UPDATE `sensors_params` SET `value` = {$param['value']}
+                WHERE `object_id` = {$this->objectId} AND `id` = {$param['param_id']}"
+            );
         }
-        
-        //Проверяем входит ли значение в диапазон аварийных значений
-        else 
+    }
+
+    private function validateValues()
+    {
+        foreach ($this->params as $key => &$param)
         {
-            if ($value > $this->sensor->max_alarm) 
+            $logTopic = 'ERROR';
+
+            if(!isset($param['value']))
             {
-                // System::addLog('warning',
-                //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                //     '). Значение ' . $humidity . ' ед. выше аварийного порога.',
-                //     'sensor');
+                $logMessage = "{$param['name']} = NULL : Значение не получено";
+                $param['value'] = 'NULL';
+            }
+            elseif(!is_numeric($param['value']))
+            {
+                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Некорректное значение";
+                $param['value'] = 'NULL';
+            }
+            elseif(
+                (isset($param['min_range']) && $param['value'] < $param['min_range']) ||
+                (isset($param['max_range']) && $param['value'] > $param['max_range']))
+            {
+                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} вне диапазона измерений";
+                $param['value'] = 'NULL';
+            }
+            elseif (isset($param['max_alarm']) && $param['value'] > $param['max_alarm']) 
+            {
+                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} выше аварийного порога";
             }
 
-            if ($termometr_value < $this->sensor->min_alarm)
+            elseif (isset($param['min_alarm']) && $param['value'] < $param['min_alarm'])
             {
-                // System::addLog('warning',
-                //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                //     '). Значение ' . $termometr_value . ' ед. ниже аварийного порога.',
-                //     'sensor');
+                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} ниже аварийного порога";
             }
-            return $error = false;
+            else
+            {
+                $logTopic = 'VALUE';
+                $logMessage = "{$param['name']} = {$param['value']} {$param['units']}";
+            }
+            
+            echo "[$logTopic] $logMessage" . PHP_EOL;
+            System::addLog(
+                $logTopic, 
+                "Датчик [{$this->name} ID {$this->objectId}] : $logMessage",
+                'sensor');
+        }
+    }
+
+    private function writeValuesToGraphs()
+    {
+        foreach ($this->params as $key => &$param)
+        {
+            if ($param['graph'])
+            {
+                parent::$db->query("INSERT INTO sensors_graphs (`object_id`, `param_id`, `datetime`, `value`)
+                    VALUES ({$this->objectId}, {$param['param_id']}, CONCAT(CURRENT_DATE,' ',CURRENT_TIME), {$param['value']} )");
+            }
+            
         }
     }
 }

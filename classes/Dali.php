@@ -299,4 +299,70 @@ class Dali extends Device
         
         return $daliBusesArray;  
     }
+
+    private function getDirectRegisters() : array
+    {
+        $sql = System::$db->query(" SELECT `id`, `alias` FROM `modbus_registers` 
+            WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+            AND `alias` = 'dali_direct_cmd'
+            OR `alias` = 'dali_direct_response'
+            OR `alias` = 'dali_direct_status'");
+        while ($row = $sql->fetch(PDO::FETCH_OBJ)) $directRegisters[$row->alias] = $row->id;
+        return $directRegisters;
+    }
+
+    private function getCmdFirstByte() {
+        return ($this->daliDevice->address << 1) + 1;
+    }
+
+    private function sendDirectCmd (int $cmd, $isResponse = false, $isConfCmd = false)
+    {
+        $directRegisters = $this->getDirectRegisters();
+        $directCmd = ($this->getCmdFirstByte() << 8) | $cmd;
+
+        if ($isConfCmd) {
+            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', 0xA300);
+            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+        }
+        Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+
+        if ($isResponse) {
+            $start = microtime(true);
+            do {
+                usleep(250000);
+                $response = Modbus::sendModbus($directRegisters['dali_direct_status'], 'read');
+            } 
+            while ($response != 3 && (microtime(true) - $start) < 2);
+            if ($response == 3)
+                return Modbus::sendModbus($directRegisters['dali_direct_response'], 'read');
+        }
+    }
+
+    public function addToGroup(int $group)
+    {
+        $addCmd = 0x60 + $group;
+        $this->sendDirectCmd ($addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+
+        $groupFlags = ($groups15_8 << 8) | $groups7_0;
+
+        if ($this->nbit($groupFlags, $group)) return true;
+        else return false;
+    }
+    
+    public function delFromGroup(int $group)
+    {
+        $addCmd = 0x70 + $group;
+        $this->sendDirectCmd ($addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+
+        $groupFlags = ($groups15_8 << 8) | $groups7_0;
+
+        if ($this->nbit($groupFlags, $group)) return false;
+        else return true;
+    }
+
+
 }

@@ -82,9 +82,11 @@ class Sensor extends System
             case 'mqtt': $this->getFromMqtt();
                 break;
         }
+        $this->properties->timestamp = date('Y-m-d H:i:s');
         $this->validateValues();
         $this->writeValuesToDb();
         $this->writeValuesToGraphs();
+        $this->setSensorStatus();
     }
 
     private function getFromMegad()
@@ -117,12 +119,11 @@ class Sensor extends System
 
     private function writeValuesToDb()
     {
+        // $timestamp = date('Y-m-d H:i:s');
         foreach ($this->params as $key => $param)
         {
-            parent::$db->query(
-                "UPDATE `sensors_params` SET `value` = {$param['value']}
-                WHERE `object_id` = {$this->objectId} AND `param_id` = {$param['param_id']}"
-            );
+            parent::$db->query("UPDATE `sensors_params` SET `value` = {$param['value']}
+                WHERE `object_id` = {$this->objectId} AND `param_id` = {$param['param_id']}");
         }
     }
 
@@ -162,6 +163,9 @@ class Sensor extends System
             {
                 $logTopic = 'VALUE';
                 $logMessage = "{$param['name']} = {$param['value']} {$param['units']}";
+                parent::$db->query("UPDATE `sensors_params` SET `timestamp` =  '{$this->properties->timestamp}'
+                    WHERE `object_id` = {$this->objectId} AND `param_id` = {$param['param_id']}");
+                
             }
             
             echo "[$logTopic] $logMessage" . PHP_EOL;
@@ -179,22 +183,35 @@ class Sensor extends System
             if ($param['graph'])
             {
                 parent::$db->query("INSERT INTO sensors_graphs (`object_id`, `param_id`, `datetime`, `value`)
-                    VALUES ({$this->objectId}, {$param['param_id']}, CONCAT(CURRENT_DATE,' ',CURRENT_TIME), {$param['value']})");
+                    VALUES ({$this->objectId}, {$param['param_id']}, '{$this->properties->timestamp}', {$param['value']})");
             }
         }
     }
 
     public function setSensorStatus()
     {
-        foreach ($this->params as $key => &$param)
+        $error = false;
+        foreach ($this->params as $key => $param)
         {
-            // if ($param['value'] == 'NULL')
-            // {
-                $sql = parent::$db->query("SELECT `datetime` FROM `sensors_graphs`
-                    WHERE `value` IS NOT NULL AND `object_id` = {$this->objectId} ORDER BY `datetime` DESC LIMIT 1");
-                $row = $sql->fetch(PDO::FETCH_COLUMN);
-                var_dump(strtotime($row));
-            // }
+            if ($param['value'] == "NULL")
+            {
+                $sql = parent::$db->query("SELECT `timestamp` FROM `sensors_params`
+                    WHERE `object_id` = {$this->objectId} AND `param_id` = {$param['param_id']}");
+                if (strtotime('now') - strtotime($sql->fetch(PDO::FETCH_COLUMN)) > 1800) $error = true;
+            }
         }
+
+        $object = new Objects();
+        $object->select($this->objectId);
+
+        if ($error)
+        {
+            if ($object->status == 'ok')
+            {
+                // TODO: Отправить оповещение
+            }
+            $object->setStatus('error',true,false);
+        }
+        else $object->setStatus('ok',true,false);
     }
 }

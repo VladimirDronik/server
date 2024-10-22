@@ -306,7 +306,7 @@ class Thermostats extends Objects
         }
 
         $error = $this->checkValue($termometr_value);
-
+        var_dump($error);
         if (!$error) 
         {
             //Заносим значение термостата в БД в таблицу термостатов и в таблицу графиков
@@ -315,24 +315,24 @@ class Thermostats extends Objects
             WHERE id=$this->id_termostat");
 
             //Заносим температуру в таблицу элементов
-            $temperature = '[{"status":"' . $termometr_value . '°С"}]';
-            parent::$db->exec("UPDATE elements
-                               SET `status` = '$temperature' 
-                               WHERE `id_object` = {$this->idObject}
-                               AND handle = 'temperature'");
+            // $temperature = '[{"status":"' . $termometr_value . '°С"}]';
+            // parent::$db->exec("UPDATE elements
+            //                    SET `status` = '$temperature' 
+            //                    WHERE `id_object` = {$this->idObject}
+            //                    AND handle = 'temperature'");
             
             $this->termostat->current = $termometr_value;
-            
-            $sql = parent::$db->query("SELECT `value` from graph_termostats 
-                                       WHERE `id_termostat` = $this->id_termostat 
-                                       ORDER BY id DESC LIMIT 1");
-            $termometr_prev_value = $sql->fetch(PDO::FETCH_OBJ);
+            var_dump($termometr_value);
+            // $sql = parent::$db->query("SELECT `value` from graph_termostats 
+            //                            WHERE `id_termostat` = $this->id_termostat 
+            //                            ORDER BY id DESC LIMIT 1");
+            // $termometr_prev_value = $sql->fetch(PDO::FETCH_OBJ);
 
-            if ((floatval($termometr_value) >= $termometr_prev_value->value+0.5) ||
-                (floatval($termometr_value) <= $termometr_prev_value->value-0.5))
-            {
+            // if ((floatval($termometr_value) >= $termometr_prev_value->value+0.5) ||
+            //     (floatval($termometr_value) <= $termometr_prev_value->value-0.5))
+            // {
                 Graphs::insertToTermostats($this->id_termostat, $termometr_value);
-            }
+            // }
 
             //Отправка значения для labels
             Labels::setValue(round($this->termostat->current,1).'°C', "current", $this->idObject);

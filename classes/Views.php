@@ -448,7 +448,7 @@ class Views extends System
                 $datetimeString = " `graph_termostats`.`datetime` ";
                 $valueString = " `graph_termostats`.`value` ";
                 $whereString = " datetime > '$startDate' ";
-                $groupString = "";
+                $groupString = "GROUP BY HOUR(datetime)";
 
             } else {
 
@@ -466,7 +466,7 @@ class Views extends System
                 //Ищем данные в таблице графиков, которые относятся к данным термостатам
                 $sql_graph = parent::$db->query("SELECT $datetimeString AS `date`, $valueString AS `value` FROM `graph_termostats` 
                                                   INNER JOIN `termostats` ON `graph_termostats`.`id_termostat` = `termostats`.`id` 
-                                                  WHERE `termostats`.`id`={$termostat->id} AND MINUTE(`graph_termostats`.`datetime`)='00' 
+                                                  WHERE `termostats`.`id`={$termostat->id} 
                                                   AND $whereString
                                                   $groupString
                                                   ");
@@ -475,7 +475,7 @@ class Views extends System
                     $temperatureLog[] = array('date' => $temperatures->date, 'value' => round($temperatures->value, 1));
                 }
 
-                $datagrapf[] = array('id_termostat' => $termostat->id, 'termostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
+                $datagrapf[] = array('id_termostat' => (string)$termostat->id, 'termostat_name' => $termostat->name, 'temperatureLog' => $temperatureLog);
                 unset($temperatureLog);
             }
  //       }
@@ -1573,7 +1573,8 @@ class Views extends System
                                        `conditioners`.`mode`,
                                        `conditioners`.`fan`,
                                        `conditioners`.`vdir`,
-                                       `conditioners`.`hdir`
+                                       `conditioners`.`hdir`,
+                                       `view_items`.`title`
                                 FROM `conditioner_types`
                                 INNER JOIN `conditioners` ON `conditioners`.`type` = `conditioner_types`.`id`
                                 INNER JOIN `objects` ON `objects`.`id` = `conditioners`.`id_object`
@@ -1598,6 +1599,7 @@ class Views extends System
             $items = [
                 'id' => $idConditionerView,
                 'type' => 'conditioner',
+                'title' => $conditioner->title,
                 'state' => $conditioner->state,
                 'min' => $temperatureRange->min,
                 'max' => $temperatureRange->max,

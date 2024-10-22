@@ -4,13 +4,13 @@
  * Класс работы с устройствами на шине DALI.
  * В качестве DALI контроллера выступает Modbus-DALI шлюз компании EcoDim.
  */
-class Dali extends Device
+class Dali extends System
 {
-    private static $address;
-    private static $daliGatewayId;
-    private static $daliState;
+    // private static $address;
+    // private static $daliGatewayId;
+    // private static $daliState;
 
-    private $daliDevice = null;
+    public $daliDevice = null;
     private $object = null;
 
     function __construct($idObject)
@@ -19,6 +19,7 @@ class Dali extends Device
         {
             $sql = parent::$db->query(" SELECT `dali_devices`.`id_object`,
                                                `dali_devices`.`address`,
+                                               `dali_devices`.`is_group`,
                                                `dali_devices`.`dali_gateway`,
                                                `dali_devices`.`brightness`,
                                                `dali_devices`.`cct`,
@@ -80,36 +81,31 @@ class Dali extends Device
         return $this->daliDevice->brightness;
     }
 
-    public function getBrightnessFromDevice() {
-        $sql = parent::$db->query(" SELECT `id`
-                                    FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_get_brightness_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-            
-        $response = Modbus::sendModbus($registerId, 'read');
+    public function getBrightnessFromDevice()
+    {
+        $alias = "dali_get_brightness_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'read'
+        );
+
         if (isset($response))
         {
-            $brightness = (int)$response;
-            $brightness = self::arcpowerTopercent($brightness);
+            $brightness = self::arcpowerTopercent((int)$response);
 
-            if ($brightness > 0)
-            {
+            if ($brightness > 0) {
                 parent::$db->query("UPDATE `dali_devices`
                                     SET `brightness` = $brightness
-                                    WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                    AND `address` = {$this->daliDevice->address}");
-                $this->object->setStatus('on',true,false);
+                                    WHERE `id_object` = {$this->daliDevice->id_object}");
+                $this->object->setStatus('on', true, false);
             }
-            else
-            {
+            else {
                 $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices`
-                                            WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                            AND `address` = {$this->daliDevice->address}");
+                                            WHERE `id_object` = {$this->daliDevice->id_object}");
                 $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
-                $this->object->setStatus('off',true,false);
+                $this->object->setStatus('off', true, false);
             }
-
             return $brightness;
         }
         else return null;
@@ -120,24 +116,21 @@ class Dali extends Device
         return $this->daliDevice->cct;
     }
 
-    public function getColorTemperatureFromDevice() {
-        $sql = parent::$db->query(" SELECT `id`
-                                    FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_get_temperature_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
+    public function getColorTemperatureFromDevice()
+    {
+        $alias = "dali_get_temperature_a{$this->daliDevice->address}";
 
-        $response = Modbus::sendModbus($registerId, 'read');
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'read'
+        );
 
         if (isset($response))
         {
             $colorTemperature = (int)$response;
-
             parent::$db->query("UPDATE `dali_devices`
                                 SET `cct` = $colorTemperature
-                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                AND `address` = {$this->daliDevice->address}");
-
+                                WHERE `id_object` = {$this->daliDevice->id_object}");
             return $colorTemperature;
         }
         else return null;
@@ -145,14 +138,13 @@ class Dali extends Device
 
     public function getDeviceStatus()
     {
-        $sql = parent::$db->query(" SELECT `id`
-                                    FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_device_status_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-
-        $response = Modbus::sendModbus($registerId, 'read');
-
+        $alias = "dali_device_status_a{$this->daliDevice->address}";
+        var_dump(Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias));
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'read'
+        );
+        var_dump($response);
         if (isset($response))
         {
             $status = (int)$response;
@@ -163,40 +155,69 @@ class Dali extends Device
             // bit 2 - состояние устройства. 0 = off; 1 = on
             (self::nbit ($status,2) == 0) ? $state = "off" : $state = "on";
             $statusArray["state"] = $state;
+            var_dump($state, $this->object->id);
+            $this->object->setStatus($state, true, false);
             parent::$db->query("UPDATE `dali_devices`
                                 SET `failure` = $isFailure
-                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                AND `address` = {$this->daliDevice->address}");
-            parent::$db->query("UPDATE `objects`
-                                INNER JOIN `dali_devices`
-                                ON `objects`.`id` = `dali_devices`.`id_object`
-                                SET `objects`.`status` = '$state'
-                                WHERE `dali_devices`.`address` = {$this->daliDevice->address}
-                                AND `dali_devices`.`dali_gateway` = {$this->daliDevice->dali_gateway}");
+                                WHERE `id_object` = {$this->daliDevice->id_object}");
+            
             return $statusArray;
         }
         else return null;
     }
 
+    public function getGroupStatus()
+    {
+        $alias = "dali_get_failure_g{$this->daliDevice->address}";
+        
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'read'
+        );
+
+        if (isset($response))
+        {
+            if ($response > 0) $statusArray["failure"] = 1;
+            else $statusArray["failure"] = 0;
+        }
+
+        $alias = "dali_get_state_g{$this->daliDevice->address}";
+        
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'read'
+        );
+
+        if (isset($response))
+        {
+            if ($response > 0) $state = 'on';
+            else $state = 'off';
+            $statusArray["state"] = $state;
+            $this->object->setStatus($state, true, false);
+        }
+    }
+
     public function setBrightness(int $brightness)
     {
-        $sql = parent::$db->query(" SELECT `id`
-                                    FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_set_brightness_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-        
         if ($brightness == 0) $value = 0;
         else $value = self::percentToArcpower($brightness);
 
-        $response = Modbus::sendModbus($registerId, 'write', $value);
+        if ($this->daliDevice->is_group) $alias = "dali_set_brightness_g{$this->daliDevice->address}";
+        else $alias = "dali_set_brightness_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'write',
+            $value
+        );
+        
         if (isset($response)) {
             if ($brightness > 0) {
                 parent::$db->query("UPDATE `dali_devices`
                                     SET `brightness` =  $brightness
-                                    WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                    AND `address` = {$this->daliDevice->address}");
+                                    WHERE `id_object` = {$this->daliDevice->id_object}");
                 $this->object->setStatus('on',true,false);
+                
                 $aliceCapabilities = [
                     "type" => "devices.capabilities.range",
                     "state" => [
@@ -205,10 +226,9 @@ class Dali extends Device
                     ]
                 ];
                 Device::aliceCallbackState($this->daliDevice->id_object, $aliceCapabilities, null);
-                
             }
             else $this->object->setStatus('off',true,false);
-            
+
             return true;
         }
         else return false;
@@ -219,18 +239,20 @@ class Dali extends Device
         if ($cct < 1000) $cct = 1000;
         if ($cct > 10000) $cct = 10000;
 
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_set_temperature_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-        
-        $response = Modbus::sendModbus($registerId, 'write', $cct);
+        if ($this->daliDevice->is_group) $alias = "dali_set_temperature_g{$this->daliDevice->address}";
+        else $alias = "dali_set_temperature_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'write',
+            $cct
+        );
+
         if (isset($response))
         {
             parent::$db->query("UPDATE `dali_devices`
                                 SET `cct` =  $cct
-                                WHERE `dali_gateway` = {$this->daliDevice->dali_gateway}
-                                AND `address` = {$this->daliDevice->address}");
+                                WHERE `id_object` = {$this->daliDevice->id_object}");
             $aliceCapabilities = [
                 "type" => "devices.capabilities.color_setting",
                 "state" => [
@@ -246,12 +268,15 @@ class Dali extends Device
 
     public function sendCmd(int $daliCmd)
     {
-        $sql = parent::$db->query("SELECT `id` FROM `modbus_registers` 
-                                    WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
-                                    AND `alias` LIKE 'dali_send_cmd_a{$this->daliDevice->address}'");
-        $registerId = $sql->fetch(PDO::FETCH_OBJ)->id;
-            
-        $response = Modbus::sendModbus($registerId, 'write', $daliCmd);
+        if ($this->daliDevice->is_group) $alias = "dali_send_cmd_g{$this->daliDevice->address}";
+        else $alias = "dali_send_cmd_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'write',
+            $daliCmd
+        );
+
         if (isset($response)) return true;
         else return false;
     }
@@ -265,21 +290,14 @@ class Dali extends Device
 
     public function daliOn()
     {
-        $sql = parent::$db->query(" SELECT `brightness` FROM `dali_devices` 
-                                    WHERE `id_object` = {$this->daliDevice->id_object}");
-        $brightness = $sql->fetch(PDO::FETCH_OBJ)->brightness;
-        $onCmd = $this->setBrightness($brightness);
+        $onCmd = $this->setBrightness($this->daliDevice->brightness);
         if ($onCmd) return true;
         else return false;
     }
 
     public function daliSw()
     {
-        $sql = parent::$db->query(" SELECT `status` FROM `objects` 
-                                    WHERE `id` = {$this->daliDevice->id_object}");
-        $status = $sql->fetch(PDO::FETCH_OBJ)->status;
-
-        if ($status == "on") return $this->daliOff();
+        if ($this->object->status == "on") return $this->daliOff();
         else return $this->daliOn();
     }
 
@@ -299,4 +317,70 @@ class Dali extends Device
         
         return $daliBusesArray;  
     }
+
+    private function getDirectRegisters() : array
+    {
+        $sql = System::$db->query(" SELECT `id`, `alias` FROM `modbus_registers` 
+            WHERE `slaver_id` = {$this->daliDevice->dali_gateway}
+            AND `alias` = 'dali_direct_cmd'
+            OR `alias` = 'dali_direct_response'
+            OR `alias` = 'dali_direct_status'");
+        while ($row = $sql->fetch(PDO::FETCH_OBJ)) $directRegisters[$row->alias] = $row->id;
+        return $directRegisters;
+    }
+
+    private function getCmdFirstByte() {
+        return ($this->daliDevice->address << 1) + 1;
+    }
+
+    private function sendDirectCmd (int $cmd, $isResponse = false, $isConfCmd = false)
+    {
+        $directRegisters = $this->getDirectRegisters();
+        $directCmd = ($this->getCmdFirstByte() << 8) | $cmd;
+
+        if ($isConfCmd) {
+            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', 0xA300);
+            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+        }
+        Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+
+        if ($isResponse) {
+            $start = microtime(true);
+            do {
+                usleep(250000);
+                $response = Modbus::sendModbus($directRegisters['dali_direct_status'], 'read');
+            } 
+            while ($response != 3 && (microtime(true) - $start) < 2);
+            if ($response == 3)
+                return Modbus::sendModbus($directRegisters['dali_direct_response'], 'read');
+        }
+    }
+
+    public function addToGroup(int $group)
+    {
+        $addCmd = 0x60 + $group;
+        $this->sendDirectCmd($addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+
+        $groupFlags = ($groups15_8 << 8) | $groups7_0;
+
+        if ($this->nbit($groupFlags, $group)) return true;
+        else return false;
+    }
+    
+    public function delFromGroup(int $group)
+    {
+        $addCmd = 0x70 + $group;
+        $this->sendDirectCmd($addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+
+        $groupFlags = ($groups15_8 << 8) | $groups7_0;
+
+        if ($this->nbit($groupFlags, $group)) return false;
+        else return true;
+    }
+
+
 }

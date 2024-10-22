@@ -2,12 +2,15 @@
 
 require_once '../include.php';
 
-$response = Modbus::sendModbus($argv[1], 'write', $argv[2], true);
-
-if (isset($response))
+if (isset($argv[2]))
 {
-    echo $response . PHP_EOL;
-    exit(0);
+    $response = Modbus::sendModbus($argv[1], 'write', $argv[2], true);
+
+    if (isset($response))
+    {
+        echo $response . PHP_EOL;
+        exit(0);
+    }
 }
 
 exit(1);

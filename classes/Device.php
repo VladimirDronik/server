@@ -392,15 +392,12 @@ class Device extends System
                 $properties = null;
                 break;
         }
-
         return [
             'type' => $type, 
             'capabilities' => json_encode($capabilities),
             'properties' => json_encode($properties)
         ];
-
     }
-
 
     /**
      * Получение статуса устройства
@@ -501,7 +498,6 @@ class Device extends System
 
             if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
             if (isset($properties)) $queryString .= "&properties=" . json_encode($properties);
-            // var_dump($queryString);
             file_get_contents($queryString);
         }
     }

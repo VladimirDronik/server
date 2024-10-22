@@ -1,6 +1,5 @@
 <?php
 
-// require_once '../vendor/autoload.php';
 use Beanstalk\Client;
 use PhpMqtt\Client\MqttClient;
 
@@ -185,7 +184,6 @@ class Modbus extends System {
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
             $response = Mqtt::subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
 
-            // var_dump($response['error']);
             if ($response['error'] === true) {
                 return null;
             }

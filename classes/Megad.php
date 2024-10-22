@@ -123,14 +123,15 @@ class Megad extends System
      *
      * @return string $value - значение датчика
      */
-    static function getI2C($idDevice, $SDA, $SCL, $sensorType, $i2cParametr=null)
+    static function getI2C($idDevice, $SDA, $SCL, $sensorType, $i2cParametr = null, $devAndParam = null)
     {
         $device = self::getDeviceParams($idDevice);
         
         if($device->active)
         {
-            $get_str = "http://$device->ip_address/$device->password?pt=$SDA&scl=$SCL&i2c_dev=$sensorType";
-            if ($i2cParametr) $get_str .= "&i2c_par=$i2cParametr";
+            $get_str = "http://$device->ip_address/$device->password?pt=$SDA&scl=$SCL&";
+            if (isset($sensorType)) $get_str .= "i2c_dev=$sensorType";
+            if (isset($i2cParametr)) $get_str .= "&i2c_par=$i2cParametr";
             $value = file_get_contents($get_str);
             return $value;
         }
@@ -175,6 +176,19 @@ class Megad extends System
         {
             $object->select($objectId);
             $object->setStatus($objectStatus, true, true);
+        }
+    }
+
+    public static function getPortValue($idDevice, string $getQueryParams)
+    {
+        $device = self::getDeviceParams($idDevice);
+        
+        if($device->active)
+        {
+            $get_str = "http://$device->ip_address/$device->password?" . $getQueryParams;
+
+            $value = file_get_contents($get_str);
+            return $value;
         }
     }
 }

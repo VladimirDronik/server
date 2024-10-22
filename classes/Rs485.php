@@ -202,7 +202,6 @@ class Rs485 extends System
                 echo 'An exception occurred' . PHP_EOL;
                 echo $exception->getMessage() . PHP_EOL;
                 echo $exception->getTraceAsString() . PHP_EOL;
-                System::addLog("Modbus", "[Error] Не получен ответ от Modbus устройства ID $task->slaver_id: $task->function_code - $task->register_id: $task->starting_address", "port");
                 Modbus::setSlaverActivity($task->slaver_id, 0);
             }
             finally {

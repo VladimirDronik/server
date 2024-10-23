@@ -5,30 +5,32 @@
  * как будто мы работаем с отдельным устройством
  */
 
-class Dimmer extends Device
+class Dimmer extends System
 {
-    private static $idObject; // id объекта диммера
-    private static $speed; // скорость изменения диммера
-    private static $deviceTable;
+    private $deviceTable;
+    public $dimmer;
+    public $object;
 
     function __construct($idObject)
     {
-        self::$idObject = $idObject;
-        
-        $deviceTables = ['lamps', 'dimmers'];
-        foreach ($deviceTables as $table)
+        if (null != $idObject)
         {
-            $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
-            if ($sql->fetch(PDO::FETCH_OBJ))
+            $deviceTables = ['lamps', 'dimmers'];
+            foreach ($deviceTables as $table)
             {
-                self::$deviceTable = $table;
-                break;
+                $sql = parent::$db->query("SELECT * FROM `$table` WHERE `id_object` = $idObject");
+                if($sql->rowCount() > 0) {
+                    $this->dimmer = $sql->fetch(PDO::FETCH_OBJ);
+                    $this->object = new Objects();
+                    $this->object->select($idObject);
+                    $this->deviceTable = $table;
+                    break;
+                }
             }
-        }
 
-        $sql = parent::$db->query("SELECT `speed` FROM `".self::$deviceTable."` WHERE id_object = $idObject");
-        $dimmer = $sql->fetch(PDO::FETCH_OBJ);
-        self::$speed = $dimmer->speed;
+            if (null == $this->dimmer) echo "[Error] Объект не найден (ID $idObject)" . PHP_EOL;
+        }
+        else echo "[Error] Не определен ID объекта" . PHP_EOL;
     }
 
     /**
@@ -37,6 +39,7 @@ class Dimmer extends Device
      */
     public function setSpeed($speed)
     {
+        $this->dimmer->speed = $speed;
         parent::$db->query("UPDATE `".self::$deviceTable."` SET `speed` = $speed WHERE id_object = ".self::$idObject);
     }
 
@@ -46,27 +49,24 @@ class Dimmer extends Device
      */
     public function setValue($value)
     {
-        $object = new Objects();
-        $object->select(self::$idObject);
-
         $mega = new Megad();
 
-        if ($object->portstate == "OUT")
+        if ($this->object->portstate == "OUT")
         {
             $valuePWM = round(255*$value/100);
             //Отправляем данные на порт контроллера
-            $mega->setPWM($object->port, $valuePWM, $object->device, self::$speed);
+            $mega->setPWM($this->object->port, $valuePWM, $this->object->device, $this->dimmer->speed);
         }
-            elseif ($object->portstate == "0..10V")
+            elseif ($this->object->portstate == "0..10V")
         {
             //Отправляем данные на модуль 0-10В
-            $mega->setValueToDimmerExt($object->device, $object->port, $value);
+            $mega->setValueToDimmerExt($this->object->device, $this->object->port, $value);
         }
 
         if($value > 0) {
             //Заносим текущее состояние в таблицу
-            parent::$db->query("UPDATE `".self::$deviceTable."` SET `value` = $value WHERE `id_object` =".self::$idObject);
-            $object->setStatus('on', true, false);
+            parent::$db->query("UPDATE `{$this->deviceTable}` SET `value` = $value WHERE `id_object` = {$this->dimmer->id_object}");
+            $this->object->setStatus('on', true, false);
             $aliceCapabilities = [
                 "type" => "devices.capabilities.range",
                 "state" => [
@@ -74,9 +74,9 @@ class Dimmer extends Device
                     "value" => $value
                 ]
             ];
-            Device::aliceCallbackState(self::$idObject, $aliceCapabilities, null);
+            Device::aliceCallbackState($this->dimmer->id_object, $aliceCapabilities, null);
         }
-        else $object->setStatus('off', true, false);
+        else $this->object->setStatus('off', true, false);
         
         
     }
@@ -118,9 +118,10 @@ class Dimmer extends Device
      */
     public function getValue()
     {
-        $sql = parent::$db->query("SELECT `value` FROM `".self::$deviceTable."` WHERE `id_object` =".self::$idObject);
-        $dimer = $sql->fetch(PDO::FETCH_OBJ);
-        return $dimer->value;
+        // $sql = parent::$db->query("SELECT `value` FROM `{$this->deviceTable}` WHERE `id_object` = {$this->dimmer->id_object}");
+        // $dimer = $sql->fetch(PDO::FETCH_OBJ);
+
+        return $this->dimmer->value;
     }
 
     public function getValueFromCtr() {

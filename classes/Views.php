@@ -555,13 +555,13 @@ class Views extends System
 
         //Если клиент отправил запрос на изменение состояния итема
         if ($data_array->status == 'itemChange') {
-
             if (isset($data_array->items[0]->id)) $itemID = $data_array->items[0]->id;
             if (isset($data_array->items[0]->description)) $itemDescription = $data_array->items[0]->description;
             if (isset($data_array->items[0]->type)) $itemType = $data_array->items[0]->type;
             if (isset($data_array->items[0]->status)) $itemStatus = $data_array->items[0]->status;
             if (isset($data_array->items[0]->value)) $itemValue = $data_array->items[0]->value;
             if (isset($data_array->items[0]->set_value)) $set_value = $data_array->items[0]->set_value;
+
 
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
@@ -726,29 +726,18 @@ class Views extends System
                         if (null != $dimmer = new Dimmer($idObject))
                         {
                             //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                            if ($itemValue === null) {
-        
-                                if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                                    System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
-        
-                            } else { //пришло конкретное значение диммера
-        
-                                //Устанавливаем яркость диммера
-                                $dimmer->setValue($itemValue);
-                                $status = 'ON';
-        
-                                if ($itemValue == 0) {
-                                    //Выключаем диммер
-                                    $status = 'OFF';
-                                }
-        
-                                $newObject->setStatus($status, true, false);
-        
+                            if(isset($itemValue)) 
+                            {
+                                $brightness = $itemValue;
                             }
+                            else {
+                                if ($status == 'off') $brightness = 0;
+                                else $brightness = $dimmer->getValue();
+                            }
+                            $dimmer->setValue($brightness);
                         }
                         break;
 
-                    
                     case 'customizable_light':
                         $status = $itemStatus;
 
@@ -793,29 +782,32 @@ class Views extends System
                         {
                             if (null != $tape = new Tape($idObject))
                             {
-                                if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
+                                if (isset($itemValue[0]))
                                 {
-                                    $hue = $itemValue[0]->h;
-                                    $saturation = $itemValue[0]->s;
-                                    $brightness = $itemValue[0]->v;
-                                    $tape->tapeSetColor($hue, $saturation);
-                                    $tape->tapeSetBrightness($brightness);
+                                    if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
+                                    {
+                                        $hue = $itemValue[0]->h;
+                                        $saturation = $itemValue[0]->s;
+                                        $brightness = $itemValue[0]->v;
+                                        $tape->tapeSetColor($hue, $saturation);
+                                        $tape->tapeSetBrightness($brightness);
+                                    }
+                                    
+                                    if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim' || $itemValue[0]->type == 'cct')
+                                    {
+                                        $brightness = $itemValue[0]->brightness;
+                                        $tape->tapeSetBrightness($brightness);
+                                    }
+
+                                    if ($itemValue[0]->type == 'cct')
+                                    {
+                                        $cct = $itemValue[0]->cct;
+                                        // Переводим в проценты значение цветовой температуры
+                                        $cctInPercent = round((($cct-1000)*100)/(10000-1000));
+                                        $tape->tapeSetTemperature($cctInPercent);
+                                    }
                                 }
                                 
-                                if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim' || $itemValue[0]->type == 'cct')
-                                {
-                                    $brightness = $itemValue[0]->brightness;
-                                    $tape->tapeSetBrightness($brightness);
-                                }
-
-                                if ($itemValue[0]->type == 'cct')
-                                {
-                                    $cct = $itemValue[0]->cct;
-                                    // Переводим в проценты значение цветовой температуры
-                                    $cctInPercent = round((($cct-1000)*100)/(10000-1000));
-                                    $tape->tapeSetTemperature($cctInPercent);
-                                }
-                            
                                 if ($status == 'off' || (isset($brightness) && $brightness == 0)) $tape->tapeOff();
                                 else $tape->tapeOn();
                             }
@@ -825,17 +817,16 @@ class Views extends System
                         {
                             if (null != $dimmer = new Dimmer($idObject))
                             {
-                                $brightness = $itemValue[0]->brightness;
                                 //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                                if (!isset($brightness))
+                                if(isset($itemValue[0]->brightness)) 
                                 {
+                                    $brightness = $itemValue[0]->brightness;
+                                }
+                                else {
                                     if ($status == 'off') $brightness = 0;
                                     else $brightness = $dimmer->getValue();
                                 }
-                                
-                                if ($brightness == 0) $status = 'off'; //Выключаем диммер
                                 $dimmer->setValue($brightness);
-                                $newObject->setStatus($status, true, false);
                             }
                         }
                         
@@ -1021,7 +1012,7 @@ class Views extends System
     function getDimmer($idDimmer) {
 
         $sql = parent::$db->query("SELECT `dimmers`.`value` AS value,
-                                   `view_items`.`description` AS description,
+                                   `view_items`.`title`,
                                     `objects`.`status` AS state
                                    FROM `dimmers`
                                    INNER JOIN objects ON objects.id = dimmers.id_object 
@@ -1042,9 +1033,9 @@ class Views extends System
 
             $items = array('id' => $idDimmer,
                 'type' => 'dimmer',
-                'name' => $dimmer->description,
-                'status' => $dimmer->state,
-                'value' => $dimmer->value);
+                'title' => $dimmer->title,
+                'status' => strtolower($dimmer->state),
+                'value' => (string)$dimmer->value);
 
           return  $json = json_encode(array('status' => 'dimerLoad', 'entity'=> $items));
 

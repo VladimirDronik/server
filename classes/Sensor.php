@@ -61,7 +61,6 @@ class Sensor extends System
         else
         {
             echo "[Error] Не определен ID параметра датчика" . PHP_EOL;
-            exit(1);
         }
     }
 

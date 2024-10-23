@@ -35,26 +35,12 @@ class Dali extends System
             if($sql->rowCount() > 0) 
             {
                 $this->daliDevice = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->daliDevice->active != 1)
-                {
-                    echo "[Error] Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен" . PHP_EOL;
-                    System::addLog("Error", "Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен", "port");
-                }
-                else
-                {
-                    $this->object = new Objects();
-                    $this->object->select($idObject);
-                }
+                $this->object = new Objects();
+                $this->object->select($idObject);
             }
-            else 
-            {
-                echo "[Error] DALI устройство (ID $idObject) не найдено" . PHP_EOL;
-            }
+            else echo "[Error] DALI устройство (ID $idObject) не найдено" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID устройства DALI" . PHP_EOL;
-        }
+        else echo "[Error] Не определен ID устройства DALI" . PHP_EOL;
     }
 
     public static function nbit($number, $n)

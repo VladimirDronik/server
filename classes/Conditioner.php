@@ -38,26 +38,10 @@ class Conditioner extends Device
             if($sql->rowCount() > 0) 
             {
                 $this->ac = $sql->fetch(PDO::FETCH_OBJ);
-                // if ($this->ac->active != 1)
-                // {
-                    // $modbusGw = $this->ac->modbus_slaver_id;
-                    // echo "[Error] Modbus шлюз кондиционера (ID $modbusGw) недоступен" . PHP_EOL;
-                    // System::addLog("Error", "Modbus шлюз кондиционера (ID $modbusGw) недоступен", "port");
-                    // exit;
-                // }
             }
-            else 
-            {
-                echo "[Error] Кондиционер (ID $idObject) не найден" . PHP_EOL;
-                // System::addLog("Error", "Попытка обратиться к кондиционеру, которого не существует (ID $idObject)", "port");
-                // exit;
-            }
+            else echo "[Error] Кондиционер (ID $idObject) не найден" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID кондиционера" . PHP_EOL;
-            // exit;
-        }
+        else echo "[Error] Не определен ID кондиционера" . PHP_EOL;
     }
 
     public function setAcPower(string $state)

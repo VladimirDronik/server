@@ -28,14 +28,9 @@ class Regulator extends System
                 `hysteresis`, `lower_method`, `higher_method`, `fallback_method`
                 FROM `regulators` WHERE `object_id` = {$this->objectId}");
             if($sql->rowCount() > 0) $this->properties = $sql->fetch(PDO::FETCH_OBJ);
-            else {
-                echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
-            }
+            else echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID регулятора" . PHP_EOL;
-        }
+        else echo "[Error] Не определен ID регулятора" . PHP_EOL;
     }
 
 

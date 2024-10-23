@@ -19,9 +19,7 @@ class Sensor extends System
                 $this->type = $result->type;
                 $this->status = $result->status;
             }
-            else {
-                echo "[Error] Не найден датчик (ID $idObject)" . PHP_EOL;
-            }
+            else echo "[Error] Не найден датчик (ID $idObject)" . PHP_EOL;
 
             $sql = parent::$db->query(" SELECT `name`, `value` FROM `sensors_properties`
                                         WHERE `object_id` = {$this->objectId}");
@@ -29,9 +27,7 @@ class Sensor extends System
                 while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $props[$row['name']] = $row['value'];
                 $this->properties = (object)$props;
             }
-            else {
-                echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
-            }
+            else echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
 
             $sql = parent::$db->query(" SELECT `param_id`, `name`, `get_param`, `value`, `units`, `graph`,
                                         `min_range`, `max_range`, `min_alarm`, `max_alarm`
@@ -41,14 +37,9 @@ class Sensor extends System
                 while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $param[] = $row;
                 $this->params = $param;
             }
-            else {
-                echo "[Error] Не найдены значения параметров датчика (ID {$this->objectId})" . PHP_EOL;
-            }
+            else echo "[Error] Не найдены значения параметров датчика (ID {$this->objectId})" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID датчика" . PHP_EOL;
-        }
+        else echo "[Error] Не определен ID датчика" . PHP_EOL;
     }
 
     public function getParam($paramId)

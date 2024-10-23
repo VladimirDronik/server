@@ -22,31 +22,13 @@ class Boiler extends System
             if($sql->rowCount() > 0)
             {
                 $this->boiler = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->boiler->active != 1)
-                {
-                    echo "[Error] Modbus шлюз шины {$this->boiler->protocol} (ID {$this->boiler->gateway_id}) недоступен" . PHP_EOL;
-                    System::addLog(
-                        "Error",
-                        "Modbus шлюз шины {$this->boiler->protocol} (ID {$this->boiler->gateway_id}) недоступен",
-                        "port"
-                    );
-                }
-                else
-                {
-                    $this->object = new Objects();
-                    $this->object->select($idObject);
-                    $this->paramsList = $this->getParamsList();
-                }
+                $this->object = new Objects();
+                $this->object->select($idObject);
+                $this->paramsList = $this->getParamsList();
             }
-            else
-            {
-                echo "[Error] Котел с ID объекта $idObject не найден" . PHP_EOL;
-            }
+            else echo "[Error] Котел с ID объекта $idObject не найден" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID котла" . PHP_EOL;
-        }
+        else echo "[Error] Не определен ID котла" . PHP_EOL;
     }
 
     private function getParamsList()

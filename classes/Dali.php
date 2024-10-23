@@ -39,7 +39,6 @@ class Dali extends System
                 {
                     echo "[Error] Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен" . PHP_EOL;
                     System::addLog("Error", "Modbus шлюз шины DALI (ID {$this->daliDevice->dali_gateway}) недоступен", "port");
-                    exit(1);
                 }
                 else
                 {
@@ -50,13 +49,11 @@ class Dali extends System
             else 
             {
                 echo "[Error] DALI устройство (ID $idObject) не найдено" . PHP_EOL;
-                exit(1);
             }
         }
         else
         {
             echo "[Error] Не определен ID устройства DALI" . PHP_EOL;
-            exit(1);
         }
     }
 
@@ -217,7 +214,7 @@ class Dali extends System
                                     SET `brightness` =  $brightness
                                     WHERE `id_object` = {$this->daliDevice->id_object}");
                 $this->object->setStatus('on',true,false);
-                
+                $this->daliDevice->brightness = $brightness;
                 $aliceCapabilities = [
                     "type" => "devices.capabilities.range",
                     "state" => [

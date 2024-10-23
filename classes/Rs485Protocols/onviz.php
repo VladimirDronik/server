@@ -1,15 +1,15 @@
 <?php
 
-class Onviz
-{
-    private static function arrayFormat($item)
+// class Onviz
+// {
+    function arrayFormat($item)
     {
         $result = dechex($item);
         if (strlen($result) < 2) $result = '0' . $result;
         return $result;
     }
 
-    public function getProtocol(string $command, $object, $value = null)
+    function getProtocol(string $command, $object, $value = null)
     {
         
 
@@ -76,7 +76,11 @@ class Onviz
 
         if (isset($value))
         {
-            if (!is_array($value)) $value = [dechex($value)];
+            if (!is_array($value)) {
+                $value = dechex($value);
+                if (strlen($value) < 2) $value = '0' . $value;
+                $value = [$value];
+            }
             $cmd = $commands[$command]['bytes'];
             $cmd = array_merge($cmd, $value);
         }
@@ -84,7 +88,7 @@ class Onviz
 
         $packageArray = array_merge($headByte, $address, $group, $cmd);
 
-        $verifyCode = array_map('self::arrayFormat', unpack('C*', Modbus::crc16(pack ('c*', ...array_map('hexdec', $packageArray)))));
+        $verifyCode = array_map('arrayFormat', unpack('C*', Modbus::crc16(pack ('c*', ...array_map('hexdec', $packageArray)))));
 
         $packageArray = array_merge($packageArray, $verifyCode);
 
@@ -95,4 +99,4 @@ class Onviz
 
         return $protocol;
     }
-}
+// }

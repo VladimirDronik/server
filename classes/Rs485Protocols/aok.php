@@ -1,8 +1,8 @@
 <?php
 
-class Aok
-{
-    public function getProtocol(string $command, $object, $value = null)
+// class Aok
+// {
+    function getProtocol(string $command, $object, $value = null)
     {
         $headByte = ['9a'];
 
@@ -69,8 +69,10 @@ class Aok
 
         if ($commands[$command]['value'])
         {
+            $value = dechex($value);
+            if (strlen($value) < 2) $value = '0' . $value;
             $cmd = $commands[$command]['bytes'];
-            array_push($cmd, dechex($value));
+            array_push($cmd, $value);
         }
         else $cmd = $commands[$command]['bytes'];
 
@@ -95,4 +97,4 @@ class Aok
 
         return $protocol;
     }
-}
+// }

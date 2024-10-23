@@ -32,7 +32,6 @@ class Modbus extends System {
         else 
         {
             echo "Modbus регистр с ID $modbusRegisterId не найден" . PHP_EOL;
-            exit;
         }
     }
 
@@ -107,6 +106,7 @@ class Modbus extends System {
                 else
                 {
                     echo "FAIL" . PHP_EOL;
+                    self::setSlaverActivity($register->slaver_id, 0);
                     if (isset($modbusSlaverId)) return false;
                 }
             }
@@ -138,15 +138,16 @@ class Modbus extends System {
      * Постановка задания на чтение/запись регистра(ов) в очередь
      * $force=true для принудительного опроса, даже если устройство неактивно
      */
-    public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, bool $force = false, int $priority = null)
+    public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, int $priority = null)
     {
         if (isset($value)) if (!is_array($value)) $value = [ $value ];
         $uid = uniqid();
         $modbusRegister = self::getModbusRegister($modbusRegisterId);
         $isSlaverActive = self::getSlaverActivity($modbusRegister->slaver_id);
-        if ($force) $isSlaverActive = true;
+        // if ($force) $isSlaverActive = true;
 
-        if ($modbusRegister && $isSlaverActive)
+        // if ($modbusRegister && $isSlaverActive)
+        if ($modbusRegister)
         {
             if ($action == 'read')
             {

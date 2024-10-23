@@ -708,43 +708,44 @@ class Views extends System
                         if (isset($data_array->items[0]->vdir)) $vdir = $data_array->items[0]->vdir;
                         if (isset($data_array->items[0]->hdir)) $hdir = $data_array->items[0]->hdir;
                         
-                        $conditioner = new Conditioner($idObject);
-                        if (isset($itemStatus)) $conditioner->setAcPower (strtolower($itemStatus));
-                        if (isset($temperature)) $conditioner->setAcTemperature ($temperature);
-                        if (isset($mode)) $conditioner->setAcMode ($mode);
-                        if (isset($fan)) $conditioner->setAcFanSpeed ($fan);
-                        if (isset($vdir)) $conditioner->setAcVDir ($vdir);
-                        if (isset($hdir)) $conditioner->setAcHDir ($hdir);
-
+                        
+                        if (null != $conditioner = new Conditioner($idObject))
+                        {
+                            if (isset($itemStatus)) $conditioner->setAcPower (strtolower($itemStatus));
+                            if (isset($temperature)) $conditioner->setAcTemperature ($temperature);
+                            if (isset($mode)) $conditioner->setAcMode ($mode);
+                            if (isset($fan)) $conditioner->setAcFanSpeed ($fan);
+                            if (isset($vdir)) $conditioner->setAcVDir ($vdir);
+                            if (isset($hdir)) $conditioner->setAcHDir ($hdir);
+                        }
                         // $conditioner->setValue($temperature, $itemStatus, $mode, $fan);
 
                         break;
 
                     case  'dimmer':
-
-                        $dimmer = new Dimmer($idObject);
-
-                        //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                        if ($itemValue === null) {
-    
-                            if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
-                                System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
-    
-                        } else { //пришло конкретное значение диммера
-    
-                            //Устанавливаем яркость диммера
-                            $dimmer->setValue($itemValue);
-                            $status = 'ON';
-    
-                            if ($itemValue == 0) {
-                                //Выключаем диммер
-                                $status = 'OFF';
+                        if (null != $dimmer = new Dimmer($idObject))
+                        {
+                            //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                            if ($itemValue === null) {
+        
+                                if (!self::runButtonMethod($newObject, $itemStatus, $onMethod, $offMethod, $itemID, $itemType))
+                                    System::addlog('error', 'Метод для диммера "' . $itemDescription . '"" не определен', 'dimmer');
+        
+                            } else { //пришло конкретное значение диммера
+        
+                                //Устанавливаем яркость диммера
+                                $dimmer->setValue($itemValue);
+                                $status = 'ON';
+        
+                                if ($itemValue == 0) {
+                                    //Выключаем диммер
+                                    $status = 'OFF';
+                                }
+        
+                                $newObject->setStatus($status, true, false);
+        
                             }
-    
-                            $newObject->setStatus($status, true, false);
-    
                         }
-
                         break;
 
                     
@@ -766,98 +767,93 @@ class Views extends System
 
                         if ($table == 'dali_devices')
                         {
-
-                            if ($itemValue[0]->type == 'cct')
+                            if (null != $dali = new Dali($idObject))
                             {
-                                $brightness = $itemValue[0]->brightness;
-                                $cct = $itemValue[0]->cct;
-                                Dali::setColorTemperature($idObject, $cct);
-                                Dali::setBrightness($idObject, $brightness);
-                            }
+                                if ($itemValue[0]->type == 'cct')
+                                {
+                                    $brightness = $itemValue[0]->brightness;
+                                    $cct = $itemValue[0]->cct;
+                                    $dali->setColorTemperature($cct);
+                                    $dali->setBrightness($brightness);
+                                }
 
-                            if ($itemValue[0]->type == 'dim')
-                            {
-                                $brightness = $itemValue[0]->brightness;
-                                Dali::setBrightness($idObject, $brightness);
+                                if ($itemValue[0]->type == 'dim')
+                                {
+                                    $brightness = $itemValue[0]->brightness;
+                                    $dali->setBrightness($brightness);
+                                }
+                                    
+                                if ($status == 'off' || (isset($brightness) && $brightness == 0)) $dali->daliOff();
+                                else $dali->daliOn();
                             }
-                                
-                            if ($status == 'off' || (isset($brightness) && $brightness == 0)) Dali::daliOff($idObject);
-                            else Dali::daliOn($idObject);
                         }
 
                         
                         if ($table == 'tapes')
                         {
-                            $tape = new Tape($idObject);
-                            // $color = 0;
-                            // $shade = 0;
-                            // $bright = 0;
-                            // $wbright = 0;
-
-                            //Пришли конкретные значения для ленты
-                            if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
+                            if (null != $tape = new Tape($idObject))
                             {
-                                $hue = $itemValue[0]->h;
-                                $saturation = $itemValue[0]->s;
-                                $brightness = $itemValue[0]->v;
-                                $tape->tapeSetColor($hue, $saturation);
-                                $tape->tapeSetBrightness($brightness);
-                            }
+                                if ($itemValue[0]->type == 'hsv' || $itemValue[0]->type == 'hsv_dim')
+                                {
+                                    $hue = $itemValue[0]->h;
+                                    $saturation = $itemValue[0]->s;
+                                    $brightness = $itemValue[0]->v;
+                                    $tape->tapeSetColor($hue, $saturation);
+                                    $tape->tapeSetBrightness($brightness);
+                                }
+                                
+                                if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim' || $itemValue[0]->type == 'cct')
+                                {
+                                    $brightness = $itemValue[0]->brightness;
+                                    $tape->tapeSetBrightness($brightness);
+                                }
+
+                                if ($itemValue[0]->type == 'cct')
+                                {
+                                    $cct = $itemValue[0]->cct;
+                                    // Переводим в проценты значение цветовой температуры
+                                    $cctInPercent = round((($cct-1000)*100)/(10000-1000));
+                                    $tape->tapeSetTemperature($cctInPercent);
+                                }
                             
-                            if ($itemValue[0]->type == 'hsv_dim' || $itemValue[0]->type == 'dim' || $itemValue[0]->type == 'cct')
-                            {
-                                $brightness = $itemValue[0]->brightness;
-                                $tape->tapeSetBrightness($brightness);
+                                if ($status == 'off' || (isset($brightness) && $brightness == 0)) $tape->tapeOff();
+                                else $tape->tapeOn();
                             }
-
-                            if ($itemValue[0]->type == 'cct')
-                            {
-                                $cct = $itemValue[0]->cct;
-                                // Переводим в проценты значение цветовой температуры
-                                $cctInPercent = round((($cct-1000)*100)/(10000-1000));
-                                $tape->tapeSetTemperature($cctInPercent);
-                            }
-                        
-                            if ($status == 'off' || (isset($brightness) && $brightness == 0)) $tape->tapeOff();
-                            else $tape->tapeOn();
-
-                            // $newObject->setStatus($status, true, false);
                         }
 
                         if ($table == 'dimmers' || $table == 'lamps')
                         {
-                            $dimmer = new Dimmer($idObject);
-                            $brightness = $itemValue[0]->brightness;
-                            //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
-                            if (!isset($brightness))
+                            if (null != $dimmer = new Dimmer($idObject))
                             {
-                                if ($status == 'off') $brightness = 0;
-                                else $brightness = $dimmer->getValue();
+                                $brightness = $itemValue[0]->brightness;
+                                //Если значение димера не установлено, то значит сработало одиночное нажатие на кнопку димера
+                                if (!isset($brightness))
+                                {
+                                    if ($status == 'off') $brightness = 0;
+                                    else $brightness = $dimmer->getValue();
+                                }
+                                
+                                if ($brightness == 0) $status = 'off'; //Выключаем диммер
+                                $dimmer->setValue($brightness);
+                                $newObject->setStatus($status, true, false);
                             }
-                            
-                            if ($brightness == 0) $status = 'off'; //Выключаем диммер
-                            $dimmer->setValue($brightness);
-                            $newObject->setStatus($status, true, false);
                         }
                         
                     break;
 
                     case  'curtain':
-
-                        $curtain = new Curtain($idObject);
-
-                        if (!isset($set_value))
+                        if (null != $curtain = new Curtain($idObject))
                         {
-                            if ($itemStatus == "on") $curtain->open();
-                            if ($itemStatus == "off") $curtain->close();
+                            if (!isset($set_value)) {
+                                if ($itemStatus == "on") $curtain->open();
+                                if ($itemStatus == "off") $curtain->close();
+                            }
+                            else {
+                                if ($set_value == 100) $curtain->open();
+                                elseif ($set_value == 0) $curtain->close();
+                                else $curtain->setPercent($set_value);
+                            }
                         }
-                        else 
-                        {
-                            if ($set_value == 100) $curtain->open();
-                            elseif ($set_value == 0) $curtain->close();
-                            else $curtain->setPercent($set_value);
-                        }
-
                     break;
                 }
 

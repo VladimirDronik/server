@@ -30,7 +30,6 @@ class Boiler extends System
                         "Modbus шлюз шины {$this->boiler->protocol} (ID {$this->boiler->gateway_id}) недоступен",
                         "port"
                     );
-                    exit(1);
                 }
                 else
                 {
@@ -42,13 +41,11 @@ class Boiler extends System
             else
             {
                 echo "[Error] Котел с ID объекта $idObject не найден" . PHP_EOL;
-                exit;
             }
         }
         else
         {
             echo "[Error] Не определен ID котла" . PHP_EOL;
-            exit;
         }
     }
 

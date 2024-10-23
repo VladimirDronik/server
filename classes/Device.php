@@ -308,8 +308,24 @@ class Device extends System
                     break;
 
             case 'curtain':
+                $curtain = new Curtain($objectId);
                 $type = 'devices.types.openable.curtain';
                 $capabilities = [ $this->devicesCapabilitiesOn_off ];
+                if ($curtain->curtain->place == 'rs485')
+                    $capabilities[] = [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                            'unit' => 'unit.percent',
+                            'range' => [
+                                'min' => 0,
+                                'max' => 100,
+                                'precision' => 1
+                            ],
+                            'instance' => 'open'
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ];
                 $properties = null;
                 break;
             
@@ -420,16 +436,26 @@ class Device extends System
         if (
             ($device->type == 'lamp') || 
             ($device->type == 'relay') || 
-            ($device->type == 'socket') ||
-            ($device->type == 'curtain')
+            ($device->type == 'socket')
             )
             $status = array('on' => $on);
 
         if ($device->type == 'dimmer') {
             $dimmer = new Dimmer($idDevice);
+
             $status = [
                 'on' => $on,
                 'brightness' => $dimmer->getValue()
+            ];
+        }
+
+        if ($device->type == 'curtain') {
+            if($device->status == 'close') $state = 0;
+            else $state = 1;
+            $curtain = new Curtain($idDevice);
+            $status = [
+                'on' => $state,
+                'open' => $curtain->curtain->percent
             ];
         }
 

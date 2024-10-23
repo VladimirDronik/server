@@ -21,7 +21,6 @@ class Sensor extends System
             }
             else {
                 echo "[Error] Не найден датчик (ID $idObject)" . PHP_EOL;
-                exit(1);
             }
 
             $sql = parent::$db->query(" SELECT `name`, `value` FROM `sensors_properties`
@@ -32,7 +31,6 @@ class Sensor extends System
             }
             else {
                 echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
-                exit(1);
             }
 
             $sql = parent::$db->query(" SELECT `param_id`, `name`, `get_param`, `value`, `units`, `graph`,
@@ -45,13 +43,11 @@ class Sensor extends System
             }
             else {
                 echo "[Error] Не найдены значения параметров датчика (ID {$this->objectId})" . PHP_EOL;
-                exit(1);
             }
         }
         else
         {
             echo "[Error] Не определен ID датчика" . PHP_EOL;
-            exit(1);
         }
     }
 

@@ -4,7 +4,7 @@ require_once '../include.php';
 
 if (isset($argv[2]))
 {
-    $response = Modbus::sendModbus($argv[1], 'write', $argv[2], true);
+    $response = Modbus::sendModbus($argv[1], 'write', $argv[2]);
 
     if (isset($response))
     {

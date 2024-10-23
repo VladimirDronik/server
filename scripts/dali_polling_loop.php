@@ -30,7 +30,7 @@ $devicesChangesRegisters[] = $getRegisterQuery->fetch(PDO::FETCH_OBJ)->id;
 while (true)
 {
     // Получаем текущее количество изменений на шине DALI
-    $changesAmount = Modbus::sendModbus($changesAmountRegister, 'read', null, false, 150);
+    $changesAmount = Modbus::sendModbus($changesAmountRegister, 'read', null, 150);
     // if (isset($changesRequest)) $changesAmount = (int)$changesRequest;
     // else $changesAmount = null;
 sleep(1);
@@ -93,7 +93,7 @@ sleep(1);
                 }
             }
 
-        $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', null, false, 150);
+        $changesRequest = Modbus::sendModbus($changesAmountRegister, 'read', null, 150);
         if (isset($changesRequest)) $changesAmountAck = (int)$changesRequest;
         else $changesAmountAck = null;
 

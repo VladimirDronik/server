@@ -22,7 +22,6 @@ class Regulator extends System
             }
             else {
                 echo "[Error] Не найден регулятор (ID $idObject)" . PHP_EOL;
-                exit(1);
             }
 
             $sql = parent::$db->query(" SELECT `sensor_id`, `param_id`,`optimal_value`,
@@ -31,13 +30,11 @@ class Regulator extends System
             if($sql->rowCount() > 0) $this->properties = $sql->fetch(PDO::FETCH_OBJ);
             else {
                 echo "[Error] Не найдены свойства датчика (ID {$this->objectId})" . PHP_EOL;
-                exit(1);
             }
         }
         else
         {
             echo "[Error] Не определен ID регулятора" . PHP_EOL;
-            exit(1);
         }
     }
 

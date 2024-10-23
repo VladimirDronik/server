@@ -71,8 +71,8 @@ require_once __DIR__.'/libs/mod_i2c_MAX44009.php';
 require_once __DIR__.'/libs/mod_i2c_bh1750.php';
 
 //Classes for RS485 protocols
-require_once __DIR__ . '/classes/Rs485Protocols/Onviz.php';
-require_once __DIR__ . '/classes/Rs485Protocols/Aok.php';
+// require_once __DIR__ . '/classes/Rs485Protocols/Onviz.php';
+// require_once __DIR__ . '/classes/Rs485Protocols/Aok.php';
 
 //Classes for user scripts
 require_once __DIR__ . '/classes/Scriptlang/MyObject.php';

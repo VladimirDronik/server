@@ -40,12 +40,10 @@ class Rs485 extends System
             }
             else {
                 echo "Modbus шина с ID $busId не найдена" . PHP_EOL;
-                exit;
             }
         }
         else {
             echo "[Error] Не определен ID шины" . PHP_EOL;
-            exit;
         }
     }
 
@@ -164,28 +162,54 @@ class Rs485 extends System
                         $binaryData = $this->recieveRawPacket($connection);
                     else $binaryData = $connection->receive();
 
-                    if ($binaryData) {
-                        $end = (microtime(true) - $start) * 1000;
-                        echo 'Response in: ' . $end . ' ms' . PHP_EOL;
-                        echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                        if ($this->bus->type == 'tcp' && $task->protocol == 'raw')
-                            $binaryData = substr((string)$binaryData, 6);
-                        $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
-                        $error = false;
-                        if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
-                        if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
-                        if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
-                        if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
-                    }
-                    else {
-                        echo 'No response from device' . PHP_EOL;
-                        $rawResponse = null;
-                        $response = null;
-                        $error = true;
-                        $errorCode = "No response from device";
-                    }
+                    // if ($binaryData) {
+                    $end = (microtime(true) - $start) * 1000;
+                    echo 'Response in: ' . $end . ' ms' . PHP_EOL;
+                    echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                    if ($this->bus->type == 'tcp' && $task->protocol == 'raw')
+                        $binaryData = substr((string)$binaryData, 6);
+                    $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
+                    $error = false;
+                    if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
+                    if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
+                    if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
+                    if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
+
+                    Modbus::setSlaverActivity($task->slaver_id, 1);
+                    // }
+                //     else {
+                //         echo 'No response from device' . PHP_EOL;
+                //         $rawResponse = null;
+                //         $response = null;
+                //         $error = true;
+                //         $errorCode = "No response from device";
+                //     }
                 }
                 
+                // $topic = "rs485/{$this->bus->id}/response";
+                // $payload = [
+                //     'uid' => $task->uid,
+                //     'error' => $error,
+                //     'protocol' => $task->protocol,
+                //     'request' => $request,
+                //     'raw_response' => $rawResponse,
+                // ];
+                // if (isset($response)) $payload += ['response' => $response,];
+                // if ($error) $payload += ['error_code' => $errorCode,];
+                // Mqtt::publish($topic, $payload);
+            }
+            catch (Exception $exception) {
+                echo 'An exception occurred' . PHP_EOL;
+                echo $exception->getMessage() . PHP_EOL;
+                echo $exception->getTraceAsString() . PHP_EOL;
+                echo 'No response from device' . PHP_EOL;
+                $rawResponse = null;
+                $response = null;
+                $error = true;
+                $errorCode = "No response from device";
+                Modbus::setSlaverActivity($task->slaver_id, 0);
+            }
+            finally {
                 $topic = "rs485/{$this->bus->id}/response";
                 $payload = [
                     'uid' => $task->uid,
@@ -197,14 +221,6 @@ class Rs485 extends System
                 if (isset($response)) $payload += ['response' => $response,];
                 if ($error) $payload += ['error_code' => $errorCode,];
                 Mqtt::publish($topic, $payload);
-            }
-            catch (Exception $exception) {
-                echo 'An exception occurred' . PHP_EOL;
-                echo $exception->getMessage() . PHP_EOL;
-                echo $exception->getTraceAsString() . PHP_EOL;
-                Modbus::setSlaverActivity($task->slaver_id, 0);
-            }
-            finally {
                 $connection->close();
                 $queue->delete($job['id']);
             }
@@ -226,7 +242,7 @@ class Rs485 extends System
                 })
                 // delay this is crucial for some serial devices and delay needs to be long as 100ms (depending on the quantity)
                 // or you will experience read errors ("stream_select interrupted") or invalid CRCs
-                ->setDelayRead(250_000) // 100 milliseconds, serial devices may need delay between sending and received
+                ->setDelayRead(100_000) // 100 milliseconds, serial devices may need delay between sending and received
                 ->build();
         }
         if ($this->bus->type == 'tcp') {

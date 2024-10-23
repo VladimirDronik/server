@@ -1,10 +1,10 @@
 <?php
 
-class Tape extends Device
+class Tape extends System
 {   
-    private $tape = null;
+    public $tape;
     private $registersIds = [];
-    private $object = null;
+    public $object;
 
     function __construct($objectId)
     {
@@ -28,28 +28,13 @@ class Tape extends Device
             if($sql->rowCount() > 0)
             {
                 $this->tape = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->tape->active != 1)
-                {
-                    $modbusGw = $this->tape->controller;
-                    echo "[Error] Modbus устройство WB-LED (ID $modbusGw) недоступно" . PHP_EOL;
-                    System::addLog("Error", "Modbus шлюз кондиционера (ID $modbusGw) недоступен", "port");
-                    exit;
-                }
                 $this->registersIds = $this->getRegistersIdByTapeType();
                 $this->object = new Objects();
                 $this->object->select($objectId);
             }
-            else 
-            {
-                echo "[Error] LED лента с ID $objectId не найдена" . PHP_EOL;
-                exit;
-            }
+            else echo "[Error] LED лента с ID $objectId не найдена" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID LED ленты" . PHP_EOL;
-            exit;
-        }
+        else echo "[Error] Не определен ID LED ленты" . PHP_EOL;
     }
 
     private function getRegistersIdByTapeType()

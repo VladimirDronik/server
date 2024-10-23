@@ -10,14 +10,12 @@
  * Для унификации методов повторный вызов метода open или close останавливает привод.
  */
 
-class Curtain extends Device
+class Curtain extends System
 {
-    private $curtain = null;
-    private $object = null;
-    private $protocol = null;
+    public $curtain = null;
+    public $object = null;
 
-    // $force=true для принудительного опроса, даже если устройство неактивно
-    public function __construct(int $idObject, bool $force = false)
+    public function __construct(int $idObject)
     {
         if (isset($idObject))
         {
@@ -42,34 +40,15 @@ class Curtain extends Device
             if($sql->rowCount() > 0)
             {
                 $this->curtain = $sql->fetch(PDO::FETCH_OBJ);
-                if ($this->curtain->place == 'rs485' && !$this->curtain->active && !$force)
-                {
-                    
-                    $motorId = $this->curtain->id_object;
-                    echo "[Error] Привод с ID $motorId недоступен" . PHP_EOL;
-                    System::addLog("Error", "Привод штор (ID $motorId) недоступен", "port");
-                    exit(1);
-                }
-                else
-                {
-                    $this->object = new Objects();
-                    $this->object->select($this->curtain->id_object);
-
-                    if ($this->curtain->vendor == 'aok') $this->protocol = new Aok();
-                    if ($this->curtain->vendor == 'onviz') $this->protocol = new Onviz();
-                }
+                $this->object = new Objects();
+                $this->object->select($this->curtain->id_object);
+                
+                if ($this->curtain->vendor == 'aok') require_once __DIR__ . '/Rs485Protocols/aok.php';
+                if ($this->curtain->vendor == 'onviz') require_once __DIR__ . '/Rs485Protocols/onviz.php';
             }
-            else 
-            {
-                echo "[Error] Привод штоор (ID $idObject) не найден" . PHP_EOL;
-                exit(1);
-            }
+            else echo "[Error] Привод штоор (ID $idObject) не найден" . PHP_EOL;
         }
-        else
-        {
-            echo "[Error] Не определен ID привода штор" . PHP_EOL;
-            exit(1);
-        }
+        else echo "[Error] Не определен ID привода штор" . PHP_EOL;
     }
 
     /**
@@ -89,18 +68,25 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            $protocol = $this->protocol->getProtocol('open', $this->curtain);
+            $protocol = getProtocol('open', $this->curtain);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
             
             if (isset($response))
             {
                 $this->putPercentToDb(100);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия" . PHP_EOL;
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.on_off",
+                    "state" => [
+                        "instance" => "on",
+                        "value" => 1
+                    ]
+                ];
+                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
                 return true;
             }
             else
             {
-                self::setRsMotorActivity($this->curtain->id_object, 0);
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
@@ -148,18 +134,25 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            $protocol = $this->protocol->getProtocol('close', $this->curtain);
+            $protocol = getProtocol('close', $this->curtain);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
             
             if (isset($response))
             {
                 $this->putPercentToDb(0);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда закрытия" . PHP_EOL;
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.on_off",
+                    "state" => [
+                        "instance" => "on",
+                        "value" => 0
+                    ]
+                ];
+                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
                 return true;
             }
             else
             {
-                self::setRsMotorActivity($this->curtain->id_object, 0);
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
@@ -206,7 +199,7 @@ class Curtain extends Device
     {
         if($this->curtain->place == 'rs485')
         {
-            $protocol = $this->protocol->getProtocol('stop', $this->curtain);
+            $protocol = getProtocol('stop', $this->curtain);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
 
             if (isset($response))
@@ -217,7 +210,6 @@ class Curtain extends Device
             }
             else
             {
-                self::setRsMotorActivity($this->curtain->id_object, 0);
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
@@ -231,21 +223,29 @@ class Curtain extends Device
     {
         if ($percent >= 0 && $percent <= 100)
         {
-            if ($this->curtain->is_inverse) $actualPercent = 100 - $percent;
-            else $actualPercent = $percent;
-            
-            $protocol = $this->protocol->getProtocol('setPercent', $this->curtain, $actualPercent);
+            if ($this->curtain->is_inverse) $inversePercent = 100 - $percent;
+            else $inversePercent = $percent;
+
+            $protocol = getProtocol('setPercent', $this->curtain, $inversePercent);
+
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
 
             if (isset($response))
             {
                 $this->putPercentToDb($percent);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия на $percent%" . PHP_EOL;
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.range",
+                    "state" => [
+                        "instance" => "open",
+                        "value" => $percent
+                    ]
+                ];
+                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
                 return true;
             }
             else
             {
-                self::setRsMotorActivity($this->curtain->id_object, 0);
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
                 return false;
             }
@@ -257,19 +257,29 @@ class Curtain extends Device
      */
     public function getPercent(bool $force = false)
     {
-        $protocol = $this->protocol->getProtocol('getPercent', $this->curtain);
+        $protocol = getProtocol('getPercent', $this->curtain);
         $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse'], $protocol['targetByte']);
 
         if (isset($response))
         {
             $percent = hexdec($response);
+
+            if ($this->curtain->is_inverse) $percent = 100 - $percent;
+
             $this->putPercentToDb($percent);
             echo "Штора (ID {$this->curtain->id_object}): Открыта на $percent%" . PHP_EOL;
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.range",
+                "state" => [
+                    "instance" => "open",
+                    "value" => $percent
+                ]
+            ];
+            Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
             return true;
         }
         else
         {
-            self::setRsMotorActivity($this->curtain->id_object, 0);
             echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
             return false;
         }
@@ -304,7 +314,7 @@ class Curtain extends Device
     {
         for ($i=1; $i<=10; $i++)
         {
-            $protocol = $this->protocol->getProtocol('setAddress', $this->curtain);
+            $protocol = getProtocol('setAddress', $this->curtain);
             $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
 
             if ($protocol['isResponse'])
@@ -345,7 +355,7 @@ class Curtain extends Device
     {
         $packet = self::packetAssembling($this->curtain->address, $this->curtain->group, '0308');
         $response = $this->sendCmd($packet);
-        if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
+        // if (!$response) self::setRsMotorActivity($this->curtain->id_object, 0);
     }
 
     /**

@@ -2,7 +2,7 @@
 
 require_once '../include.php';
 
-$response = Modbus::sendModbus($argv[1], 'read', null, true);
+$response = Modbus::sendModbus($argv[1], 'read');
 
 if (isset($response))
 {

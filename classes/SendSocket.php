@@ -351,14 +351,14 @@ class SendSocket
             }
 
         } elseif ($object->type == 'curtain') {
-            if ($status) {
-                $curtain = new Curtain($idObject);
-                $curtain->open();
+            $curtain = new Curtain($idObject);
+            if ($instance == 'on')
+            {
+                if ($status) $curtain->open();
+                else $curtain->close();
             }
-            else {
-                $curtain = new Curtain($idObject);
-                $curtain->close();
-            }
+            if ($instance == 'open') $curtain->setPercent($status);
+
         } elseif ($object->type == 'virtual') {
 
             $virtual = new Virtuals($idObject);

@@ -19,7 +19,7 @@ class Thermostats extends Objects
     private $placetype;
     private $usensor;
     private $hitepro_dev;
-    private $name;
+    public $name;
     private $optimal;
 
 

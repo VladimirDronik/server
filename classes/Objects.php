@@ -18,7 +18,7 @@ class Objects extends System
      * @var string
      */
     public $type;
-
+    public $name;
     /**
      * object status
      * @var string
@@ -43,9 +43,6 @@ class Objects extends System
      */
     public $device;
     public $extid;
-
-
-
 
     /**
      * Ищем объект и его метод в таблице объектов выводим ссылку на скрипт или код
@@ -106,9 +103,7 @@ class Objects extends System
                                        WHERE `ports`.`id_device` = $id_device AND `ports`.`num_port` = $num_port");
 
         }else
-            $sql = parent::$db->query(" SELECT `objects`.`id`,
-                                               `objects`.`type`,
-                                               `objects`.`status`,
+            $sql = parent::$db->query(" SELECT `objects`.*,
                                                `ports`.`num_port` AS port,
                                                `ports`.`id_device` AS device,
                                                `ports`.`status` AS portstate,
@@ -123,6 +118,7 @@ class Objects extends System
 
             $this->id = $obj->id;
             $this->type = $obj->type;
+            $this->name = $obj->name;
             $this->status = $obj->status;
             $this->port = $obj->port;
             $this->portstate = $obj->portstate;

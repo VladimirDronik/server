@@ -39,6 +39,7 @@ class Views extends System
             //Отдаем элементы
             $sql = parent::$db->query("SELECT `view_items`.`id`,
                                               `view_items`.`type`, 
+                                              `view_items`.`id_object`, 
                                               `view_items`.`description`, 
                                               `view_items`.`icon`,
                                               `view_items`.`status`,
@@ -95,8 +96,10 @@ class Views extends System
 
         //Отдаем элементы
         $sql = parent::$db->query("SELECT `view_items`.`id`,
-                                              `view_items`.`type`, 
-                                              `view_items`.`description`, 
+                                              `view_items`.`type`,
+                                              `view_items`.`id_object`,
+                                              `view_items`.`description`,
+                                              `view_items`.`title`,
                                               `view_items`.`icon`,
                                               `view_items`.`status`, 
                                               `view_items`.`params`,
@@ -951,7 +954,7 @@ class Views extends System
      */
     static private function getItem($viewObject)
     {
-
+        // var_dump($viewObject);
         // Если тип объекта кнопка или переключатель
         if (($viewObject->type == 'button') ||
             ($viewObject->type == 'switch') ||
@@ -1001,6 +1004,9 @@ class Views extends System
          if ($viewObject->type == 'carbdioxide') {
             return self::getCarbdioxide($viewObject, 'array');
         }
+
+        if ($viewObject->type == 'sensor') return self::getSensor($viewObject, 'array');
+        if ($viewObject->type == 'regulator') return self::getRegulator($viewObject, 'array');
         
     }
 
@@ -1821,6 +1827,55 @@ class Views extends System
             if ($curtain->place == 'rs485') $items += ['openRate' => $curtain->percent];
             return json_encode(array('status' => 'curtainLoad', 'entity'=> $items));
         }      
+    }
+
+    /** Функция отдает параметры выбранного сенсора
+     */
+    static function getSensor($viewObject, $output = 'array')
+    {
+        if (null != $sensor = new Sensor ($viewObject->id_object))
+        {
+            $item = [
+                'id' => (int)$viewObject->id,
+                'type' => $viewObject->type,
+                'title' => $viewObject->title,
+                'value' => $sensor->sensor->params[(int)$viewObject->params]['value'],
+                'units' => $sensor->sensor->params[(int)$viewObject->params]['units']
+            ];
+
+            if  ($output == 'array') return $item;
+            else return json_decode($item);
+            // {
+            //     return '{"id":"'.$viewObject->id.'", ' .
+            //         '"type":"'.$viewObject->type.'", ' .
+            //         '"title":"'.$viewObject->title.'", ' .
+            //         '"value":"'.$param[0].'", ' .
+            //         '"units":"'.$param[1].'"}';
+            // } 
+        }
+        else return false;
+    }
+
+    /** Функция отдает параметры выбранного сенсора
+     */
+    static function getRegulator($viewObject, $output = 'array')
+    {
+        if (null != $regulator = new Regulator ($viewObject->id_object))
+        {
+            $item = [
+                'id' => (int)$viewObject->id,
+                'type' => $viewObject->type,
+                'title' => $viewObject->title,
+                'status' => $regulator->object->status,
+                'current' => $regulator->sensor->sensor->params[$regulator->regulator->param_id]['value'],
+                'setpoint' => $regulator->regulator->optimal_value,
+                'units' => $regulator->sensor->sensor->params[$regulator->regulator->param_id]['units'],
+                'params' => $viewObject->params
+            ];
+            if ($output == 'array') return $item;
+            else return json_decode($item);
+        }
+        else return false;
     }
 }
 

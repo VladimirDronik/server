@@ -81,14 +81,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `temp` = $temperature
                                             WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.range",
-                            "state" => [
-                                "instance" => "temperature",
-                                "value" => $temperature
-                            ]
-                        ];
-                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        // $aliceCapabilities = [
+                        //     "type" => "devices.capabilities.range",
+                        //     "state" => [
+                        //         "instance" => "temperature",
+                        //         "value" => $temperature
+                        //     ]
+                        // ];
+                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;
@@ -112,14 +112,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `mode` = '$mode'
                                             WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.mode",
-                            "state" => [
-                                "instance" => "thermostat",
-                                "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
-                            ]
-                        ];
-                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        // $aliceCapabilities = [
+                        //     "type" => "devices.capabilities.mode",
+                        //     "state" => [
+                        //         "instance" => "thermostat",
+                        //         "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
+                        //     ]
+                        // ];
+                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;
@@ -143,14 +143,14 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `fan` = '$speed'
                                             WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.mode",
-                            "state" => [
-                                "instance" => "fan_speed",
-                                "value" => Device::ALICE_AC_MODES_MAPPING[$speed]
-                            ]
-                        ];
-                        Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        // $aliceCapabilities = [
+                        //     "type" => "devices.capabilities.mode",
+                        //     "state" => [
+                        //         "instance" => "fan_speed",
+                        //         "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$speed]
+                        //     ]
+                        // ];
+                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
                         return true;
                     }
                     else return false;

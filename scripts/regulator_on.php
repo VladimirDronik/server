@@ -4,4 +4,6 @@ require_once '../include.php';
 
 // $argv[1] - id объекта
 $id = (isset($argv[1]) ? $argv[1] : null);
-( new Regulator($id) ) -> regulatorOn();
+
+$regulator = new Regulator($id);
+if (isset($regulator->regulator)) $regulator->regulatorOn();

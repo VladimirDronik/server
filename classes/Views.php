@@ -580,6 +580,24 @@ class Views extends System
 
 
                 switch ($itemType) {
+                    case 'regulator':
+                        if (null !== $regulator = new Regulator($idObject))
+                        {
+                            if (isset($itemStatus))
+                            {
+                                if ($itemStatus == 'on') $regulator->regulatorOn();
+                                else $regulator->regulatorOff();
+                            }
+                            
+                            if (isset($itemValue))
+                            {
+                                $regulator->setOptimalValue($itemValue);
+                                $regulator->checkRegulator();
+                            }
+                        }
+                        self::updateItem($itemID);
+                        break;
+
                     case 'termostat':
                         
                         if ($set_value == '') $set_value = 'NULL';
@@ -904,6 +922,12 @@ class Views extends System
             } elseif ($viewItem->type == 'lightstat') {
                 $itemLightstat = self::getLightstats($viewItem, 'string');
                 $message = '{ "status": "itemChange", "items": ['.$itemLightstat.']}';
+            } elseif ($viewItem->type == 'sensor') {
+                $item = self::getSensor($viewItem, 'string');
+                $message = '{"status":"itemChange", "items":['.$item.']}';
+            }elseif ($viewItem->type == 'regulator') {
+                $item = self::getRegulator($viewItem, 'string');
+                $message = '{"status":"itemChange", "items":['.$item.']}';
             } else
             //иначе отдаем структуру обычного итема
                 $message = '{ "status": "itemChange", "items": [{"id":'.$viewItem->id.',
@@ -1844,7 +1868,7 @@ class Views extends System
             ];
 
             if  ($output == 'array') return $item;
-            else return json_decode($item);
+            else return json_encode($item);
             // {
             //     return '{"id":"'.$viewObject->id.'", ' .
             //         '"type":"'.$viewObject->type.'", ' .
@@ -1873,7 +1897,7 @@ class Views extends System
                 'params' => $viewObject->params
             ];
             if ($output == 'array') return $item;
-            else return json_decode($item);
+            else return json_encode($item);
         }
         else return false;
     }

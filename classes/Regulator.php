@@ -37,7 +37,6 @@ class Regulator extends System
         {
             if (null !== $sensorValue = $this->sensor->sensor->params[$this->regulator->param_id]['value'])
             {
-                var_dump($sensorValue);
                 if ($sensorValue <= ($this->regulator->optimal_value - $this->regulator->hysteresis))
                 {
                     Action::runAction($this->regulator->lower_method);
@@ -73,6 +72,6 @@ class Regulator extends System
         $this->regulator->optimal_value = $value;
         parent::$db->query("UPDATE `regulators`
             SET `optimal_value` = '{$this->regulator->optimal_value}'
-            WHERE `object_id` = {$this->objectId}");
+            WHERE `object_id` = {$this->object->id}");
     }
 }

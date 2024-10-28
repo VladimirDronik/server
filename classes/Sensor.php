@@ -9,6 +9,26 @@ class Sensor extends ObjectManager
     public $object;
     public $device;
 
+    const UNITS_MAPPING = [
+        'celsius' => '°C',
+        'percent' => '%',
+        'ppm' => 'ppm',
+        'atm' => 'атм',
+        'pascal' => 'Па',
+        'bar' => 'бар',
+        'mmhg' => 'мм рт.ст.',
+        'lux' => 'люкс',
+        'ampere' => 'А',
+        'kilowatt_hour' => 'кВт/ч',
+        'cubic_meter' => 'м³',
+        'gigacalorie' => 'Гкал',
+        'mcg_m3'  => 'мкг/м³',
+        'watt' => 'Вт',
+        'kelvin' => 'К',
+        'volt' => 'В',
+        NULL => ''
+    ];
+
     function __construct(int $objectId = null)
     {
         if(null !== $objectId) {
@@ -39,6 +59,7 @@ class Sensor extends ObjectManager
         $this->roundValues();
         $this->writeValuesToDb();
         $this->writeValuesToGraphs();
+        $this->aliceCallback();
         $this->setSensorStatus();
     }
 
@@ -84,6 +105,7 @@ class Sensor extends ObjectManager
         foreach ($this->device->params as $key => &$param)
         {
             $logTopic = 'ERROR';
+            $units = self::UNITS_MAPPING[$param['units']];
 
             if(!isset($param['value']))
             {
@@ -92,29 +114,29 @@ class Sensor extends ObjectManager
             }
             elseif(!is_numeric($param['value']))
             {
-                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Некорректное значение";
+                $logMessage = "{$param['name']} = {$param['value']} {} : Некорректное значение";
                 $param['value'] = 'NULL';
             }
             elseif(
                 (isset($param['min_range']) && $param['value'] < $param['min_range']) ||
                 (isset($param['max_range']) && $param['value'] > $param['max_range']))
             {
-                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} вне диапазона измерений";
+                $logMessage = "{$param['name']} = {$param['value']} $units : Значение {$param['value']} вне диапазона измерений";
                 $param['value'] = 'NULL';
             }
             elseif (isset($param['max_alarm']) && $param['value'] > $param['max_alarm']) 
             {
-                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} выше аварийного порога";
+                $logMessage = "{$param['name']} = {$param['value']} $units : Значение {$param['value']} выше аварийного порога";
             }
 
             elseif (isset($param['min_alarm']) && $param['value'] < $param['min_alarm'])
             {
-                $logMessage = "{$param['name']} = {$param['value']} {$param['units']} : Значение {$param['value']} ниже аварийного порога";
+                $logMessage = "{$param['name']} = {$param['value']} $units : Значение {$param['value']} ниже аварийного порога";
             }
             else
             {
                 $logTopic = 'VALUE';
-                $logMessage = "{$param['name']} = {$param['value']} {$param['units']}";
+                $logMessage = "{$param['name']} = {$param['value']} $units";
                 parent::$db->query("UPDATE `sensors_params` SET `timestamp` =  '{$this->device->timestamp}'
                     WHERE `id` = {$param['id']}");
                 
@@ -147,6 +169,21 @@ class Sensor extends ObjectManager
                     VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
             }
         }
+    }
+
+    private function aliceCallback()
+    {
+        foreach ($this->device->params as $key => $param)
+        {
+            $aliceProperties[] = [
+                "type" => "devices.properties.float",
+                "state" => [
+                    "instance" => $param['param'],
+                    "value" => $param['value']
+                ]
+            ];
+        }
+        Device::aliceCallbackState($this->object->id, null, $aliceProperties);
     }
 
     public function setSensorStatus()

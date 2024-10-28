@@ -30,6 +30,26 @@ class Device extends System
         'fan' => 'fan_only'
     ];
 
+    const ALICE_UNITS_MAPPING = [
+        'celsius' => 'unit.temperature.celsius',
+        'percent' => 'unit.percent',
+        'ppm' => 'unit.ppm',
+        'atm' => 'unit.pressure.atm',
+        'pascal' => 'unit.pressure.pascal',
+        'bar' => 'unit.pressure.bar',
+        'mmhg' => 'unit.pressure.mmhg',
+        'lux' => 'unit.illumination.lux',
+        'ampere' => 'unit.ampere',
+        'kilowatt_hour' => 'unit.kilowatt_hour',
+        'cubic_meter' => 'unit.cubic_meter',
+        'gigacalorie' => 'unit.gigacalorie',
+        'mcg_m3'  => 'unit.density.mcg_m3',
+        'watt' => 'unit.watt',
+        'kelvin' => 'unit.temperature.kelvin',
+        'volt' => 'unit.volt',
+        NULL => 'meter'
+    ];
+
     private $devicesCapabilitiesOn_off = [
         'type' => 'devices.capabilities.on_off',
         'parameters' => [
@@ -159,10 +179,18 @@ class Device extends System
                 $model = 'to.srv01';
                 $manufacturer = 'TouchOn';
                 $capabilities = $attributes['capabilities'];
+                $properties = $attributes['properties'];
                 $room = $device->room;
 
-                $devicesArr[$deviceId] = array('name' => $name, 'type' => $type, 'model' => $model,
-                    'manufacturer' => $manufacturer, 'capabilities' => $capabilities, 'room' => $room);
+                $devicesArr[$deviceId] = array(
+                    'name' => $name,
+                    'type' => $type,
+                    'model' => $model,
+                    'manufacturer' => $manufacturer,
+                    'capabilities' => $capabilities,
+                    'properties' => $properties,
+                    'room' => $room
+                );
 
             }
 
@@ -407,7 +435,30 @@ class Device extends System
                 ];
                 $properties = null;
                 break;
+
+            case 'sensor':
+                $sensor = new Sensor($objectId);
+                $type = 'devices.types.sensor';
+                $capabilities = null;
+                
+                foreach ($sensor->device->params as $param)
+                {
+                    // var_dump($param);
+                    $properties[] = [
+                        
+                            'type' => 'devices.properties.float',
+                            'retrievable' => true,
+                            'reportable' => true,
+                            'parameters' => [
+                                'instance' => $param['param'],
+                                'unit' => self::ALICE_UNITS_MAPPING[$param['units']]
+                            ]
+                        
+                    ];
+                }
+                break;
         }
+        var_dump(json_encode($properties));
         return [
             'type' => $type, 
             'capabilities' => json_encode($capabilities),
@@ -504,6 +555,13 @@ class Device extends System
             ];
         }
 
+        if ($device->type == 'sensor') {
+            $sensor = new Sensor($idDevice);
+            foreach ($sensor->device->params as $param)
+                $status[$param['param']] = $param['value'];
+        }
+
+
         return json_encode(array('mode' => 'get_status', 'status' => $status));
     }
 
@@ -523,7 +581,7 @@ class Device extends System
             $queryString = "$ydrHost/$ydrScript?suid=$serverUid&object_id=$objectId";
 
             if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
-            if (isset($properties)) $queryString .= "&properties=" . json_encode($properties);
+            if (isset($properties)) $queryString .= "&properties=" . json_encode($properties, JSON_PRESERVE_ZERO_FRACTION);
             file_get_contents($queryString);
         }
     }

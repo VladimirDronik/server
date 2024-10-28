@@ -2,5 +2,5 @@
 require_once '../include.php';
 
 $id = (isset($argv[1]) ? $argv[1] : null);
-$sensor = new Sensor($id);
-if (isset($sensor)) $sensor->checkSensor();
+
+if (null !== $sensor = new Sensor($id)) $sensor->checkSensor();

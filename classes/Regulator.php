@@ -5,7 +5,7 @@
  * Класс должен объединить в себе логику для любых пар датчик - устройство воздействия.
  */
 
-class Regulator extends System
+class Regulator extends ObjectManager
 {
     public $object;
     public $device;
@@ -47,6 +47,7 @@ class Regulator extends System
                     echo "[WARN] Регулятор (ID {$this->object->id}) вызвал аварийный метод, т.к. не получил текущее значение датчика" . PHP_EOL;
                 }
             }
+            else echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
         }
     }
 

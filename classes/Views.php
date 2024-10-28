@@ -1857,14 +1857,14 @@ class Views extends System
      */
     static function getSensor($viewObject, $output = 'array')
     {
-        if (null != $sensor = new Sensor ($viewObject->id_object))
+        if (null !== $sensor = new Sensor ($viewObject->id_object))
         {
             $item = [
                 'id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
                 'title' => $viewObject->title,
-                'value' => $sensor->sensor->params[(int)$viewObject->params]['value'],
-                'units' => $sensor->sensor->params[(int)$viewObject->params]['units']
+                'value' => $sensor->device->params[(int)$viewObject->params]['value'],
+                'units' => $sensor->device->params[(int)$viewObject->params]['units']
             ];
 
             if  ($output == 'array') return $item;
@@ -1884,16 +1884,19 @@ class Views extends System
      */
     static function getRegulator($viewObject, $output = 'array')
     {
-        if (null != $regulator = new Regulator ($viewObject->id_object))
+        if (null !== $regulator = new Regulator($viewObject->id_object))
         {
+            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+            $controlDevice = new ObjectManager(ObjectManager::getObjectIdByMethod($regulator->device->lower_method));
             $item = [
                 'id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
                 'title' => $viewObject->title,
                 'status' => $regulator->object->status,
-                'current' => $regulator->sensor->sensor->params[$regulator->regulator->param_id]['value'],
-                'setpoint' => $regulator->regulator->optimal_value,
-                'units' => $regulator->sensor->sensor->params[$regulator->regulator->param_id]['units'],
+                'current' => $sensor->device->params[$regulator->device->sensor_param_id]['value'],
+                'setpoint' => $regulator->device->setpoint,
+                'units' => $sensor->device->params[$regulator->device->sensor_param_id]['units'],
+                'control_device' => $controlDevice->object->status,
                 'params' => $viewObject->params
             ];
             if ($output == 'array') return $item;

@@ -7,66 +7,65 @@
 
 class Regulator extends System
 {
-    public $regulator;
-    public $sensor;
-    public $controllDevice;
+    public $object;
+    public $device;
 
     public function __construct(int $objectId = null)
     {
-        if(null !== $objectId) {
-            if($this->regulator = new ObjectManager($objectId))
-                if($this->sensor = new ObjectManager(
-                        Sensor::getSensorObjectIdByParamId($this->regulator->device->sensor_param_id)
-                )) 
-                    if($this->controllDevice = new ObjectManager(
-                            ObjectManager::getObjectIdByMethod($this->regulator->device->lower_method)
-                    ))
-                        return true;
+        if (null !== $objectId) {
+            if (null !== $regulator = new ObjectManager($objectId))
+            {
+                $this->object = $regulator->object;
+                $this->device = $regulator->device;
+            } 
         }
-        return false;
+        else return null;
     }
 
     public function checkRegulator()
     {
-        if ($this->regulator->object->status == 'on')
+        if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id)))
         {
-            if (null !== $sensorValue = $this->sensor->device->params[$this->regulator->device->sensor_param_id]['value'])
+            if ($this->object->status == 'on')
             {
-                if ($sensorValue <= ($this->regulator->device->setpoint - $this->regulator->device->hysteresis))
+                if (null !== $sensorValue = $sensor->device->params[$this->device->sensor_param_id]['value'])
                 {
-                    Action::runAction($this->regulator->device->lower_method);
-                    echo "[INFO] Регулятор (ID {$this->regulator->object->id}) вызвал метод при значении датчика ниже уставки" . PHP_EOL;
-                }
-                if ($sensorValue >= ($this->regulator->device->setpoint + $this->regulator->device->hysteresis))
+                    if ($sensorValue <= ($this->device->setpoint - $this->device->hysteresis))
+                    {
+                        Action::runAction($this->device->lower_method);
+                        echo "[INFO] Регулятор (ID {$this->object->id}) вызвал метод при значении датчика ниже уставки" . PHP_EOL;
+                    }
+                    if ($sensorValue >= ($this->device->setpoint + $this->device->hysteresis))
+                    {
+                        Action::runAction($this->device->higher_method);
+                        echo "[INFO] Регулятор (ID {$this->object->id}) вызвал метод при значении датчика выше уставки" . PHP_EOL;
+                    }
+                } 
+                else
                 {
-                    Action::runAction($this->regulator->device->higher_method);
-                    echo "[INFO] Регулятор (ID {$this->regulator->object->id}) вызвал метод при значении датчика выше уставки" . PHP_EOL;
+                    Action::runAction($this->device->fallback_method);
+                    echo "[WARN] Регулятор (ID {$this->object->id}) вызвал аварийный метод, т.к. не получил текущее значение датчика" . PHP_EOL;
                 }
-            } 
-            else
-            {
-                Action::runAction($this->regulator->device->fallback_method);
-                echo "[WARN] Регулятор (ID {$this->regulator->object->id}) вызвал аварийный метод, т.к. не получил текущее значение датчика" . PHP_EOL;
             }
         }
     }
 
     public function regulatorOn() {
-        $this->regulator->setStatus('on');
-        echo "[INFO] Регулятор (ID {$this->regulator->object->id}) включен" . PHP_EOL;
+        $this->setStatus('on');
+        echo "[INFO] Регулятор (ID {$this->object->id}) включен" . PHP_EOL;
     }
     
     public function regulatorOff() {
-        $this->regulator->setStatus('off');
-        Action::runAction($this->regulator->device->fallback_method);
-        echo "[INFO] Регулятор (ID {$this->regulator->object->id}) отключен" . PHP_EOL;
+        $this->setStatus('off');
+        Action::runAction($this->device->fallback_method);
+        echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
     }
 
     public function setOptimalValue($value)
     {
-        $this->regulator->device->setpoint = $value;
+        $this->device->setpoint = $value;
         parent::$db->query("UPDATE `regulators`
-            SET `setpoint` = '{$this->regulator->device->setpoint}'
-            WHERE `object_id` = {$this->regulator->object->id}");
+            SET `setpoint` = '{$this->device->setpoint}'
+            WHERE `object_id` = {$this->object->id}");
     }
 }

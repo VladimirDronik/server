@@ -6,21 +6,24 @@
 
 class Sensor extends ObjectManager
 {
-    public $sensor;
+    public $object;
+    public $device;
 
     function __construct(int $objectId = null)
     {
         if(null !== $objectId) {
-            if($this->sensor = new ObjectManager($objectId))
-                return true;
+            if($sensor = new ObjectManager($objectId))
+            {
+                $this->object = $sensor->object;
+                $this->device = $sensor->device;
+            }  
         }
-        
-        return false;
+        else return null;
     }
 
     public function checkSensor()
     {
-        switch($this->sensor->device->source)
+        switch($this->device->source)
         {
             case 'megad': $this->getFromMegad();
                 break;
@@ -31,7 +34,7 @@ class Sensor extends ObjectManager
             case 'mqtt': $this->getFromMqtt();
                 break;
         }
-        $this->sensor->device->timestamp = date('Y-m-d H:i:s');
+        $this->device->timestamp = date('Y-m-d H:i:s');
         $this->validateValues();
         $this->roundValues();
         $this->writeValuesToDb();
@@ -41,27 +44,27 @@ class Sensor extends ObjectManager
 
     private function getFromMegad()
     {
-        foreach ($this->sensor->device->params as $key => &$param)
+        foreach ($this->device->params as $key => &$param)
         {
-            if ($this->sensor->device->connection == 'i2c')
-                $query = "pt={$this->sensor->device->sda}&scl={$this->sensor->device->scl}&" . $param['get_param'];
+            if ($this->device->connection == 'i2c')
+                $query = "pt={$this->device->sda}&scl={$this->device->scl}&" . $param['get_param'];
             
-            if ($this->sensor->device->connection == '1w')
-                $query = "pt={$this->sensor->device->port}&{$param['get_param']}";
+            if ($this->device->connection == '1w')
+                $query = "pt={$this->device->port}&{$param['get_param']}";
 
-            if ($this->sensor->device->connection == '1wbus')
-                $query = "pt={$this->sensor->device->port}&{$param['get_param']}{$this->sensor->device->address}";
+            if ($this->device->connection == '1wbus')
+                $query = "pt={$this->device->port}&{$param['get_param']}{$this->device->address}";
             
-            $param['value'] = Megad::getPortValue($this->sensor->device->source_id, $query);
+            $param['value'] = Megad::getPortValue($this->device->source_id, $query);
             
-            if ($this->sensor->device->connection == '1w')
+            if ($this->device->connection == '1w')
                 $param['value'] = explode(':', $param['value'])[1];
         }
     }
 
     private function getFromModbus()
     {
-        foreach ($this->sensor->device->params as $key => &$param)
+        foreach ($this->device->params as $key => &$param)
         {
             $param['value'] = Modbus::sendModbus($param['get_param'], 'read');
         }
@@ -69,16 +72,16 @@ class Sensor extends ObjectManager
 
     private function writeValuesToDb()
     {
-        foreach ($this->sensor->device->params as $key => $param)
+        foreach ($this->device->params as $key => $param)
         {
             parent::$db->query("UPDATE `sensors_params` SET `value` = {$param['value']}
-                WHERE `object_id` = {$this->sensor->object->id} AND `id` = {$param['id']}");
+                WHERE `object_id` = {$this->object->id} AND `id` = {$param['id']}");
         }
     }
 
     private function validateValues()
     {
-        foreach ($this->sensor->device->params as $key => &$param)
+        foreach ($this->device->params as $key => &$param)
         {
             $logTopic = 'ERROR';
 
@@ -112,7 +115,7 @@ class Sensor extends ObjectManager
             {
                 $logTopic = 'VALUE';
                 $logMessage = "{$param['name']} = {$param['value']} {$param['units']}";
-                parent::$db->query("UPDATE `sensors_params` SET `timestamp` =  '{$this->sensor->device->timestamp}'
+                parent::$db->query("UPDATE `sensors_params` SET `timestamp` =  '{$this->device->timestamp}'
                     WHERE `id` = {$param['id']}");
                 
             }
@@ -120,14 +123,14 @@ class Sensor extends ObjectManager
             echo "[$logTopic] $logMessage" . PHP_EOL;
             System::addLog(
                 $logTopic, 
-                "Датчик [{$this->sensor->object->name} ID {$this->sensor->object->id}] : $logMessage",
+                "Датчик [{$this->object->name} ID {$this->object->id}] : $logMessage",
                 'sensor');
         }
     }
 
     private function roundValues()
     {
-        foreach ($this->sensor->device->params as $key => &$param)
+        foreach ($this->device->params as $key => &$param)
         {
             if ("NULL" != $param['value'])
                 $param['value'] = round($param['value'], $param['accuracy']);
@@ -136,12 +139,12 @@ class Sensor extends ObjectManager
 
     private function writeValuesToGraphs()
     {
-        foreach ($this->sensor->device->params as $key => &$param)
+        foreach ($this->device->params as $key => &$param)
         {
             if ($param['graph'])
             {
                 parent::$db->query("INSERT INTO sensors_graphs (`param_id`, `datetime`, `value`)
-                    VALUES ({$param['id']}, '{$this->sensor->device->timestamp}', {$param['value']})");
+                    VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
             }
         }
     }
@@ -149,7 +152,7 @@ class Sensor extends ObjectManager
     public function setSensorStatus()
     {
         $error = false;
-        foreach ($this->sensor->device->params as $key => $param)
+        foreach ($this->device->params as $key => $param)
         {
             if ($param['value'] == "NULL")
             {
@@ -162,13 +165,13 @@ class Sensor extends ObjectManager
 
         if ($error)
         {
-            if ($this->sensor->object->status == 'ok')
+            if ($this->object->status == 'ok')
             {
-                Messages::send(1, "Датчик {$this->sensor->object->name} (ID {$this->sensor->object->id}) неисправен");
+                Messages::send(1, "Датчик {$this->object->name} (ID {$this->object->id}) неисправен");
             }
-            $this->sensor->setStatus('error');
+            $this->setStatus('error');
         }
-        else $this->sensor->setStatus('ok');
+        else $this->setStatus('ok');
     }
 
     public static function getSensorObjectIdByParamId($paramId)

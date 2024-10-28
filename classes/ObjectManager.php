@@ -13,11 +13,8 @@ class ObjectManager extends System
             {
                 $this->object = $sql->fetch(PDO::FETCH_OBJ);
                 $this->device = $this->getDevicebyType();
-                return true;
             }
         }
-
-        return false;
     }
 
     private function getDevicebyType()

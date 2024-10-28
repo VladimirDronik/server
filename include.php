@@ -23,6 +23,7 @@ $dbpass = getenv('MYSQL_PASSWORD');
 require_once __DIR__. '/classes/System.php';
 require_once __DIR__. '/classes/Device.php';
 require_once __DIR__. '/classes/Objects.php';
+require_once __DIR__. '/classes/ObjectManager.php';
 require_once __DIR__. '/classes/Megad.php';
 require_once __DIR__. '/classes/Scripts.php';
 require_once __DIR__. '/classes/Thermostats.php';

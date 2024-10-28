@@ -18,11 +18,8 @@ class Tape extends System
                                             `tapes`.`w` AS 'brightness',
                                             `tapes`.`cct`,
                                             `tapes`.`channel` AS 'channel',
-                                            `tapes`.`controller_id` AS 'controller',
-                                            `modbus_slavers`.`active`
+                                            `tapes`.`controller_id` AS 'controller'
                                         FROM `tapes`
-                                        INNER JOIN `modbus_slavers`
-                                        ON `modbus_slavers`.`id` = `tapes`.`controller_id`
                                         WHERE `tapes`.`id_object` = $objectId");
 
             if($sql->rowCount() > 0)

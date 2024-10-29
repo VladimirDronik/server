@@ -49,14 +49,19 @@ class Regulator extends ObjectManager
             }
             else echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
 
-            $aliceProperties[] = [
-                "type" => "devices.properties.float",
-                "state" => [
-                    "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
-                    "value" => $sensor->device->params[$this->device->sensor_param_id]['value']
-                ]
-            ];
-            Device::aliceCallbackState($this->object->id, null, $aliceProperties);
+            if (
+                $sensor->device->params[$this->device->sensor_param_id]['value'] !== 
+                $sensor->device->params[$this->device->sensor_param_id]['last_value']
+            ) {
+                $aliceProperties[] = [
+                    "type" => "devices.properties.float",
+                    "state" => [
+                        "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
+                        "value" => $sensor->device->params[$this->device->sensor_param_id]['value']
+                    ]
+                ];
+            }
+            if (isset($aliceProperties)) Device::aliceCallbackState($this->object->id, null, $aliceProperties);
         }
     }
 

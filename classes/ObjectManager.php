@@ -42,8 +42,13 @@ class ObjectManager extends System
         );
         if ($sql->rowCount() > 0)
         {
-            while ($row = $sql->fetch(PDO::FETCH_ASSOC)) $param[$row['id']] = $row;
+            while ($row = $sql->fetch(PDO::FETCH_ASSOC)) {
+                $row['last_value'] = $row['value'];
+                $param[$row['id']] = $row;
+            }
+            
             $this->device->params = $param;
+            // $this->device->param['last_value'] = 
         }
         return $this->device;
     }

@@ -58,8 +58,8 @@ class Sensor extends ObjectManager
         $this->validateValues();
         $this->roundValues();
         $this->writeValuesToDb();
-        $this->writeValuesToGraphs();
         $this->aliceCallback();
+        $this->writeValuesToGraphs();
         $this->setSensorStatus();
     }
 
@@ -175,15 +175,17 @@ class Sensor extends ObjectManager
     {
         foreach ($this->device->params as $key => $param)
         {
-            $aliceProperties[] = [
-                "type" => "devices.properties.float",
-                "state" => [
-                    "instance" => $param['param'],
-                    "value" => $param['value']
-                ]
-            ];
+            if ($param['value'] !== $param['last_value']) {
+                $aliceProperties[] = [
+                    "type" => "devices.properties.float",
+                    "state" => [
+                        "instance" => $param['param'],
+                        "value" => $param['value']
+                    ]
+                ];
+            }
         }
-        Device::aliceCallbackState($this->object->id, null, $aliceProperties);
+        if (isset($aliceProperties)) Device::aliceCallbackState($this->object->id, null, $aliceProperties);
     }
 
     public function setSensorStatus()

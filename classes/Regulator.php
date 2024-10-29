@@ -48,18 +48,45 @@ class Regulator extends ObjectManager
                 }
             }
             else echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
+
+            $aliceProperties[] = [
+                "type" => "devices.properties.float",
+                "state" => [
+                    "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
+                    "value" => $sensor->device->params[$this->device->sensor_param_id]['value']
+                ]
+            ];
+            Device::aliceCallbackState($this->object->id, null, $aliceProperties);
         }
     }
 
     public function regulatorOn() {
         $this->setStatus('on');
         echo "[INFO] Регулятор (ID {$this->object->id}) включен" . PHP_EOL;
+        $aliceCapabilities = [
+            "type" => "devices.capabilities.on_off",
+            "state" => [
+                "instance" => "on",
+                "value" => true
+            ]
+        ];
+        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+        $this->checkRegulator();
+        
     }
     
     public function regulatorOff() {
         $this->setStatus('off');
-        Action::runAction($this->device->fallback_method);
+        if (null !== $this->device->fallback_method) Action::runAction($this->device->fallback_method);
         echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
+        $aliceCapabilities = [
+            "type" => "devices.capabilities.on_off",
+            "state" => [
+                "instance" => "on",
+                "value" => false
+            ]
+        ];
+        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
     }
 
     public function setOptimalValue($value)
@@ -68,5 +95,15 @@ class Regulator extends ObjectManager
         parent::$db->query("UPDATE `regulators`
             SET `setpoint` = '{$this->device->setpoint}'
             WHERE `object_id` = {$this->object->id}");
-    }
+        
+        $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id));
+        $aliceCapabilities = [
+            "type" => "devices.capabilities.range",
+            "state" => [
+                "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
+                "value" => $this->device->setpoint
+            ]
+        ];
+        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+        }
 }

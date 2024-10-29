@@ -420,21 +420,21 @@ class Device extends System
                 ];
                 break;
             
-            case 'termostat':
-                $type = 'devices.types.thermostat';
-                $capabilities = [
-                    [
-                        'type' => 'devices.capabilities.range',
-                        'parameters' => [
-                            'instance' => 'temperature',
-                            'unit' => 'unit.temperature.celsius'
-                        ],
-                        'retrievable' => true,
-                        'reportable' => true
-                    ]
-                ];
-                $properties = null;
-                break;
+            // case 'termostat':
+            //     $type = 'devices.types.thermostat';
+            //     $capabilities = [
+            //         [
+            //             'type' => 'devices.capabilities.range',
+            //             'parameters' => [
+            //                 'instance' => 'temperature',
+            //                 'unit' => 'unit.temperature.celsius'
+            //             ],
+            //             'retrievable' => true,
+            //             'reportable' => true
+            //         ]
+            //     ];
+            //     $properties = null;
+            //     break;
 
             case 'sensor':
                 $sensor = new Sensor($objectId);
@@ -443,22 +443,55 @@ class Device extends System
                 
                 foreach ($sensor->device->params as $param)
                 {
-                    // var_dump($param);
                     $properties[] = [
-                        
-                            'type' => 'devices.properties.float',
-                            'retrievable' => true,
-                            'reportable' => true,
-                            'parameters' => [
-                                'instance' => $param['param'],
-                                'unit' => self::ALICE_UNITS_MAPPING[$param['units']]
-                            ]
-                        
+                        'type' => 'devices.properties.float',
+                        'retrievable' => true,
+                        'reportable' => true,
+                        'parameters' => [
+                            'instance' => $param['param'],
+                            'unit' => self::ALICE_UNITS_MAPPING[$param['units']]
+                        ]
                     ];
                 }
                 break;
+            
+            case 'regulator':
+                $regulator = new Regulator($objectId);
+                $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+                $type = 'devices.types.thermostat';
+
+                if ($sensor->device->params[$regulator->device->sensor_param_id]['param'] == 'temperature') $precision = 0.5;
+                elseif ($sensor->device->params[$regulator->device->sensor_param_id]['param'] == 'humidity') $precision = 10;
+                else $precision = 1;
+
+                $capabilities = [
+                    $this->devicesCapabilitiesOn_off,
+                    [
+                        'type' => 'devices.capabilities.range',
+                        'parameters' => [
+                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensor_param_id]['units']],
+                            'range' => [
+                                'min' => $regulator->device->min_setpoint,
+                                'max' => $regulator->device->max_setpoint,
+                                'precision' => $precision
+                            ],
+                            'instance' => $sensor->device->params[$regulator->device->sensor_param_id]['param']
+                        ],
+                        'retrievable' => true,
+                        'reportable' => true
+                    ],
+                ];
+                $properties[] = [
+                    'type' => 'devices.properties.float',
+                    'retrievable' => true,
+                    'reportable' => true,
+                    'parameters' => [
+                        'instance' => $sensor->device->params[$regulator->device->sensor_param_id]['param'],
+                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensor_param_id]['units']]
+                    ]
+                ];
         }
-        var_dump(json_encode($properties));
+
         return [
             'type' => $type, 
             'capabilities' => json_encode($capabilities),
@@ -561,6 +594,18 @@ class Device extends System
                 $status[$param['param']] = $param['value'];
         }
 
+        if ($device->type == 'regulator') {
+            $regulator = new Regulator($idDevice);
+            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+            $status = [
+                'on' => $on,
+                $sensor->device->params[$regulator->device->sensor_param_id]['param']
+                    => $regulator->device->setpoint,
+                $sensor->device->params[$regulator->device->sensor_param_id]['param'].'_prop'
+                    => $sensor->device->params[$regulator->device->sensor_param_id]['value']
+            ];
+        }
+
 
         return json_encode(array('mode' => 'get_status', 'status' => $status));
     }
@@ -569,10 +614,9 @@ class Device extends System
         $ydrHost = 'https://server1.touchon.tech';
         $ydrScript = 'ydr.php';
 
-        $sql = parent::$db->query(" SELECT `id_object`
-                                    FROM `alice_devices` 
-                                    WHERE `id_object` = $objectId
-                                    AND `active` = 1");
+        $sql = parent::$db->query(
+            "SELECT `id_object` FROM `alice_devices` WHERE `id_object` = $objectId AND `active` = 1"
+        );
         if ($sql->rowCount() > 0) {
             $sql = parent::$db->query(" SELECT `value`
                                         FROM `settings`

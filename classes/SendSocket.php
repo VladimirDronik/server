@@ -390,6 +390,19 @@ class SendSocket
             }
             if ($instance == 'temperature_k') $dali->setColorTemperature($status);
         }
+
+        elseif ($object->type == 'regulator') {
+            $regulator = new Regulator($idObject);
+            if ($instance == 'on') {
+                if ($status) $regulator->regulatorOn();
+                else $regulator->regulatorOff();
+            }
+            else {
+                $regulator->setOptimalValue($status);
+                $regulator->checkRegulator();
+            }
+        }
+
     }
 
     /**

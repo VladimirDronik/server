@@ -1888,6 +1888,7 @@ class Views extends System
         {
             $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
             $controlDevice = new ObjectManager(ObjectManager::getObjectIdByMethod($regulator->device->lower_method));
+            $params = "lowval={$regulator->device->min_setpoint};highval={$regulator->device->max_setpoint}";
             $item = [
                 'id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
@@ -1897,7 +1898,9 @@ class Views extends System
                 'setpoint' => $regulator->device->setpoint,
                 'units' => $sensor->device->params[$regulator->device->sensor_param_id]['units'],
                 'control_device' => $controlDevice->object->status,
-                'params' => $viewObject->params
+                'params' => $params,
+                'lowval' => $regulator->device->min_setpoint,
+                'highval' => $regulator->device->max_setpoint
             ];
             if ($output == 'array') return $item;
             else return json_encode($item);

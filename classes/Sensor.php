@@ -175,7 +175,7 @@ class Sensor extends ObjectManager
     {
         foreach ($this->device->params as $key => $param)
         {
-            if ($param['value'] !== $param['last_value']) {
+            if ($param['value'] !== $param['last_value'] || date('i') == 0) {
                 $aliceProperties[] = [
                     "type" => "devices.properties.float",
                     "state" => [

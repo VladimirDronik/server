@@ -51,7 +51,8 @@ class Regulator extends ObjectManager
 
             if (
                 $sensor->device->params[$this->device->sensor_param_id]['value'] !== 
-                $sensor->device->params[$this->device->sensor_param_id]['last_value']
+                $sensor->device->params[$this->device->sensor_param_id]['last_value'] ||
+                date('i') == 0
             ) {
                 $aliceProperties[] = [
                     "type" => "devices.properties.float",

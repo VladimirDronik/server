@@ -179,6 +179,11 @@ class Boiler extends System
         if ($mode == 'wc') $this->weatherCompensation();
     }
 
+    public function getMode()
+    {
+        return $this->boiler->heating_mode;
+    }
+
     public static function convertToF88($value)
     {
         if (0x8000 & $value) return ($value - 0x10000) / 0x100;

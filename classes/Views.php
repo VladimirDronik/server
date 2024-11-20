@@ -1250,7 +1250,7 @@ class Views extends System
             unset($elements);
 
             //Запрашиваем данные для компонентов страницы
-            $queryElement = parent::$db->query("SELECT `id`, `name`, `type`,
+            $queryElement = parent::$db->query("SELECT `id`, `name`, `type`, `id_object`,
                                                        `status`, `units`, `position`,
                                                        `handle`, `settings`, `wh_color`, `bl_color`
                                                 FROM `elements`
@@ -1339,7 +1339,7 @@ class Views extends System
 
                     $element->value = json_encode($value);
 
-                    $elements[] = [
+                    $a = [
                         'id'        => (string)$element->id,
                         'image'     => $image,
                         'title'     => $element->name,
@@ -1348,6 +1348,20 @@ class Views extends System
                         'handle'    => $element->handle,
                         'value'     => [json_decode($element->value)],
                     ];
+                    
+                    if ($element->settings === 'true') {
+                        if ($element->handle == 'ch_setpoint_temp') {
+                            $boiler = new Boiler($element->id_object);
+                            if ($boiler->getMode() == 'wc') $a['settings_type'] = 'auto';
+                            else $a['settings_type'] = 'manual';
+                        }
+                        if ($element->handle == 'dhw_setpoint_temp') {
+                            $a['settings_type'] = 'manual';
+                        }
+                    }
+
+                    $elements[] = $a;
+                    
                 // }
                 }
 

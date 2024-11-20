@@ -83,6 +83,7 @@ class Action extends Megad
      */
     static private function easy($object, $whence, $params = null)
     {
+        echo "Run easy action for obj = {$object->id}" . PHP_EOL;
         $porteasy = explode(';',self::$easy);
         if ($porteasy[0] == 'm') 
         {   
@@ -121,18 +122,18 @@ class Action extends Megad
                         if ($params == 'ON') $command = 1;
                         if($params == 'OFF') $command = 0;
                     }
-
-                    file_get_contents("http://$ip_device/$password?cmd=$port:$command");
+                    $s = "http://$ip_device/$password?cmd=$port:$command";
+                    file_get_contents($s);
                     
                     //Получаем состояние порта, на который воздействуем
                     $state = file_get_contents("http://$ip_device/$password?pt=$port&cmd=get");
+                    
                     if ($object->extid)
                     {
                         $extPort = explode('e', $portAndCmd[0])[1];
                         $state = mb_strtolower(explode(';', $state)[$extPort]);
                     }
                     else $state = mb_strtolower(explode('/', $state)[0]);
-
                 }
 
                 //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
@@ -145,7 +146,8 @@ class Action extends Megad
                 }
 
                 //Меняем статус объекта, которым управляем
-                $object->setStatus($state);
+                $object->setStatus($state, true, false);
+                // var_dump($state);
                 return $state;
             }
         }

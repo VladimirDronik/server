@@ -12,10 +12,21 @@ $logstr = '';
 $log = '';
 $file = 'md.log';
 $ports = []; // Массив из объектов портов, которые отправили данные о сработке
-       
-$url = $_SERVER['REQUEST_URI'];
+
+if (array_key_exists('REMOTE_ADDR', $_SERVER) && array_key_exists('REQUEST_URI', $_SERVER)) {
+    $ip_device = $_SERVER['REMOTE_ADDR'];
+    $url = $_SERVER['REQUEST_URI'];
+}
+elseif (isset($argv[1]) && isset($argv[2])) {
+    $ip_device = $argv[1];
+    $url = $argv[2];
+}
+else {
+    echo "[ERROR] No device ip address and/or get query sring" . PHP_EOL;
+    exit(1);
+}
+
 // $url ='/md.php?pt=2&cnt=22';
-$ip_device = $_SERVER['REMOTE_ADDR'];
 // $ip_device = '10.200.3.11';
 
 // Определяем переданные параметры
@@ -254,7 +265,10 @@ if (array_key_exists('pt', $parametersArray))
     foreach ($ports as $port)
     {
         // System::addLog("Messages", "method = $port['method']", "port");
-        if($port['method']) Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params']);
+        if($port['method']) {
+            echo "[Method] Action::runAction({$port['method']}, 'device', {$port['portObject']}, {$port['params']}, {$port['method_params']})" . PHP_EOL;
+            Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params']);
+        }
         //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
         else Action::runWithoutMethod($port['portObject'], $port['params']);
         System::addLog("Messages", $port['log'], "port");

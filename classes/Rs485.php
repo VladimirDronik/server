@@ -162,28 +162,30 @@ class Rs485 extends System
                         $binaryData = $this->recieveRawPacket($connection);
                     else $binaryData = $connection->receive();
 
-                    // if ($binaryData) {
-                    $end = (microtime(true) - $start) * 1000;
-                    echo 'Response in: ' . $end . ' ms' . PHP_EOL;
-                    echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
-                    if ($this->bus->type == 'tcp' && $task->protocol == 'raw')
-                        $binaryData = substr((string)$binaryData, 6);
-                    $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
-                    $error = false;
-                    if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
-                    if ($task->protocol == 'modbus') $response = $this->getResponse($binaryData, $task);
-                    if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
-                    if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
+                    if ($binaryData) {
+                        $end = (microtime(true) - $start) * 1000;
+                        echo 'Response in: ' . $end . ' ms' . PHP_EOL;
+                        echo 'Binary received (in hex):   ' . unpack('H*', $binaryData)[1] . PHP_EOL;
+                        if ($this->bus->type == 'tcp' && $task->protocol == 'raw')
+                            $binaryData = substr((string)$binaryData, 6);
+                        $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
+                        $error = false;
+                        if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
+                        if ($task->protocol == 'modbus') {
+                            $response = $this->getResponse($binaryData, $task);
+                            Modbus::setSlaverActivity($task->slaver_id, 1);
+                        }
+                        if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
+                        if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
 
-                    Modbus::setSlaverActivity($task->slaver_id, 1);
-                    // }
-                //     else {
-                //         echo 'No response from device' . PHP_EOL;
-                //         $rawResponse = null;
-                //         $response = null;
-                //         $error = true;
-                //         $errorCode = "No response from device";
-                //     }
+                    }
+                    else {
+                        echo 'No response from device' . PHP_EOL;
+                        $rawResponse = null;
+                        $response = null;
+                        $error = true;
+                        $errorCode = "No response from device";
+                    }
                 }
                 
                 // $topic = "rs485/{$this->bus->id}/response";

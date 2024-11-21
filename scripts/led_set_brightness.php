@@ -6,5 +6,4 @@ require_once '../include.php';
 $id = (isset($argv[1]) ? $argv[1] : null);
 $br = (isset($argv[2]) ? $argv[2] : null);
 $tape = new Tape($id);
-var_dump($tape);
 $tape->tapeSetBrightness($br);

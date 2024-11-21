@@ -81,14 +81,20 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `temp` = $temperature
                                             WHERE id_object = {$this->ac->id_object}");
-                        // $aliceCapabilities = [
-                        //     "type" => "devices.capabilities.range",
-                        //     "state" => [
-                        //         "instance" => "temperature",
-                        //         "value" => $temperature
-                        //     ]
-                        // ];
-                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.range",
+                            "state" => [
+                                "instance" => "temperature",
+                                "value" => $temperature
+                            ]
+                        ];
+                        $payload = [
+                            "object_id" => $this->ac->id_object,
+                            "capabilities" => $aliceCapabilities,
+                            "properties" => null
+                        ];
+                        $mqtt = new Mqtt();
+                        $mqtt->publish('alice/callback', $payload, false);
                         return true;
                     }
                     else return false;
@@ -112,14 +118,20 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `mode` = '$mode'
                                             WHERE id_object = {$this->ac->id_object}");
-                        // $aliceCapabilities = [
-                        //     "type" => "devices.capabilities.mode",
-                        //     "state" => [
-                        //         "instance" => "thermostat",
-                        //         "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
-                        //     ]
-                        // ];
-                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.mode",
+                            "state" => [
+                                "instance" => "thermostat",
+                                "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
+                            ]
+                        ];
+                        $payload = [
+                            "object_id" => $this->ac->id_object,
+                            "capabilities" => $aliceCapabilities,
+                            "properties" => null
+                        ];
+                        $mqtt = new Mqtt();
+                        $mqtt->publish('alice/callback', $payload, false);
                         return true;
                     }
                     else return false;
@@ -143,14 +155,20 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `fan` = '$speed'
                                             WHERE id_object = {$this->ac->id_object}");
-                        // $aliceCapabilities = [
-                        //     "type" => "devices.capabilities.mode",
-                        //     "state" => [
-                        //         "instance" => "fan_speed",
-                        //         "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$speed]
-                        //     ]
-                        // ];
-                        // Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.mode",
+                            "state" => [
+                                "instance" => "fan_speed",
+                                "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$speed]
+                            ]
+                        ];
+                        $payload = [
+                            "object_id" => $this->ac->id_object,
+                            "capabilities" => $aliceCapabilities,
+                            "properties" => null
+                        ];
+                        $mqtt = new Mqtt();
+                        $mqtt->publish('alice/callback', $payload, false);
                         return true;
                     }
                     else return false;
@@ -272,8 +290,9 @@ class Conditioner extends Device
                         parent::$db->query("UPDATE `conditioners`
                                             SET `$column` = '$value'
                                             WHERE id_object = {$this->ac->id_object}");
+                        $aliceCapabilities = NULL;
                         if ($column == 'mode' || $column == 'fan' || $column == 'temp') {
-                            if ($column == 'mode') {
+                            if ($column == 'mode' && $value != $this->ac->mode) {
                                 $aliceCapabilities = [
                                     "type" => "devices.capabilities.mode",
                                     "state" => [
@@ -282,7 +301,7 @@ class Conditioner extends Device
                                     ]
                                 ];
                             }
-                            if ($column == 'fan') {
+                            if ($column == 'fan' && $value != $this->ac->fan) {
                                 $aliceCapabilities = [
                                     "type" => "devices.capabilities.mode",
                                     "state" => [
@@ -291,7 +310,7 @@ class Conditioner extends Device
                                     ]
                                 ];
                             }
-                            if ($column == 'temp') {
+                            if ($column == 'temp' && $value != $this->ac->temp) {
                                 $aliceCapabilities = [
                                     "type" => "devices.capabilities.range",
                                     "state" => [
@@ -300,7 +319,16 @@ class Conditioner extends Device
                                     ]
                                 ];
                             }
-                            Device::aliceCallbackState($this->ac->id_object, $aliceCapabilities, null);
+
+                            if (isset($aliceCapabilities)) {
+                                $payload = [
+                                    "object_id" => $this->ac->id_object,
+                                    "capabilities" => $aliceCapabilities,
+                                    "properties" => null
+                                ];
+                                $mqtt = new Mqtt();
+                                $mqtt->publish('alice/callback', $payload, false);
+                            }
                         } 
                     }
                 }

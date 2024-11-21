@@ -178,8 +178,8 @@ class Objects extends System
             parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
         if ($this->status != $status) {
-            if ($status == "on") $s = true;
-            elseif ($status == "off") $s = false;
+            if ($status == "on" || $status == "open") $s = true;
+            elseif ($status == "off" || $status == "close") $s = false;
 
             $aliceCapabilities = [
                 "type" => "devices.capabilities.on_off",
@@ -188,13 +188,11 @@ class Objects extends System
                     "value" => $s
                 ]
             ];
-
             $payload = [
                 "object_id" => $this->id,
                 "capabilities" => $aliceCapabilities,
                 "properties" => null
             ];
-
             $mqtt = new Mqtt();
             $mqtt->publish('alice/callback', $payload, false);
         }

@@ -67,14 +67,22 @@ class Dimmer extends System
             //Заносим текущее состояние в таблицу
             parent::$db->query("UPDATE `{$this->deviceTable}` SET `value` = $value WHERE `id_object` = {$this->dimmer->id_object}");
             $this->object->setStatus('on', true, false);
-            $aliceCapabilities = [
-                "type" => "devices.capabilities.range",
-                "state" => [
-                    "instance" => "brightness",
-                    "value" => $value
-                ]
-            ];
-            Device::aliceCallbackState($this->dimmer->id_object, $aliceCapabilities, null);
+            if ($this->dimmer->value != $value) {
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.range",
+                    "state" => [
+                        "instance" => "brightness",
+                        "value" => $value
+                    ]
+                ];
+                $payload = [
+                    "object_id" => $this->dimmer->id_object,
+                    "capabilities" => $aliceCapabilities,
+                    "properties" => null
+                ];
+                $mqtt = new Mqtt();
+                $mqtt->publish('alice/callback', $payload, false);
+            }
         }
         else $this->object->setStatus('off', true, false);
         

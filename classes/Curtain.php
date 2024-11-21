@@ -75,14 +75,23 @@ class Curtain extends System
             {
                 $this->putPercentToDb(100);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия" . PHP_EOL;
-                $aliceCapabilities = [
-                    "type" => "devices.capabilities.on_off",
-                    "state" => [
-                        "instance" => "on",
-                        "value" => 1
-                    ]
-                ];
-                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+                // if ($this->object->status != "open")
+                // {
+                //     $aliceCapabilities = [
+                //         "type" => "devices.capabilities.on_off",
+                //         "state" => [
+                //             "instance" => "on",
+                //             "value" => 1
+                //         ]
+                //     ];
+                //     $payload = [
+                //         "object_id" => $this->object->id,
+                //         "capabilities" => $aliceCapabilities,
+                //         "properties" => null
+                //     ];
+                //     $mqtt = new Mqtt();
+                //     $mqtt->publish('alice/callback', $payload, false);
+                // }
                 return true;
             }
             else
@@ -141,14 +150,24 @@ class Curtain extends System
             {
                 $this->putPercentToDb(0);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда закрытия" . PHP_EOL;
-                $aliceCapabilities = [
-                    "type" => "devices.capabilities.on_off",
-                    "state" => [
-                        "instance" => "on",
-                        "value" => 0
-                    ]
-                ];
-                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+
+                // if ($this->object->status != "close")
+                // {
+                //     $aliceCapabilities = [
+                //         "type" => "devices.capabilities.on_off",
+                //         "state" => [
+                //             "instance" => "on",
+                //             "value" => 0
+                //         ]
+                //     ];
+                //     $payload = [
+                //         "object_id" => $this->object->id,
+                //         "capabilities" => $aliceCapabilities,
+                //         "properties" => null
+                //     ];
+                //     $mqtt = new Mqtt();
+                //     $mqtt->publish('alice/callback', $payload, false);
+                // }
                 return true;
             }
             else
@@ -234,14 +253,23 @@ class Curtain extends System
             {
                 $this->putPercentToDb($percent);
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда открытия на $percent%" . PHP_EOL;
-                $aliceCapabilities = [
-                    "type" => "devices.capabilities.range",
-                    "state" => [
-                        "instance" => "open",
-                        "value" => $percent
-                    ]
-                ];
-                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+                if ($this->curtain->percent != $percent)
+                {
+                    $aliceCapabilities = [
+                        "type" => "devices.capabilities.range",
+                        "state" => [
+                            "instance" => "open",
+                            "value" => $percent
+                        ]
+                    ];
+                    $payload = [
+                        "object_id" => $this->object->id,
+                        "capabilities" => $aliceCapabilities,
+                        "properties" => null
+                    ];
+                    $mqtt = new Mqtt();
+                    $mqtt->publish('alice/callback', $payload, false);
+                }
                 return true;
             }
             else
@@ -268,14 +296,23 @@ class Curtain extends System
 
             $this->putPercentToDb($percent);
             echo "Штора (ID {$this->curtain->id_object}): Открыта на $percent%" . PHP_EOL;
-            $aliceCapabilities = [
-                "type" => "devices.capabilities.range",
-                "state" => [
-                    "instance" => "open",
-                    "value" => $percent
-                ]
-            ];
-            Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+
+            if ($this->curtain->percent != $percent) {
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.range",
+                    "state" => [
+                        "instance" => "open",
+                        "value" => $percent
+                    ]
+                ];
+                $payload = [
+                    "object_id" => $this->object->id,
+                    "capabilities" => $aliceCapabilities,
+                    "properties" => null
+                ];
+                $mqtt = new Mqtt();
+                $mqtt->publish('alice/callback', $payload, false);
+            }
             return true;
         }
         else

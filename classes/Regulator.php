@@ -62,54 +62,53 @@ class Regulator extends ObjectManager
                     ]
                 ];
             }
-            if (isset($aliceProperties)) Device::aliceCallbackState($this->object->id, null, $aliceProperties);
+            if (isset($aliceProperties)) {
+                $payload = [
+                    "object_id" => $this->object->id,
+                    "capabilities" => null,
+                    "properties" =>$aliceProperties
+                ];
+                $mqtt = new Mqtt();
+                $mqtt->publish('alice/callback', $payload, false);
+            }
         }
     }
 
     public function regulatorOn() {
         $this->setStatus('on');
-        echo "[INFO] Регулятор (ID {$this->object->id}) включен" . PHP_EOL;
-        $aliceCapabilities = [
-            "type" => "devices.capabilities.on_off",
-            "state" => [
-                "instance" => "on",
-                "value" => true
-            ]
-        ];
-        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
-        $this->checkRegulator();
-        
+        $this->checkRegulator(); 
     }
     
     public function regulatorOff() {
         $this->setStatus('off');
         if (null !== $this->device->fallback_method) Action::runAction($this->device->fallback_method);
         echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
-        $aliceCapabilities = [
-            "type" => "devices.capabilities.on_off",
-            "state" => [
-                "instance" => "on",
-                "value" => false
-            ]
-        ];
-        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
     }
 
     public function setOptimalValue($value)
     {
+        if ($this->device->setpoint != $value) {
+            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id));
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.range",
+                "state" => [
+                    "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
+                    "value" => $this->device->setpoint
+                ]
+            ];
+            $payload = [
+                "object_id" => $this->object->id,
+                "capabilities" => $aliceCapabilities,
+                "properties" => null
+            ];
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
+        }
+
         $this->device->setpoint = $value;
         parent::$db->query("UPDATE `regulators`
             SET `setpoint` = '{$this->device->setpoint}'
             WHERE `object_id` = {$this->object->id}");
-        
-        $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id));
-        $aliceCapabilities = [
-            "type" => "devices.capabilities.range",
-            "state" => [
-                "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
-                "value" => $this->device->setpoint
-            ]
-        ];
-        Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
-        }
+
+    }
 }

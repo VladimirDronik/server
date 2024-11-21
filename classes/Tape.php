@@ -123,18 +123,26 @@ class Tape extends System
                                         SET `s` = $saturation
                                         WHERE `id_object` = {$this->object->id}");
                 
-                $aliceCapabilities = [
-                    "type" => "devices.capabilities.color_setting",
-                    "state" => [
-                        "instance" => "hsv",
-                        "value" => [
-                            "h" => $hue,
-                            "s" => $saturation,
-                            "v" => 100
+                if ($this->tape->h != $hue || $this->tape->s != $saturation) {
+                    $aliceCapabilities = [
+                        "type" => "devices.capabilities.color_setting",
+                        "state" => [
+                            "instance" => "hsv",
+                            "value" => [
+                                "h" => $hue,
+                                "s" => $saturation,
+                                "v" => 100
+                            ]
                         ]
-                    ]
-                ];
-                Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+                    ];
+                    $payload = [
+                        "object_id" => $this->object->id,
+                        "capabilities" => $aliceCapabilities,
+                        "properties" => null
+                    ];
+                    $mqtt = new Mqtt();
+                    $mqtt->publish('alice/callback', $payload, false);
+                }
             }
             else echo "[Error] Устройство не поддерживает настройку цвета" . PHP_EOL;
         }
@@ -172,7 +180,7 @@ class Tape extends System
     /**
      * @param int $brightness - значение яркости, от 0 до 100 %
      */
-    public function tapeSetBrightness (int $brightness)
+    public function tapeSetBrightness(int $brightness)
     {
         if (isset($brightness))
         {
@@ -181,22 +189,36 @@ class Tape extends System
                 $response = Modbus::sendModbus($this->registersIds['brightness'], 'write', $brightness);
                 if (isset($response))
                 {
-                    if ($this->tape->type == 'RGB') $column = 'v';
-                    else $column = 'w';
+                    if ($this->tape->type == 'RGB') {
+                        $column = 'v';
+                        $cb = $this->tape->value;
+                    }
+                    else {
+                        $column = 'w';
+                        $cb = $this->tape->brightness;
+                    }
                     parent::$db->query("UPDATE `tapes`
                                         SET `$column` = $brightness
                                         WHERE `id_object` = {$this->object->id}");
-
-                    $aliceCapabilities = [
-                        "type" => "devices.capabilities.range",
-                        "state" => [
-                            "instance" => "brightness",
-                            "value" => $brightness
-                        ]
-                    ];
-                    Device::aliceCallbackState($this->object->id, $aliceCapabilities, null);
+                    if ($cb != $brightness) {
+                        $aliceCapabilities = [
+                            "type" => "devices.capabilities.range",
+                            "state" => [
+                                "instance" => "brightness",
+                                "value" => $brightness
+                            ]
+                        ];
+                        $payload = [
+                            "object_id" => $this->object->id,
+                            "capabilities" => $aliceCapabilities,
+                            "properties" => null
+                        ];
+                        $mqtt = new Mqtt();
+                        $mqtt->publish('alice/callback', $payload, false);
+                    }
                 }
             }
+            else $this->tapeOff();
         }
         else echo "[Error] Не указано значение яркости" . PHP_EOL;
     }

@@ -185,7 +185,15 @@ class Sensor extends ObjectManager
                 ];
             }
         }
-        if (isset($aliceProperties)) Device::aliceCallbackState($this->object->id, null, $aliceProperties);
+        if (isset($aliceProperties)) {
+            $payload = [
+                "object_id" => $this->object->id,
+                "capabilities" => null,
+                "properties" =>$aliceProperties
+            ];
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
+        }
     }
 
     public function setSensorStatus()

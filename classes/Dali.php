@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Класс работы с устройствами на шине DALI.
  * В качестве DALI контроллера выступает Modbus-DALI шлюз компании EcoDim.
@@ -200,15 +199,23 @@ class Dali extends System
                                     SET `brightness` =  $brightness
                                     WHERE `id_object` = {$this->daliDevice->id_object}");
                 $this->object->setStatus('on',true,false);
+                if ($this->daliDevice->brightness != $brightness) {
+                    $aliceCapabilities = [
+                        "type" => "devices.capabilities.range",
+                        "state" => [
+                            "instance" => "brightness",
+                            "value" => $brightness
+                        ]
+                    ];
+                    $payload = [
+                        "object_id" => $this->daliDevice->id_object,
+                        "capabilities" => $aliceCapabilities,
+                        "properties" => null
+                    ];
+                    $mqtt = new Mqtt();
+                    $mqtt->publish('alice/callback', $payload, false);
+                }
                 $this->daliDevice->brightness = $brightness;
-                $aliceCapabilities = [
-                    "type" => "devices.capabilities.range",
-                    "state" => [
-                        "instance" => "brightness",
-                        "value" => $brightness
-                    ]
-                ];
-                Device::aliceCallbackState($this->daliDevice->id_object, $aliceCapabilities, null);
             }
             else $this->object->setStatus('off',true,false);
 
@@ -236,14 +243,24 @@ class Dali extends System
             parent::$db->query("UPDATE `dali_devices`
                                 SET `cct` =  $cct
                                 WHERE `id_object` = {$this->daliDevice->id_object}");
-            $aliceCapabilities = [
-                "type" => "devices.capabilities.color_setting",
-                "state" => [
-                    "instance" => "temperature_k",
-                    "value" => $cct
-                ]
-            ];
-            Device::aliceCallbackState($this->daliDevice->id_object, $aliceCapabilities, null);
+            
+            if ($this->daliDevice->cct != $cct) {
+                $aliceCapabilities = [
+                    "type" => "devices.capabilities.color_setting",
+                    "state" => [
+                        "instance" => "temperature_k",
+                        "value" => $cct
+                    ]
+                ];
+                $payload = [
+                    "object_id" => $this->daliDevice->id_object,
+                    "capabilities" => $aliceCapabilities,
+                    "properties" => null
+                ];
+    
+                $mqtt = new Mqtt();
+                $mqtt->publish('alice/callback', $payload, false);
+            }
             return true;
         }
         else return false;

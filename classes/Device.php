@@ -623,7 +623,7 @@ class Device extends System
                                         WHERE `name` = 'server_id'");
             $serverUid = $sql->fetch(PDO::FETCH_OBJ)->value;
             $queryString = "$ydrHost/$ydrScript?suid=$serverUid&object_id=$objectId";
-
+            echo (new datetime())->format('Y-m-d H:i:s.v') . " [INFO] Yandex Alice callback request for object ID $objectId" . PHP_EOL;
             if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
             if (isset($properties)) $queryString .= "&properties=" . json_encode($properties, JSON_PRESERVE_ZERO_FRACTION);
             file_get_contents($queryString);

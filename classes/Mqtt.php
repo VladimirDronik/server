@@ -6,26 +6,49 @@ class Mqtt extends System
 {
     const MQTT_HOST = 'localhost';
     const MQTT_PORT = 1883;
+    private $client;
 
+    public function __construct() {
+        $this->client = $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+    }
+
+    public function connect() {
+        $this->client->connect(null, true);
+    }
     
-    public static function subscribeRs485(string $topic, $uid) {
-        $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
-        $client->connect(null, true);
-        $client->subscribe($topic, function ($topic, $message) use ($uid, $client, &$response) {
+    public function subscribeRs485(string $topic, $uid) {
+        $this->connect();
+        $c = $this->client;
+        $this->client->subscribe($topic, function ($topic, $message) use ($uid, $c, &$response) {
             $response = json_decode($message, true);
-            if ($uid == $response['uid']) $client->interrupt();
+            if ($uid == $response['uid']) $c->interrupt();
         }, MqttClient::QOS_AT_MOST_ONCE);
-        $client->loop(true);
-        $client->disconnect();
+        $this->client->loop(true);
+        $this->disconnect();
         return $response;
     }
 
-    public static function publish(string $topic, array $payload, $qos = MqttClient::QOS_AT_MOST_ONCE, $retained = true) {
-        $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
-        $client->connect(null, true);
-        $client->publish($topic, json_encode($payload), $qos, $retained);
-        $client->disconnect(); 
+    public function disconnect() {
+         $this->client->disconnect();
     }
 
+    public function publish(string $topic, array $payload, $retained = true, $qos = MqttClient::QOS_AT_MOST_ONCE) {
+        $this->connect();
+        $this->client->publish($topic, json_encode($payload), $qos, $retained);
+        $this->disconnect(); 
+    }
+
+
+    public function subscribe(string $topic) {
+        $this->connect();
+        $c = $this->client;
+        $this->client->subscribe($topic, function ($topic, $message) use ($c) {
+            $payload = json_decode($message, true);
+            if ($topic == 'alice/callback') {
+                Device::aliceCallbackState($payload['object_id'], $payload['capabilities'], $payload['properties']);
+            }
+        }, MqttClient::QOS_AT_MOST_ONCE);
+        $this->client->loop(true);
+    }
 
 }

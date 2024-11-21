@@ -183,7 +183,8 @@ class Modbus extends System {
             );
 
             BeanstalkQueue::putTask($modbusRegister->bus_id, $task, 5);
-            $response = Mqtt::subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
+            $mqtt = new Mqtt();
+            $response = $mqtt->subscribeRs485("rs485/{$modbusRegister->bus_id}/response", $uid);
 
             if ($response['error'] === true) {
                 return null;

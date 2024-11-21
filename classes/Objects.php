@@ -96,7 +96,7 @@ class Objects extends System
         //Если объект не указан явно, то пробуем искать его у порта на устройстве
         if ($object == null) {
 
-            $sql = parent::$db->query("SELECT `objects`.`id`, `objects`.`type`, `objects`.`status`,
+            $sql = parent::$db->query("SELECT `objects`.*,
                                               `ports`.`num_port` AS port, `ports`.`id_device` AS device, 
                                               `ports`.`status` AS portstate, `ports`.`extension_module_id` AS extid
                                        FROM `objects` LEFT JOIN `ports` ON `objects`.`id` = `ports`.`object` 
@@ -163,40 +163,21 @@ class Objects extends System
 
         //Выполняем по умолчанию смену состояния связанного порта и снимаем с порта реальный статус
         if($portrelease) {
-
             $portState = $this->set_port_state($status);
-            if($portState)
-                $status = $portState;
+            if($portState) $status = $portState;
         }
 
 
         //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
-        if(($whence == 'device') && ($idCausing != null)) {
-            $idCausing->setStatus($status);
-        }
+        // if(($whence == 'device') && ($idCausing != null)) {
+        //     $idCausing->setStatus($status);
+        // }
 
         //Изменяем статус объекта
         if($set_object_status)
-        parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
+            parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
-        $this->status = $status;
-
-        if($this->id)
-        {   
-            //Если у объекта есть представление, то меняем его статус
-            $sql = parent::$db->query("SELECT id FROM view_items WHERE id_object =  $this->id");
-            $item = $sql->fetch(PDO::FETCH_OBJ);
-
-            if($status == 'open') $status = 'on';
-            elseif ($status == 'close') $status = 'off';
-          
-
-            if(isset($item->id)) {
-
-                $view = new Views();
-                $view->updateItem($item->id, $status);
-            }
-
+        if ($this->status != $status) {
             if ($status == "on") $status = true;
             elseif ($status == "off") $status = false;
 
@@ -207,13 +188,33 @@ class Objects extends System
                     "value" => $status
                 ]
             ];
-            Device::aliceCallbackState($this->id, $aliceCapabilities, null);
 
+            $payload = [
+                "object_id" => $this->id,
+                "capabilities" => $aliceCapabilities,
+                "properties" => null
+            ];
+
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
         }
+        
+        $this->status = $status;
 
+        if($this->id) //Если у объекта есть представление, то меняем его статус
+        {   
+            $sql = parent::$db->query("SELECT id FROM view_items WHERE id_object =  $this->id");
+            $item = $sql->fetch(PDO::FETCH_OBJ);
 
+            if($status == 'open') $status = 'on';
+            elseif ($status == 'close') $status = 'off';
+          
+            if(isset($item->id)) {
+                $view = new Views();
+                $view->updateItem($item->id, $status);
+            }
+        }
         return $status;
-
     }
 
 

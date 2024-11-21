@@ -4,10 +4,6 @@ require_once '../include.php';
 $configFile = getenv('WORK_DIR') . '/configs/supervisord.conf';
 
 checkSupervisorCfg ('modbus');
-// checkSupervisorCfg ('modbus_polling');
-// checkSupervisorCfg ('dali_polling');
-// checkSupervisorCfg ('curtain_polling');
-
 
 //* FUNCTIONS */
 
@@ -23,6 +19,7 @@ function getSupervisorProcs()
         'cron',
         'beanstalkd',
         'mediamtx',
+        'mqtt_alice',
     ];
     
     // Получаем список несистемных процессов из конфига supervisord
@@ -69,10 +66,7 @@ function checkSupervisorCfg(string $subject)
 function getIdArrayFromDb(string $subject)
 {
     $idArrayFromDb = [];
-    if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Rs485::getBuses();
-    if ($subject == 'dali_polling') $idArrayFromDb = Dali::getDaliBuses();
-    // if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
-
+    if ($subject == 'modbus') $idArrayFromDb = Rs485::getBuses();
     return $idArrayFromDb;
 }
 
@@ -100,10 +94,6 @@ function addToSupervisorConfig(string $subject, int $subjectId)
     global $configFile;
 
     if ($subject == 'modbus') $scriptName = 'modbus_queue.php';
-    if ($subject == 'modbus_polling') $scriptName = 'modbus_polling_loop.php';
-    if ($subject == 'dali_polling') $scriptName = 'dali_polling_loop.php';
-    // if ($subject == 'curtain_polling') $scriptName = 'curtain_polling_loop.php';
-
     
     $query = 'grep ' . escapeshellarg("\[program:${subject}_id${subjectId}\]") . ' ' .  $configFile;
     

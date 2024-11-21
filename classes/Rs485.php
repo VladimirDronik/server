@@ -117,8 +117,8 @@ class Rs485 extends System
 
         if (!isset($priority)) $priority = 50;
         BeanstalkQueue::putTask($this->bus->id, $task, $priority);
-
-        $response = Mqtt::subscribeRs485("rs485/{$this->bus->id}/response", $uid);
+        $mqtt = new Mqtt();
+        $response = $mqtt->subscribeRs485("rs485/{$this->bus->id}/response", $uid);
 
         if (isset($response) && !$response['error'])
         {
@@ -222,7 +222,8 @@ class Rs485 extends System
                 ];
                 if (isset($response)) $payload += ['response' => $response,];
                 if ($error) $payload += ['error_code' => $errorCode,];
-                Mqtt::publish($topic, $payload);
+                $mqtt = new Mqtt();
+                $mqtt->publish($topic, $payload);
                 $connection->close();
                 $queue->delete($job['id']);
             }

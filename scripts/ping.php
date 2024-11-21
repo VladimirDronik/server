@@ -3,5 +3,5 @@
 require_once '../include.php';
 
 Modbus::checkModbusAvailible();
-Curtain::checkRsMotorAvailible();
+//Curtain::checkRsMotorAvailible();
 Device::checkAvailible('devices');

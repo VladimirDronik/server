@@ -102,7 +102,7 @@ class Rs485 extends System
         return fread($connection->getStream(), 256);
     }
 
-    public function sendRaw(string $cmd, bool $needResponse = true, $targetByte = null, int $priority = null)
+    public function sendRaw(string $cmd, bool $needResponse = true, int $priority = null)
     {
         $uid = uniqid();
         $rawData = pack ('c*', ...array_map('hexdec', str_split(str_replace(' ', '', $cmd), 2)));
@@ -113,18 +113,12 @@ class Rs485 extends System
             'needResponse' => $needResponse
         ];
 
-        if (isset($targetByte)) $task['targetByte'] = $targetByte;
-
         if (!isset($priority)) $priority = 50;
         BeanstalkQueue::putTask($this->bus->id, $task, $priority);
         $mqtt = new Mqtt();
         $response = $mqtt->subscribeRs485("rs485/{$this->bus->id}/response", $uid);
 
-        if (isset($response) && !$response['error'])
-        {
-            if (isset($targetByte)) return $response['response'];
-            return $response['raw_response'];
-        }
+        if (isset($response) && !$response['error']) return $response['raw_response'];
         else return null;
     }
 
@@ -140,6 +134,7 @@ class Rs485 extends System
 
         while (true) {
             $job = $queue->reserve(); // Block until job is available.
+            $response = null;
             $task = json_decode($job['body']);
             $connection = $this->busConnection();
             $packet = $this->getPacket($task);
@@ -170,7 +165,7 @@ class Rs485 extends System
                             $binaryData = substr((string)$binaryData, 6);
                         $rawResponse = array_map('arrayFormat', unpack('C*', $binaryData));
                         $error = false;
-                        if (isset($task->targetByte)) $response = $rawResponse[$task->targetByte];
+
                         if ($task->protocol == 'modbus') {
                             $response = $this->getResponse($binaryData, $task);
                             Modbus::setSlaverActivity($task->slaver_id, 1);
@@ -187,18 +182,6 @@ class Rs485 extends System
                         $errorCode = "No response from device";
                     }
                 }
-                
-                // $topic = "rs485/{$this->bus->id}/response";
-                // $payload = [
-                //     'uid' => $task->uid,
-                //     'error' => $error,
-                //     'protocol' => $task->protocol,
-                //     'request' => $request,
-                //     'raw_response' => $rawResponse,
-                // ];
-                // if (isset($response)) $payload += ['response' => $response,];
-                // if ($error) $payload += ['error_code' => $errorCode,];
-                // Mqtt::publish($topic, $payload);
             }
             catch (Exception $exception) {
                 echo 'An exception occurred' . PHP_EOL;

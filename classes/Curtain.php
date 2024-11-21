@@ -54,10 +54,10 @@ class Curtain extends System
     /**
      * Отправка команды (для штор с RS485)
      */
-    private function sendCmd (string $packet, bool $needResponse, $targetByte = null)
+    private function sendCmd (string $packet, bool $needResponse)
 	{
         $bus = new Rs485($this->curtain->bus_id);
-        $response = $bus->sendRaw($packet, $needResponse, $targetByte);
+        $response = $bus->sendRaw($packet, $needResponse);
         return $response;
 	}
 
@@ -92,11 +92,13 @@ class Curtain extends System
                 //     $mqtt = new Mqtt();
                 //     $mqtt->publish('alice/callback', $payload, false);
                 // }
+                $this->setRsMotorActivity(1);
                 return true;
             }
             else
             {
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+                $this->setRsMotorActivity(0);
                 return false;
             }
 
@@ -168,11 +170,13 @@ class Curtain extends System
                 //     $mqtt = new Mqtt();
                 //     $mqtt->publish('alice/callback', $payload, false);
                 // }
+                $this->setRsMotorActivity(1);
                 return true;
             }
             else
             {
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+                $this->setRsMotorActivity(0);
                 return false;
             }
         }
@@ -223,13 +227,17 @@ class Curtain extends System
 
             if (isset($response))
             {
-                $this->getPercent();
+                // $this->getPercent();
                 echo "Штора (ID {$this->curtain->id_object}): Отправлена команда остановки" . PHP_EOL;
+                $this->setRsMotorActivity(1);
+                sleep(1);
+                $this->getPercent();
                 return true;
             }
             else
             {
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+                $this->setRsMotorActivity(0);
                 return false;
             }
         }
@@ -270,11 +278,13 @@ class Curtain extends System
                     $mqtt = new Mqtt();
                     $mqtt->publish('alice/callback', $payload, false);
                 }
+                $this->setRsMotorActivity(1);
                 return true;
             }
             else
             {
                 echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+                $this->setRsMotorActivity(0);
                 return false;
             }
         }
@@ -286,11 +296,11 @@ class Curtain extends System
     public function getPercent(bool $force = false)
     {
         $protocol = getProtocol('getPercent', $this->curtain);
-        $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse'], $protocol['targetByte']);
+        $response = $this->sendCmd($protocol['cmd'], $protocol['isResponse']);
 
-        if (isset($response))
+        if (isset($response) && isset($response[$protocol['targetByte']]))
         {
-            $percent = hexdec($response);
+            $percent = hexdec($response[$protocol['targetByte']]);
 
             if ($this->curtain->is_inverse) $percent = 100 - $percent;
 
@@ -313,11 +323,13 @@ class Curtain extends System
                 $mqtt = new Mqtt();
                 $mqtt->publish('alice/callback', $payload, false);
             }
+            $this->setRsMotorActivity(1);
             return true;
         }
         else
         {
             echo "Привод штор (ID {$this->curtain->id_object}) недоступен" . PHP_EOL;
+            $this->setRsMotorActivity(0);
             return false;
         }
     }
@@ -412,17 +424,17 @@ class Curtain extends System
     /**
      * Установка флага активности для привода с RS485
      */
-    private static function setRsMotorActivity(int $rsMotorId, int $activity)
+    private function setRsMotorActivity(int $activity)
     {
-        parent::$db->exec("UPDATE `curtains` SET `active` = $activity WHERE `id_object` = $rsMotorId");
+        parent::$db->exec("UPDATE `curtains` SET `active` = $activity WHERE `id_object` = {$this->curtain->id_object}");
     }
 
     /**
      * Получение флага активности для привода с RS485
      */
-    public static function getRsMotorActivity(int $rsMotorId)
+    public function getRsMotorActivity()
     {
-        $sql = parent::$db->query("SELECT `active` FROM `curtains` WHERE `id_object` = $rsMotorId");
+        $sql = parent::$db->query("SELECT `active` FROM `curtains` WHERE `id_object` = {$this->curtain->id_object}");
         $activity = $sql->fetch(PDO::FETCH_OBJ);
         return $activity->active;
     }
@@ -445,8 +457,8 @@ class Curtain extends System
             {
                 $curtain = new Curtain ($rsMotor->id_object, true);
                 $response = $curtain->getPercent();
-                if ($response) self::setRsMotorActivity($rsMotor->id_object, 1);
-                else self::setRsMotorActivity($rsMotor->id_object, 0);
+                if ($response) $curtain->setRsMotorActivity(1);
+                else $curtain->setRsMotorActivity(0);
             }
         }
     }

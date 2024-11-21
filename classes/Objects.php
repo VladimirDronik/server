@@ -178,14 +178,14 @@ class Objects extends System
             parent::$db->exec("UPDATE `objects` SET `status` = '$status' WHERE `id` = $this->id");
 
         if ($this->status != $status) {
-            if ($status == "on") $status = true;
-            elseif ($status == "off") $status = false;
+            if ($status == "on") $s = true;
+            elseif ($status == "off") $s = false;
 
             $aliceCapabilities = [
                 "type" => "devices.capabilities.on_off",
                 "state" => [
                     "instance" => "on",
-                    "value" => $status
+                    "value" => $s
                 ]
             ];
 

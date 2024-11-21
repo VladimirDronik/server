@@ -36,8 +36,6 @@ class Action extends Megad
      */
     static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $method_params=null, $sendMessage=true)
     {
-        // var_dump ($idMethod, $whence, $idCausing, $params, $method_params, $sendMessage);
-        // var_dump ($params);
         if ($idCausing)
         {
             //Меняем состояние объекта и итема, которые вызвали действие
@@ -45,18 +43,10 @@ class Action extends Megad
             $causingObject->select($idCausing);
         }
         
-        //Если дейстивие происходит по замыканию порта в любом режиме
-        // или если действие происходит без удержания
-        // или если действие происходит с удержанием кнопки и объект является кнопкой
-        // if(
-        //     ($params == '') ||
-        //     (($params == 1) && ($causingObject->type != 'button')) ||
-        //     (($params == 2) && ($causingObject->type == 'button'))
-        // ) {
         if ($idMethod != null) {
 
             $sql = parent::$db->query("SELECT `easy`, `script`, `id_object`, `name`, `is_system`
-            FROM `methods` WHERE `methods`.`id`=$idMethod");
+                FROM `methods` WHERE `methods`.`id`=$idMethod");
             $method = $sql->fetch(PDO::FETCH_OBJ);
 
             self::$easy = $method->easy;
@@ -66,7 +56,7 @@ class Action extends Megad
 
             if ($idCausing) Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
             if ($idCausing != $method->id_object)
-            Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
+                Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
 
             if (self::$easy) self::easy($object, $whence, $params);
             elseif ((self::$idScript) && ($method->is_system == 0)) self::script($object);
@@ -106,35 +96,25 @@ class Action extends Megad
 
             if ($device->active)
             {
-                //Если тип устройства хитпро
-                if(Device::getTypeName($device->type) == 'Hite-pro')
+                //Если есть доп. параметры
+                if (($params == 'ON') || ($params == 'OFF'))
                 {
-                    HitePro::setHiteProCommand($ip_device, $password, $port, $command, $object);
-                    sleep(1);
-                    $state = HitePro::getHiteProCommand($ip_device, $password, $port);
-                } 
-                else
-                { 
-                    //если обычная мега
-                    //Если есть доп. параметры
-                    if (($params == 'ON') || ($params == 'OFF'))
-                    {
-                        if ($params == 'ON') $command = 1;
-                        if($params == 'OFF') $command = 0;
-                    }
-                    $s = "http://$ip_device/$password?cmd=$port:$command";
-                    file_get_contents($s);
-                    
-                    //Получаем состояние порта, на который воздействуем
-                    $state = file_get_contents("http://$ip_device/$password?pt=$port&cmd=get");
-                    
-                    if ($object->extid)
-                    {
-                        $extPort = explode('e', $portAndCmd[0])[1];
-                        $state = mb_strtolower(explode(';', $state)[$extPort]);
-                    }
-                    else $state = mb_strtolower(explode('/', $state)[0]);
+                    if ($params == 'ON') $command = 1;
+                    if($params == 'OFF') $command = 0;
                 }
+                $s = "http://$ip_device/$password?cmd=$port:$command";
+                file_get_contents($s);
+                
+                //Получаем состояние порта, на который воздействуем
+                $state = file_get_contents("http://$ip_device/$password?pt=$port&cmd=get");
+                
+                if ($object->extid)
+                {
+                    $extPort = explode('e', $portAndCmd[0])[1];
+                    $state = mb_strtolower(explode(';', $state)[$extPort]);
+                }
+                else $state = mb_strtolower(explode('/', $state)[0]);
+          
 
                 //Если вызвали с устройства, то меняем также статус вызвавшего объекта (это может быть кнопка)
                 if($whence == 'device') {
@@ -147,7 +127,7 @@ class Action extends Megad
 
                 //Меняем статус объекта, которым управляем
                 $object->setStatus($state, true, false);
-                // var_dump($state);
+
                 return $state;
             }
         }

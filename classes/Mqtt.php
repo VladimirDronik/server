@@ -4,12 +4,10 @@ use PhpMqtt\Client\MqttClient;
 
 class Mqtt extends System
 {
-    const MQTT_HOST = 'localhost';
-    const MQTT_PORT = 1883;
     private $client;
 
     public function __construct() {
-        $this->client = $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+        $this->client = $client = new MqttClient(MQTT_HOST, MQTT_PORT);
     }
 
     public function connect() {

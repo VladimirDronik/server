@@ -611,9 +611,8 @@ class Device extends System
     }
 
     public static function aliceCallbackState($objectId, $capabilities, $properties) {
-        $ydrHost = 'https://server1.touchon.tech';
-        $ydrScript = 'ydr.php';
-
+        $host = YA_CALLBACK_HOST;
+        $script = YA_CALLBACK_SCRIPT;
         $sql = parent::$db->query(
             "SELECT `id_object` FROM `alice_devices` WHERE `id_object` = $objectId AND `active` = 1"
         );
@@ -622,11 +621,16 @@ class Device extends System
                                         FROM `settings`
                                         WHERE `name` = 'server_id'");
             $serverUid = $sql->fetch(PDO::FETCH_OBJ)->value;
-            $queryString = "$ydrHost/$ydrScript?suid=$serverUid&object_id=$objectId";
+            $queryString = "$host/$script?suid=$serverUid&object_id=$objectId";
             echo (new datetime())->format('Y-m-d H:i:s.v') . " [INFO] Yandex Alice callback request for object ID $objectId" . PHP_EOL;
-            var_dump($capabilities);
-            if (isset($capabilities)) $queryString .= "&capabilities=" . json_encode($capabilities);
-            if (isset($properties)) $queryString .= "&properties=" . json_encode($properties, JSON_PRESERVE_ZERO_FRACTION);
+            if (isset($capabilities)) {
+                var_dump($capabilities);
+                $queryString .= "&capabilities=" . json_encode($capabilities);
+            }
+            if (isset($properties)) {
+                var_dump($properties);
+                $queryString .= "&properties=" . json_encode($properties, JSON_PRESERVE_ZERO_FRACTION);
+            }
             file_get_contents($queryString);
         }
     }

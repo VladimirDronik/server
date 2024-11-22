@@ -20,6 +20,12 @@ $dbname = getenv('MYSQL_DATABASE');
 $dbuser = getenv('MYSQL_USER');
 $dbpass = getenv('MYSQL_PASSWORD');
 
+define('YA_CALLBACK_HOST', 'https://server1.touchon.tech');
+define('YA_CALLBACK_SCRIPT', 'ydr.php');
+
+define('MQTT_HOST', 'localhost');
+define('MQTT_PORT', 1883);
+
 require_once __DIR__. '/classes/System.php';
 require_once __DIR__. '/classes/Device.php';
 require_once __DIR__. '/classes/Objects.php';

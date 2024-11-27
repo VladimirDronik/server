@@ -61,7 +61,7 @@
                 $group[] = '00';
             }
             $value = [$object->address, $object->group];
-            $value = array_map('self::arrayFormat', $value);
+            $value = array_map('arrayFormat', $value);
         }
         else
         {

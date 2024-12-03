@@ -171,7 +171,15 @@ class Rs485 extends System
                             Modbus::setSlaverActivity($task->slaver_id, 1);
                         }
                         if (isset($task->scale) && $task->function_code < 15) $response *= $task->scale;
-                        if (isset($response)) echo 'Response: ' . $response . PHP_EOL;
+                        if (isset($response)) {
+                            if (is_array($response)){
+                                echo 'Response: [ ';
+                                foreach ($response as $elem) echo "$elem ";
+                                echo "]" . PHP_EOL;
+                            }
+                            else echo 'Response: ' . $response . PHP_EOL;
+                        } 
+
 
                     }
                     else {
@@ -228,7 +236,7 @@ class Rs485 extends System
                 })
                 // delay this is crucial for some serial devices and delay needs to be long as 100ms (depending on the quantity)
                 // or you will experience read errors ("stream_select interrupted") or invalid CRCs
-                ->setDelayRead(100_000) // 100 milliseconds, serial devices may need delay between sending and received
+                ->setDelayRead(300_000) // 100 milliseconds, serial devices may need delay between sending and received
                 ->build();
         }
         if ($this->bus->type == 'tcp') {
@@ -326,9 +334,21 @@ class Rs485 extends System
                 if ($task->format == 'float') return $response->getDoubleWordAt(0)->getFloat();
                 if ($task->format == 's32') return $response->getDoubleWordAt(0)->getInt32();
                 if ($task->format == 'u32') return $response->getDoubleWordAt(0)->getUInt32();
-                if ($task->format == 'u16') return $response->getWordAt(0)->getUInt16();
+                if ($task->format == 'u16') {
+                    if ($task->quantity > 1) {
+                        $r = [];
+                        foreach ($response->getWords() as $word) {
+                            $r[] = $word->getUInt16();
+                        }
+                        return $r;
+                    }
+                    else return $response->getWordAt(0)->getUInt16();
+                }
                 if ($task->format == 's16') return $response->getWordAt(0)->getInt16();
                 if ($task->format == 'f8.8') return Boiler::convertToF88($response->getWordAt(0)->getUInt16());
+                if (($task->format == 'collection')) {
+                    
+                }
                 break;
             case 5:
                 return $response->isCoil() ? '1' : '0';

@@ -7,6 +7,7 @@
 class Conditioner extends Device
 {
     private $ac = null; // id объекта кондиционера 
+    private $modbus_dev_type;
 
     function __construct($idObject)
     {
@@ -20,7 +21,7 @@ class Conditioner extends Device
                                                `conditioners`.`vdir`,
                                                `conditioners`.`hdir`,
                                                `conditioners`.`modbus_slaver_id`,
-                                               `modbus_slavers`.`active`,
+                                               `conditioner_types`.`id` AS 'type_id',
                                                `conditioner_types`.`temperature` AS 'temps',
                                                `conditioner_types`.`mode` AS 'modes',
                                                `conditioner_types`.`fan` AS 'fans',
@@ -29,8 +30,6 @@ class Conditioner extends Device
                                         FROM `conditioners`
                                         INNER JOIN `objects`
                                         ON `conditioners`.`id_object` = `objects`.`id`
-                                        INNER JOIN `modbus_slavers`
-                                        ON `modbus_slavers`.`id` = `conditioners`.`modbus_slaver_id`
                                         INNER JOIN `conditioner_types`
                                         ON `conditioners`.`type` = `conditioner_types`.`id`
                                         WHERE `conditioners`.`id_object` = $idObject");
@@ -38,69 +37,113 @@ class Conditioner extends Device
             if($sql->rowCount() > 0) 
             {
                 $this->ac = $sql->fetch(PDO::FETCH_OBJ);
+                
+                $sql = parent::$db->query(
+                    "SELECT `modbus_slavers_types`.`type` FROM `modbus_slavers_types`
+                    INNER JOIN `modbus_slavers` ON `modbus_slavers`.`type` = `modbus_slavers_types`.`id`
+                    WHERE `modbus_slavers`.`id` = {$this->ac->modbus_slaver_id}"
+                );
+                $this->modbus_dev_type = $sql->fetch(PDO::FETCH_OBJ)->type;
             }
             else echo "[Error] Кондиционер (ID $idObject) не найден" . PHP_EOL;
         }
         else echo "[Error] Не определен ID кондиционера" . PHP_EOL;
     }
 
+    private function getIrCode($state, $temp, $fan) {
+        if ($state == 'on') $ifOnState = " AND `temp` = '$temp' AND `fan` = '$fan'";
+        else $ifOnState = null;
+
+        $sql = parent::$db->query(
+            "SELECT `code` FROM `conditioner_codes` WHERE `ac_type` = {$this->ac->type_id}
+            AND `status` = '$state'" . $ifOnState
+        );
+
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ)->code;
+        else return null;
+    }
+
+    private function execIrCode($code) {
+        $c_arr = explode(', ', $code);
+        $c_arr = array_chunk($c_arr, 102);
+
+        $fist_block_reg = Modbus::getRegisterIdByAlias($this->ac->modbus_slaver_id, 'wb_mir_block_1');
+        foreach($c_arr as $bank) {
+            Modbus::sendModbus($fist_block_reg, 'write', $bank);
+            $fist_block_reg++;
+        }
+
+        $exec_reg = Modbus::getRegisterIdByAlias($this->ac->modbus_slaver_id, 'wb_mir_exec_code');
+            return Modbus::sendModbus($exec_reg, 'write', 1);
+    }
+
     public function setAcPower(string $state)
     {
-        $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_power');
+        if($this->modbus_dev_type == 'wb-mir') {
+            $code = $this->getIrCode($state, $this->ac->temp, $this->ac->fan);
+            if(isset($code))
+                $response = $this->execIrCode($code);
+        }
+        else {
+            $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_power');
 
-        if ($state == 'on') $cmd = 1;
-        if ($state == 'off') $cmd = 0;
-            
-        if (isset($registerId))
+            if ($state == 'on') $cmd = 1;
+            if ($state == 'off') $cmd = 0;
+                
+            if (isset($registerId))
+                $response = Modbus::sendModbus($registerId, 'write', $cmd);
+        }
+        if (isset($response))
         {
-            $response = Modbus::sendModbus($registerId, 'write', $cmd);
-            if (isset($response))
-            {
-                $object = new Objects();
-                $object->select($this->ac->id_object);
-                $object->setStatus($state, true, false);
-                return true;
-            }
-            else return false;
-        }   
+            $object = new Objects();
+            $object->select($this->ac->id_object);
+            $object->setStatus($state, true, false);
+            return true;
+        }
+        else return false;
     }
 
     public function setAcTemperature(int $temperature)
     {
-        if(isset($this->ac->temps)) {
-            $acTemperatureRange = json_decode($this->ac->temps, true);
-
-            if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
-            {
-                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
-                if (isset($registerId)) 
+        if($this->modbus_dev_type == 'wb-mir') {
+            $code = $this->getIrCode($this->ac->state, $temperature, $this->ac->fan);
+            if(isset($code))
+                $response = $this->execIrCode($code);
+        }
+        else {
+            if(isset($this->ac->temps)) {
+                $acTemperatureRange = json_decode($this->ac->temps, true);
+    
+                if ($temperature >= $acTemperatureRange['min'] && $temperature <= $acTemperatureRange['max'])
                 {
-                    $response = Modbus::sendModbus($registerId, 'write', $temperature);
-                    if (isset($response))
-                    {
-                        parent::$db->query("UPDATE `conditioners`
-                                            SET `temp` = $temperature
-                                            WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.range",
-                            "state" => [
-                                "instance" => "temperature",
-                                "value" => $temperature
-                            ]
-                        ];
-                        $payload = [
-                            "object_id" => $this->ac->id_object,
-                            "capabilities" => $aliceCapabilities,
-                            "properties" => null
-                        ];
-                        $mqtt = new Mqtt();
-                        $mqtt->publish('alice/callback', $payload, false);
-                        return true;
-                    }
-                    else return false;
+                    $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_temp');
+                    if (isset($registerId)) 
+                        $response = Modbus::sendModbus($registerId, 'write', $temperature);
                 }
             }
         }
+        if (isset($response))
+        {
+            parent::$db->query("UPDATE `conditioners`
+                                SET `temp` = $temperature
+                                WHERE id_object = {$this->ac->id_object}");
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.range",
+                "state" => [
+                    "instance" => "temperature",
+                    "value" => $temperature
+                ]
+            ];
+            $payload = [
+                "object_id" => $this->ac->id_object,
+                "capabilities" => $aliceCapabilities,
+                "properties" => null
+            ];
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
+            return true;
+        }
+        else return false;
     }
     
     public function setAcMode(string $mode)
@@ -142,39 +185,44 @@ class Conditioner extends Device
 
     public function setAcFanSpeed(string $speed)
     {
-        if(isset($this->ac->fans)) {
-            $acFanSpeeds = json_decode($this->ac->fans, true);
-            if (array_key_exists($speed, $acFanSpeeds))
-            {
-                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
-                if (isset($registerId)) 
+        if($this->modbus_dev_type == 'wb-mir') {
+            $code = $this->getIrCode($this->ac->state, $this->ac->temp, $speed);
+            if(isset($code))
+                $response = $this->execIrCode($code);
+        }
+        else {
+            if(isset($this->ac->fans)) {
+                $acFanSpeeds = json_decode($this->ac->fans, true);
+                if (array_key_exists($speed, $acFanSpeeds))
                 {
-                    $response = Modbus::sendModbus($registerId, 'write', $acFanSpeeds[$speed]);
-                    if (isset($response))
-                    {
-                        parent::$db->query("UPDATE `conditioners`
-                                            SET `fan` = '$speed'
-                                            WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.mode",
-                            "state" => [
-                                "instance" => "fan_speed",
-                                "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$speed]
-                            ]
-                        ];
-                        $payload = [
-                            "object_id" => $this->ac->id_object,
-                            "capabilities" => $aliceCapabilities,
-                            "properties" => null
-                        ];
-                        $mqtt = new Mqtt();
-                        $mqtt->publish('alice/callback', $payload, false);
-                        return true;
-                    }
-                    else return false;
+                    $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_fan');
+                    if (isset($registerId)) 
+                        $response = Modbus::sendModbus($registerId, 'write', $acFanSpeeds[$speed]);
                 }
             }
         }
+        if (isset($response))
+        {
+            parent::$db->query("UPDATE `conditioners`
+                                SET `fan` = '$speed'
+                                WHERE id_object = {$this->ac->id_object}");
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.mode",
+                "state" => [
+                    "instance" => "fan_speed",
+                    "value" => Device::ALICE_AC_FAN_MODES_MAPPING[$speed]
+                ]
+            ];
+            $payload = [
+                "object_id" => $this->ac->id_object,
+                "capabilities" => $aliceCapabilities,
+                "properties" => null
+            ];
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
+            return true;
+        }
+        else return false;
     }
 
     public function setAcVDir(string $vDir)

@@ -50,15 +50,21 @@ class Conditioner extends Device
         else echo "[Error] Не определен ID кондиционера" . PHP_EOL;
     }
 
-    private function getIrCode($state, $temp, $fan) {
-        if ($state == 'on') $ifOnState = " AND `temp` = '$temp' AND `fan` = '$fan'";
+    private function getIrCode($state, $temp, $mode, $fan) {
+        if ($state == 'on') {
+            $ifOnState = "";
+            if($temp === null) $ifOnState .= " AND `temp` IS NULL";
+            else $ifOnState .= " AND `temp` = '$temp'";
+            if($mode === null) $ifOnState .= " AND `mode` IS NULL";
+            else $ifOnState .= " AND `mode` = '$mode'";
+            if($fan === null) $ifOnState .= " AND `fan` IS NULL";
+            else $ifOnState .= " AND `fan` = '$fan'";
+        }
         else $ifOnState = null;
-
         $sql = parent::$db->query(
             "SELECT `code` FROM `conditioner_codes` WHERE `ac_type` = {$this->ac->type_id}
             AND `status` = '$state'" . $ifOnState
         );
-
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ)->code;
         else return null;
     }
@@ -74,13 +80,19 @@ class Conditioner extends Device
         }
 
         $exec_reg = Modbus::getRegisterIdByAlias($this->ac->modbus_slaver_id, 'wb_mir_exec_code');
-            return Modbus::sendModbus($exec_reg, 'write', 1);
+        $response = null;    
+        for($i=0; $i<2; $i++) {
+            $r = Modbus::sendModbus($exec_reg, 'write', 1);
+            usleep(500000);
+            if (isset($r)) $response = $r;
+        }
+        return $response;
     }
 
     public function setAcPower(string $state)
     {
         if($this->modbus_dev_type == 'wb-mir') {
-            $code = $this->getIrCode($state, $this->ac->temp, $this->ac->fan);
+            $code = $this->getIrCode($state, $this->ac->temp, $this->ac->mode, $this->ac->fan);
             if(isset($code))
                 $response = $this->execIrCode($code);
         }
@@ -106,9 +118,13 @@ class Conditioner extends Device
     public function setAcTemperature(int $temperature)
     {
         if($this->modbus_dev_type == 'wb-mir') {
-            $code = $this->getIrCode($this->ac->state, $temperature, $this->ac->fan);
-            if(isset($code))
-                $response = $this->execIrCode($code);
+            $code = $this->getIrCode($this->ac->state, $temperature, $this->ac->mode, $this->ac->fan);
+            if(isset($code)) {
+                if($this->ac->state == 'on')
+                    $response = $this->execIrCode($code);
+                else 
+                    $response = 1;
+            }
         }
         else {
             if(isset($this->ac->temps)) {
@@ -148,47 +164,60 @@ class Conditioner extends Device
     
     public function setAcMode(string $mode)
     {
-        if(isset($this->ac->modes)) {
-            $acModes = json_decode($this->ac->modes, true);
-            if (array_key_exists($mode, $acModes))
-            {
-                $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
-                if (isset($registerId)) 
+        if($this->modbus_dev_type == 'wb-mir') {
+            $code = $this->getIrCode($this->ac->state, $this->ac->temp, $mode, $this->ac->fan);
+            if(isset($code)) {
+                if($this->ac->state == 'on')
+                    $response = $this->execIrCode($code);
+                else 
+                    $response = 1;
+            }
+        }
+        else {
+            if(isset($this->ac->modes)) {
+                $acModes = json_decode($this->ac->modes, true);
+                if (array_key_exists($mode, $acModes))
                 {
-                    $response = Modbus::sendModbus($registerId, 'write', $acModes[$mode]);
-                    if (isset($response))
-                    {
-                        parent::$db->query("UPDATE `conditioners`
-                                            SET `mode` = '$mode'
-                                            WHERE id_object = {$this->ac->id_object}");
-                        $aliceCapabilities = [
-                            "type" => "devices.capabilities.mode",
-                            "state" => [
-                                "instance" => "thermostat",
-                                "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
-                            ]
-                        ];
-                        $payload = [
-                            "object_id" => $this->ac->id_object,
-                            "capabilities" => $aliceCapabilities,
-                            "properties" => null
-                        ];
-                        $mqtt = new Mqtt();
-                        $mqtt->publish('alice/callback', $payload, false);
-                        return true;
-                    }
-                    else return false;
+                    $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, 'ac_mode');
+                    if (isset($registerId)) 
+                        $response = Modbus::sendModbus($registerId, 'write', $acModes[$mode]);
                 }
             }
         }
+        if (isset($response))
+        {
+            parent::$db->query("UPDATE `conditioners`
+                                SET `mode` = '$mode'
+                                WHERE id_object = {$this->ac->id_object}");
+            $aliceCapabilities = [
+                "type" => "devices.capabilities.mode",
+                "state" => [
+                    "instance" => "thermostat",
+                    "value" => Device::ALICE_AC_MODES_MAPPING[$mode]
+                ]
+            ];
+            $payload = [
+                "object_id" => $this->ac->id_object,
+                "capabilities" => $aliceCapabilities,
+                "properties" => null
+            ];
+            $mqtt = new Mqtt();
+            $mqtt->publish('alice/callback', $payload, false);
+            return true;
+        }
+        else return false;
     }
 
     public function setAcFanSpeed(string $speed)
     {
         if($this->modbus_dev_type == 'wb-mir') {
-            $code = $this->getIrCode($this->ac->state, $this->ac->temp, $speed);
-            if(isset($code))
-                $response = $this->execIrCode($code);
+            $code = $this->getIrCode($this->ac->state, $this->ac->temp, $this->ac->mode, $speed);
+            if(isset($code)) {
+                if($this->ac->state == 'on')
+                    $response = $this->execIrCode($code);
+                else 
+                    $response = 1;
+            }
         }
         else {
             if(isset($this->ac->fans)) {

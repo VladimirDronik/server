@@ -337,9 +337,13 @@ class SendSocket
                 else $dimmer->setValue(0);
             }
         } elseif ($object->type == 'conditioner') {
-
+            
             $conditioner = new Conditioner($idObject);
-            if ($instance == 'on') $conditioner->setAcPower($status);
+            if ($instance == 'on') {
+                if ($status == 1) $status = 'on';
+                else $status = 'off';
+                $conditioner->setAcPower($status);
+            }
             if ($instance == 'temperature') $conditioner->setAcTemperature($status);
             if ($instance == 'fan_speed') {
                 $status = array_search($status, Device::ALICE_AC_FAN_MODES_MAPPING);

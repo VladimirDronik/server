@@ -5,7 +5,7 @@
  * name - производитель, модель или другой идентификатор (одно слово, без пробелов)
  * device - всегда 'wb-mir' (без '')
  * temperature - '{"min":16,"max":31}' (без '', в соответствии с диапазоном температур кондиционера)
- * mode - NULL
+ * mode - {"cool":null,"heat":null}
  * fan - '{"auto":null,"1":null,"2":null,"3":null}' (без '', в соответствии со скоростями вентилятора кондиционера)
  * hdir - NULL
  * vdir - NULL
@@ -110,10 +110,12 @@ else {
 
 $temp = json_decode($ac->temperature);
 $temp_arr = range($temp->min, $temp->max);
+$mode_arr = array_keys(json_decode($ac->mode, true));
 $fan_arr = array_keys(json_decode($ac->fan, true));
 
 $combinations = get_combinations(
 	array(
+        'mode' => $mode_arr,
         'fan' => $fan_arr,
 		'temp' => $temp_arr
 	)
@@ -122,14 +124,15 @@ $combinations = get_combinations(
 foreach($combinations as $row) {
     $t = $row['temp'];
     $f = $row['fan'];
+    $m = $row['mode'];
     $sql = System::$db->query(
         "SELECT * FROM `conditioner_codes` WHERE `ac_type` = {$ac->id} AND `status` = 'on'
-        AND `temp` = $t AND `fan` = '$f'"
+        AND `temp` = $t AND `mode` = '$m' AND `fan` = '$f'"
     );
     if($sql->rowCount() == 0) {
         System::$db->query(
-            "INSERT INTO `conditioner_codes` (`ac_type`, `status`, `temp`, `fan`)
-            VALUES ({$ac->id}, 'on', $t, '$f')"
+            "INSERT INTO `conditioner_codes` (`ac_type`, `status`, `temp`, `mode`, `fan`)
+            VALUES ({$ac->id}, 'on', $t, '$m', '$f')"
         );
     }
 }
@@ -157,12 +160,12 @@ while ($cmd = $sql->fetch(PDO::FETCH_OBJ)) {
 
     echo "Код команды ";
     if ($cmd->status == 'off') echo "OFF";
-    else echo "ON / FAN=$cmd->fan / TEMP=$cmd->temp ";
+    else echo "ON / FAN=$cmd->fan / MODE=$cmd->mode / TEMP=$cmd->temp ";
     Modbus::sendModbus(GET_CODE_REG, 'write', 1);
-   
+
     anykey();
     $code = read_ram();
-    
+
     if(!empty(array_filter($code))) {
         echo "[OK] Код считан" . PHP_EOL;
         Modbus::sendModbus(GET_CODE_REG, 'write', 0);

@@ -1616,31 +1616,42 @@ class Views extends System
         {
             $conditioner = $sql->fetch(PDO::FETCH_OBJ);
 
-            $operationModes = json_decode($conditioner->modes);
-            $operationModes = get_object_vars($operationModes);
-            $operationModes = array_keys($operationModes);
-
-            $fanModes = json_decode($conditioner->fans);
-            $fanModes = get_object_vars($fanModes);
-            $fanModes = array_keys($fanModes);
-            $fanModes = array_map('strval', $fanModes);
-
-            $temperatureRange = json_decode($conditioner->temp_range);
-
             $items = [
                 'id' => $idConditionerView,
                 'type' => 'conditioner',
                 'title' => $conditioner->title,
-                'state' => $conditioner->state,
-                'min' => $temperatureRange->min,
-                'max' => $temperatureRange->max,
-                'temp' => $conditioner->temp,
-                'operation_modes' => $operationModes,
-                'operation' => $conditioner->mode,
-                'fan_modes' => $fanModes,
-                'fan' => $conditioner->fan
+                'state' => $conditioner->state
             ];
 
+            if(isset($conditioner->modes)) {
+                $operationModes = json_decode($conditioner->modes);
+                $operationModes = get_object_vars($operationModes);
+                $operationModes = array_keys($operationModes);
+                $items += [
+                    'operation_modes' => $operationModes,
+                    'operation' => $conditioner->mode
+                ];
+            }
+            
+            if(isset($conditioner->fans)) {
+                $fanModes = json_decode($conditioner->fans);
+                $fanModes = get_object_vars($fanModes);
+                $fanModes = array_keys($fanModes);
+                $fanModes = array_map('strval', $fanModes);
+                $items += [
+                    'fan_modes' => $fanModes,
+                    'fan' => $conditioner->fan
+                ];
+            }
+            
+            if(isset($conditioner->temp_range)) {
+                $temperatureRange = json_decode($conditioner->temp_range);
+                $items += [
+                    'min' => $temperatureRange->min,
+                    'max' => $temperatureRange->max,
+                    'temp' => $conditioner->temp
+                ];
+            }
 
             if (isset($conditioner->vdirs))
             {

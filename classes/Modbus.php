@@ -40,7 +40,7 @@ class Modbus extends System {
      */
     public static function setValue(int $id, mixed $value)
     {
-        if (is_null ($value)) $value = 'NULL';
+        if (is_null ($value) || is_array($value)) $value = 'NULL';
         else $value = "'$value'";
         $sql = parent::$db->exec("UPDATE `modbus_registers`
                                      SET `timestamp` = CURRENT_TIMESTAMP(3),

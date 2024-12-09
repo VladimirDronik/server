@@ -67,15 +67,22 @@ class Sensor extends ObjectManager
     {
         foreach ($this->device->params as $key => &$param)
         {
-            if ($this->device->connection == 'i2c')
-                $query = "pt={$this->device->sda}&scl={$this->device->scl}&" . $param['get_param'];
-            
-            if ($this->device->connection == '1w')
-                $query = "pt={$this->device->port}&{$param['get_param']}";
+            if ($this->device->connection == 'i2c') {
+                $sda = Megad::getPortNum($this->device->sda);
+                $scl = Megad::getPortNum($this->device->scl);
+                $query = "pt={$sda}&scl={$scl}&" . $param['get_param'];
+            }
 
-            if ($this->device->connection == '1wbus')
-                $query = "pt={$this->device->port}&{$param['get_param']}{$this->device->address}";
-            
+            if ($this->device->connection == '1w') {
+                $pt = Megad::getPortNum($this->device->port);
+                $query = "pt={$pt}&{$param['get_param']}";
+            }
+
+            if ($this->device->connection == '1wbus') {
+                $pt = Megad::getPortNum($this->device->port);
+                $query = "pt={$pt}&{$param['get_param']}{$this->device->address}";
+            }
+                
             $param['value'] = Megad::getPortValue($this->device->source_id, $query);
             
             if ($this->device->connection == '1w')
@@ -165,7 +172,7 @@ class Sensor extends ObjectManager
         {
             if ($param['graph'])
             {
-                parent::$db->query("INSERT INTO sensors_graphs (`param_id`, `datetime`, `value`)
+                parent::$db->query("INSERT INTO sensor_graphs (`param_id`, `datetime`, `value`)
                     VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
             }
         }

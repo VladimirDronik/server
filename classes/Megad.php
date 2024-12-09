@@ -191,4 +191,9 @@ class Megad extends System
             return $value;
         }
     }
+
+    public static function getPortNum($portId) {
+        return parent::$db->query("SELECT `num_port` FROM `ports` WHERE `id` = $portId")
+            ->fetchColumn();
+    }
 }

@@ -58,8 +58,9 @@
             16 => ['00', '80']
         ];
 
-        if (strlen(dechex($object->address)) < 2) $address[] = '0' . $object->address;
-        else $address[] = dechex($object->address);
+        $hex_addr = dechex($object->address);
+        if (strlen($hex_addr) < 2) $address[] = '0' . $hex_addr;
+        else $address[] = $hex_addr;
         
         if ($command == 'getPercent') 
         {

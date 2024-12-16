@@ -85,8 +85,8 @@ class Cameras extends Device
         {
             while ($camera = $sql->fetch(PDO::FETCH_OBJ))
             {
-                exec("(ffmpeg -y -rtsp_transport tcp -i " . self::getValidRtspLink($camera->id) . 
-                    " -frames:v 1 -s 384*256 -ss 00:00:00.05 " .
+                exec("(ffmpeg -y -rtsp_transport tcp -i '" . self::getValidRtspLink($camera->id) . 
+                    "' -frames:v 1 -s 384*256 -ss 00:00:00.05 " .
                     getenv('WORK_DIR') . "/adm/public/ela/images/cameras_snapshots/camera$camera->id.jpeg " .
                     "-hide_banner -v 0) >> /dev/null 2>&1", $output, $retval);
         

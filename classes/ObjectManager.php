@@ -22,6 +22,7 @@ class ObjectManager extends System
         if ($this->object->type == 'sensor') return $this->sensorBuilder();
         if ($this->object->type == 'regulator') return $this->regulatorBuilder();
         if ($this->object->type == 'tape') return $this->tapeBuilder();
+        if ($this->object->type == 'meter') return $this->meterBuilder();
     }
 
     private function sensorBuilder()
@@ -46,9 +47,7 @@ class ObjectManager extends System
                 $row['last_value'] = $row['value'];
                 $param[$row['id']] = $row;
             }
-            
             $this->device->params = $param;
-            // $this->device->param['last_value'] = 
         }
         return $this->device;
     }
@@ -59,7 +58,6 @@ class ObjectManager extends System
             "SELECT `sensor_param_id`,`setpoint`, `hysteresis`, `lower_method`, `higher_method`,
             `fallback_method`, `min_setpoint`, `max_setpoint` FROM `regulators` WHERE `object_id` = {$this->object->id}"
         );
-        
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
     }
 
@@ -68,8 +66,8 @@ class ObjectManager extends System
         $sql = parent::$db->query(
             "SELECT `type`, `h` AS 'hue', `s` AS 'saturation', `v` AS 'value',
             `w` AS 'brightness', `cct`, `channel`, `controller_id` AS 'controller'
-            FROM `tapes` WHERE `id_object` = {$this->object->id}");
-        
+            FROM `tapes` WHERE `id_object` = {$this->object->id}"
+        );
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
     }
     
@@ -77,8 +75,16 @@ class ObjectManager extends System
     {
         $sql = parent::$db->query(
             "SELECT `id_object`, `address`, `is_group`, `dali_gateway`, `brightness`,
-            `cct`, `status` FROM `dali_devices` WHERE `id_object` = {$this->object->id}");
-        
+            `cct`, `status` FROM `dali_devices` WHERE `id_object` = {$this->object->id}"
+        );
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+    }
+
+    private function meterBuilder()
+    {
+        $sql = parent::$db->query(
+            "SELECT * FROM `meters` WHERE `object_id` = {$this->object->id}"
+        );
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
     }
 

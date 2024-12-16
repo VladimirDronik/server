@@ -71,6 +71,7 @@ require_once __DIR__. '/classes/BeanstalkQueue.php';
 require_once __DIR__. '/classes/Rs485.php';
 require_once __DIR__. '/classes/Sensor.php';
 require_once __DIR__. '/classes/Regulator.php';
+require_once __DIR__. '/classes/Meter.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

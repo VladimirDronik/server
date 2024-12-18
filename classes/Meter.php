@@ -80,8 +80,7 @@ class Meter extends ObjectManager
     private function getFromModbus()
     {
         $value = Modbus::sendModbus($this->device->source_id, 'read');
-        $lastTotal = $this->getLastTotal();        
-        if(isset($value) && isset($lastTotal)) return $value - $lastTotal;
+        if(isset($value)) return $value;
         else return null;
     }
 
@@ -129,46 +128,155 @@ class Meter extends ObjectManager
         } 
     }
 
-    private function getLastTotal() {
+    // private function getLastTotal() {
+    //     try {
+    //         $sql = parent::$db->query(
+    //             "SELECT `value` FROM `meter_graphs`
+    //                 WHERE `meter_id` = {$this->device->id}
+    //                 AND `value` != 0"
+    //         );
+    //         if($sql->rowCount() > 0)
+    //         {
+    //             $total = $this->device->init_value;
+    //             while($value = $sql->fetchColumn()) {
+    //                 $total += $value;
+    //             }
+    //             $total = round($total, 2);
+    //         }
+    //         return $total;
+    //     }
+    //     catch (Exception $exception) {
+    //         echo $exception->getMessage() . PHP_EOL;
+    //         return null;
+    //     }
+    // }
+
+    // public function getPeriod(string $start, string $end, string $step) {
+    //     try {
+    //         $sql = parent::$db->query(
+    //             "SELECT `datetime`, ROUND(SUM(`value`), 2) AS 'value' FROM `meter_graphs`
+    //             WHERE `datetime` >= '$start'
+    //             AND `datetime` < '$end'
+    //             AND `meter_id` = {$this->device->id}
+    //             GROUP BY $step(`datetime`)
+    //             ORDER BY `datetime`"
+    //         );
+    //         if($sql->rowCount() > 0)
+    //             return $sql->fetchAll(PDO::FETCH_KEY_PAIR);
+    //         else 
+    //             return null;
+    //     }
+    //     catch (Exception $exception) {
+    //         echo $exception->getMessage() . PHP_EOL;
+    //     }
+    // }
+
+    private function getStartEnd(string $period) {
+        if($period == 'day') {
+            $start = date('Y-m-d');
+            $end = date('Y-m-d');
+        }
+        if($period == 'week') {
+            if(date('D') != 'Mon') $start = date('Y-m-d', strtotime('last Monday'));
+            else $start = date('Y-m-d');
+            if(date('D') != 'Sun') $end = date('Y-m-d', strtotime('next Sunday'));
+            else $end = date('Y-m-d');
+        }
+        if($period == 'month') {
+            $start = date('Y-m-01');
+            $end = date('Y-m-t');
+        }
+        if($period == 'year') {
+            $start = date('Y-01-01');
+            $end = date('Y-12-31');
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
+    public function getChart(string $period) {
+        $se = $this->getStartEnd($period);
+        $ch = $this->getPeriod($se['start'], $se['end'], $se['step']);
+        if(isset($ch)) {
+            $columns = [];
+            foreach($ch as $datetime => $value) {
+                $columns[] = [
+                    'date' => date($se['format'], strtotime($datetime)),
+                    'value' => strval($value)
+                ];
+            }
+            return $columns;
+        }
+        else return null;
+    }
+
+    public function getDay(string $date) {
+        $start = date($date . ' 01:00:00');
+        $end = date('Y-m-d H:i:s', strtotime($start . '+1 day'));
+        $step = 'hour';
+        $format = 'H';
         try {
             $sql = parent::$db->query(
-                "SELECT `value` FROM `meter_graphs`
-                    WHERE `meter_id` = {$this->device->id}
-                    AND `value` != 0"
+                "SELECT `datetime`, ROUND(SUM(`value`), {$this->device->accuracy}) AS 'value' FROM `meter_graphs`
+                WHERE `datetime` >= '$start'
+                AND `datetime` < '$end'
+                AND `meter_id` = {$this->device->id}
+                GROUP BY $step(`datetime`)
+                ORDER BY `datetime`"
             );
             if($sql->rowCount() > 0)
-            {
-                $total = $this->device->init_value;
-                while($value = $sql->fetchColumn()) {
-                    $total += $value;
-                }
-                $total = round($total, 2);
-            }
-            return $total;
+                return $sql->fetchAll(PDO::FETCH_KEY_PAIR);
+            else 
+                return null;
         }
         catch (Exception $exception) {
             echo $exception->getMessage() . PHP_EOL;
-            return null;
         }
     }
 
+    private function getDatesRange(string $start, string $end) {
+        $array = [];
+        for (
+            $currentDate = strtotime($start);
+            $currentDate <= strtotime($end);
+            $currentDate += (86400)
+        ) $array[] = date('Y-m-d', $currentDate);
+        return $array;
+    }
+
+    public function getPeriod(string $start, string $end) {
+        $days = [];
+        foreach($this->getDatesRange($start, $end) as $date) {
+            $days[$date] = $this->getDay($date);
+        }
+        return $days;
+    }
+
+    public function getPeriodTotal(string $start, string $end) {
+        $r = $this->getPeriod($start, $end);
+        $total = 0;
+        foreach($r as $values) {
+            if(!isset($values)) $values = [];
+            $total += array_sum($values);
+        }
+        return round($total, $this->device->accuracy);
+    }
+
+    public function getPeriodTotalAlias(string $periodAlias) {
+        $se = $this->getStartEnd($periodAlias);
+        return  $this->getPeriodTotal($se['start'], $se['end']);
+    }
+
     public function getTotal() {
-        switch($this->device->source)
-        {
+        switch($this->device->source) {
             case 'megad':
                 try {
                     $sql = parent::$db->query(
-                        "SELECT `value` FROM `meter_graphs`
-                            WHERE `meter_id` = {$this->device->id}
-                            AND `value` != 0"
+                        "SELECT ROUND(SUM(`value`), {$this->device->accuracy}) FROM `meter_graphs`
+                        WHERE `meter_id` = {$this->device->id}"
                     );
-                    if($sql->rowCount() > 0)
-                    {
-                        $total = $this->device->init_value;
-                        while($value = $sql->fetchColumn()) {
-                            $total += $value;
-                        }
-                        $total = round($total, 2);
+                    if($sql->rowCount() > 0) {
+                        $total = $this->device->init_value + $sql->fetchColumn();
+                        return round($total, $this->device->accuracy);
                     }
                 }
                 catch (Exception $exception) {
@@ -176,15 +284,16 @@ class Meter extends ObjectManager
                 }
                 break;
             
-            case 'modbus': $value = $this->getFromModbus();
+            case 'modbus':
+                $value = Modbus::sendModbus($this->device->source_id, 'read');
+                if(isset($value)) return $value;
+                else return null;
                 break;
             
             case 'mqtt': $value = $this->getFromMqtt();
                 break;
         }
-
-        if (isset($total)) return $total;
-        else return false;
-        
+        return null;
     }
+
 }

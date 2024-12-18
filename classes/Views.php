@@ -1109,68 +1109,30 @@ class Views extends System
 
 
     public function getCounts() {
+        $meters = ObjectManager::getAllMeters();
+        if(isset($meters)) {
+            foreach($meters as $meterObjectId) {
+                $meter = new Meter($meterObjectId);
 
-        $day = date('w')-1;
-        $week_start = date('Y-m-d', strtotime('-'.$day.' days'));
-        $todayDate = date('Y-m-d');
-
-        $month_start = date('Y').date('-m').'-01';
-        $year_start = date('Y').'-01-01';
-
-
-        $sql = parent::$db->query("SELECT id, name, type, today_value, total_value, unit FROM counts");
-
-        while ($counts = $sql->fetch(PDO::FETCH_OBJ)) {
-
-
-
-            $sqlweekly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
-                                              WHERE datetime >= '$week_start' 
-                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
-
-
-            $weekly = (string)ceil($sqlweekly->fetch(PDO::FETCH_OBJ)->value);
-            if($weekly == null) $weekly = "0";
-
-
-            $sqlmonthly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
-                                              WHERE datetime >=  '$month_start' 
-                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
-
-
-            $monthly = (string)ceil($sqlmonthly->fetch(PDO::FETCH_OBJ)->value);
-            if($monthly == null) $monthly = "0";
-
-
-            $sqlyearly = parent::$db->query("SELECT SUM(value) AS value FROM `graph_counts` 
-                                              WHERE datetime >=  '$year_start'
-                                              AND datetime <= '$todayDate' AND id_count=$counts->id");
-
-
-            $yearly = (string)ceil($sqlyearly->fetch(PDO::FETCH_OBJ)->value);
-            if($yearly == null) $yearly = "0";
-
-
-            $totalValue = ceil($counts->total_value);
-            $nulls = 6-strlen($totalValue);
-
-            $total ='';
-
-            for($i=0;$i<$nulls;$i++) {
-                $total .= '0';
-                }
-            $total .= $totalValue;
-            
-
-            $today = (string)ceil($counts->today_value);
-
-
-            $counts_array = array('id'=>(int)$counts->id, 'name'=>$counts->name, 'type'=>$counts->type, 'unit'=>$counts->unit,
-                                    'today_value'=>$today, 'total_value'=>(string)$total,
-                                    'weekly_value'=>(string)ceil($weekly), 'monthly_value'=>(string)ceil($monthly), 'yearly_value'=>(string)ceil($yearly));
-            $countsarr[] = $counts_array;
-
-
+                $today = $meter->getPeriodTotalAlias('day');
+                $weekly = $meter->getPeriodTotalAlias('week');
+                $monthly = $meter->getPeriodTotalAlias('month');
+                $yearly = $meter->getPeriodTotalAlias('year');
+                $total = str_pad(strval($meter->getTotal()), 6, '0', STR_PAD_LEFT);
+                $counts_array = array(
+                    'id' => (int)$meter->object->id,
+                    'name' => $meter->object->name,
+                    'type' => $meter->device->param,
+                    'unit' => Meter::UNITS_MAPPING[$meter->device->units],
+                    'today_value' => strval($today),
+                    'total_value' => $total,
+                    'weekly_value' => strval($weekly),
+                    'monthly_value' => strval($monthly),
+                    'yearly_value' => strval($yearly)
+                );
+                var_dump($counts_array);
+                $countsarr[] = $counts_array;
+            }
         }
 
         return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
@@ -1178,30 +1140,17 @@ class Views extends System
     }
 
 
-    public function getCountsGraphs($idCount, $period) {
-
-         if (($period == 'month')||($period == '(period)'))
-        $sql = "SELECT DATE_FORMAT(datetime,'%d') AS date, SUM(value) AS value FROM `graph_counts` 
-                WHERE `datetime` >= NOW() - INTERVAL 30 DAY AND id_count = $idCount
-                GROUP BY DAY(datetime)  ORDER BY datetime";
-
-        if ($period == 'year')
-            $sql = "SELECT DATE_FORMAT(datetime,'%b') AS date, SUM(value) AS value FROM `graph_counts` 
-                    WHERE `datetime` >= NOW() - INTERVAL 12 MONTH  AND id_count = $idCount
-                    GROUP BY MONTH(datetime)  ORDER BY datetime";
-
-
-        $sqlquery = parent::$db->query($sql);
-        if($sqlquery ->rowCount() > 0) {
-		while ($counts = $sqlquery->fetch(PDO::FETCH_OBJ)) {
-
-		    $graphs_value[] = array('date'=>$counts->date, 'value'=>$counts->value);
-		}
-        } else $graphs_value = null;
-        
-        return  $json = json_encode(array('status'=>'countsGraphsLoad', 'id_count' => $idCount, 'values'=>$graphs_value));
-
-
+    public function getCountsGraphs($meterObjectId, $period) {
+        $meter = new Meter($meterObjectId);
+        $meter->checkMeter();
+        $graphs_value = $meter->getChart($period);
+        return  $json = json_encode(
+            array(
+                'status'=>'countsGraphsLoad',
+                'id_count' => $idCount,
+                'values'=>$graphs_value
+            )
+        );
     }
 
 

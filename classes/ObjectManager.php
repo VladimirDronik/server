@@ -100,5 +100,14 @@ class ObjectManager extends System
         return parent::$db->query("SELECT `id_object` FROM `methods` WHERE `id` = $methodId")
             ->fetchColumn();
     }
+
+    public static function getAllMeters()
+    {
+        $sql = parent::$db->query(
+            "SELECT `id` FROM `objects` WHERE `type` = 'meter'"
+        );
+        if($sql->rowCount() > 0) return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
+        else return null;
+    }
 }
 

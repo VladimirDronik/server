@@ -1107,18 +1107,17 @@ class Views extends System
 
     }
 
-
     public function getCounts() {
         $meters = ObjectManager::getAllMeters();
         if(isset($meters)) {
             foreach($meters as $meterObjectId) {
                 $meter = new Meter($meterObjectId);
-
+                $meter->checkMeter();
                 $today = $meter->getPeriodTotalAlias('day');
                 $weekly = $meter->getPeriodTotalAlias('week');
                 $monthly = $meter->getPeriodTotalAlias('month');
                 $yearly = $meter->getPeriodTotalAlias('year');
-                $total = str_pad(strval($meter->getTotal()), 6, '0', STR_PAD_LEFT);
+                $total = str_pad(strval(round($meter->getTotal(), $meter->device->accuracy)), 6, '0', STR_PAD_LEFT);
                 $counts_array = array(
                     'id' => (int)$meter->object->id,
                     'name' => $meter->object->name,
@@ -1130,24 +1129,27 @@ class Views extends System
                     'monthly_value' => strval($monthly),
                     'yearly_value' => strval($yearly)
                 );
-                var_dump($counts_array);
                 $countsarr[] = $counts_array;
             }
         }
-
         return $json = json_encode(array('status'=>'countsLoad', 'counts'=>$countsarr));
-
     }
 
 
     public function getCountsGraphs($meterObjectId, $period) {
         $meter = new Meter($meterObjectId);
-        $meter->checkMeter();
-        $graphs_value = $meter->getChart($period);
+        // $meter->checkMeter();
+        // $graphs_value = $meter->getChart($period);
+        foreach($meter->getChart($period) as $key => $value) {
+            $graphs_value[] = [
+                'date' => strval($key),
+                'value' => strval($value)
+            ];
+        }
         return  $json = json_encode(
             array(
                 'status'=>'countsGraphsLoad',
-                'id_count' => $idCount,
+                'id_count' => $meterObjectId,
                 'values'=>$graphs_value
             )
         );

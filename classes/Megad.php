@@ -187,13 +187,18 @@ class Megad extends System
         {
             $get_str = "http://$device->ip_address/$device->password?" . $getQueryParams;
 
-            $value = file_get_contents($get_str);
-            return $value;
+            if ($value = file_get_contents($get_str)) return $value;
+            else return null;
         }
     }
 
     public static function getPortNum($portId) {
         return parent::$db->query("SELECT `num_port` FROM `ports` WHERE `id` = $portId")
+            ->fetchColumn();
+    }
+
+    public static function getDeviceIdByPortNum($portId) {
+        return parent::$db->query("SELECT `id_device` FROM `ports` WHERE `id` = $portId")
             ->fetchColumn();
     }
 }

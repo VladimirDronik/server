@@ -26,7 +26,7 @@ else {
     exit(1);
 }
 
-// $url ='/md.php?pt=2&cnt=22';
+// $url ='/md.php?pt=0&m=1&cnt=21';
 // $ip_device = '10.200.3.11';
 
 // Определяем переданные параметры
@@ -58,7 +58,7 @@ if ($debug)
             $cnt = $item;
             $logstr .= 'кол-во нажатий: ' . $cnt . PHP_EOL;
         }
-    
+
         // m = 1 - при размыкании порта
         // m = 2 - при длительном нажатии 
         if ($key == 'm')
@@ -121,6 +121,8 @@ if (array_key_exists('pt', $parametersArray))
 
     $log = "Устройство $deviceName ($ip_device). ";
 
+    $cnt = (int)$parametersArray['cnt'];
+
     if (array_key_exists('click', $parametersArray) || array_key_exists('m', $parametersArray))
     {
         foreach ($parametersArray as $key=>$value)
@@ -160,20 +162,21 @@ if (array_key_exists('pt', $parametersArray))
                 if ($value == 1) 
                 {
                     $ports[] = [
-                        'method' => null,
+                        'method' => $port->lcr_method,
                         'portObject' => $port->object,
                         'params' => $value,
-                        'method_params' => null,
+                        'method_params' => 'lcr',
                         'log' => "$log размыкание"
                     ];
                 }
-                if ($value == 2) 
+                if ($value == 2)
                 {
                     $ports[] = [
                         'method' => $port->lc_method,
                         'portObject' => $port->object,
                         'params' => $value,
                         'method_params' => 'lc',
+                        'cnt' => $cnt,
                         'log' => "$log длительное замыкание"
                     ];
                 }  
@@ -267,7 +270,9 @@ if (array_key_exists('pt', $parametersArray))
         // System::addLog("Messages", "method = $port['method']", "port");
         if($port['method']) {
             echo "[Method] Action::runAction({$port['method']}, 'device', {$port['portObject']}, {$port['params']}, {$port['method_params']})" . PHP_EOL;
-            Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params']);
+            if(isset($port['cnt'])) $cnt = $port['cnt'];
+            else $cnt = null;
+            Action::runAction($port['method'], 'device', $port['portObject'], $port['params'], $port['method_params'], true, $cnt);
         }
         //Если метода нет, тогда выполняем действия для объекта, исходя из его типа и состояния
         else Action::runWithoutMethod($port['portObject'], $port['params']);

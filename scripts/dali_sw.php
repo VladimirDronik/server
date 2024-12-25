@@ -7,5 +7,5 @@ require_once '../include.php';
 $id = (isset($argv[1]) ? $argv[1] : null);
 
 $dali = new Dali($id);
-if (isset($dali)) if ($dali->daliOff()) exit(0);
+if (isset($dali)) if ($dali->daliSw()) exit(0);
 exit(1);

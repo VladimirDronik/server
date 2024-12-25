@@ -34,8 +34,15 @@ class Action extends Megad
      * @param string $params - передаваемые параметры
      * @param bool $sendMessage - отправлять сообщение или нет
      */
-    static public function runAction($idMethod, $whence=null, $idCausing=null, $params=null, $method_params=null, $sendMessage=true)
-    {
+    static public function runAction(
+        $idMethod,
+        $whence=null,
+        $idCausing=null,
+        $params=null,
+        $method_params=null,
+        $sendMessage=true,
+        $cnt=null
+    ) {
         if ($idCausing)
         {
             //Меняем состояние объекта и итема, которые вызвали действие
@@ -57,10 +64,9 @@ class Action extends Megad
             if ($idCausing) Messages::sendByObject($idCausing, $sendMessage); // Вызов сообщений для вызывающего действие объекта
             if ($idCausing != $method->id_object)
                 Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
-
             if (self::$easy) self::easy($object, $whence, $params);
             elseif ((self::$idScript) && ($method->is_system == 0)) self::script($object);
-            else self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
+            else self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params, $cnt));
 
         }
           
@@ -170,8 +176,12 @@ class Action extends Megad
      * @param $whence
      * @param $params - дополнителные параметры
      */
-    static private function params($whence, $idCausing = null, $method_params = null)
+    static private function params($whence, $idCausing = null, $method_params = null, $cnt=null)
     {
+        if(isset($cnt)) {
+            if($cnt %2 == 0) return "'even'";
+            else return "'odd'";
+        }
 
         if (($whence)&&($idCausing)) {
 

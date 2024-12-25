@@ -139,12 +139,11 @@ class Dali extends System
     public function getDeviceStatus()
     {
         $alias = "dali_device_status_a{$this->daliDevice->address}";
-        var_dump(Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias));
         $response = Modbus::sendModbus(
             Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
             'read'
         );
-        var_dump($response);
+
         if (isset($response))
         {
             $status = (int)$response;
@@ -155,7 +154,7 @@ class Dali extends System
             // bit 2 - состояние устройства. 0 = off; 1 = on
             (self::nbit ($status,2) == 0) ? $state = "off" : $state = "on";
             $statusArray["state"] = $state;
-            var_dump($state, $this->object->id);
+
             $this->object->setStatus($state, true, false);
             parent::$db->query("UPDATE `dali_devices`
                                 SET `failure` = $isFailure
@@ -199,6 +198,7 @@ class Dali extends System
 
     public function setBrightness(int $brightness)
     {
+
         if ($brightness == 0) $value = 0;
         else $value = self::percentToArcpower($brightness);
 
@@ -414,7 +414,23 @@ class Dali extends System
     public function getMinArcLevel() {
         $firstByte = ($this->daliDevice->address << 1) + 1;
         $min = $this->sendDirectCmd($firstByte << 8 | 0x9A, true, false);
-        var_dump($min);
     }
 
+    public function onWithFade($targetBrightness) {
+        $this->setFadeTime('4.000');
+        $this->setBrightness($targetBrightness);
+    }
+
+    public function stop() {
+        if ($this->daliDevice->is_group) $alias = "dali_set_brightness_g{$this->daliDevice->address}";
+        else $alias = "dali_set_brightness_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'write',
+            255
+        );
+        $this->getBrightnessFromDevice();
+        $this->setFadeTime('0.707');
+    }
 }

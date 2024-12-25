@@ -5,6 +5,24 @@
  */
 class Dali extends System
 {
+    const FADE_TIME = [
+        '0' => 0x00,
+        '0.707' => 0x01,
+        '1.000' => 0x02,
+        '1.414' => 0x03,
+        '2.000' => 0x04,
+        '2.828' => 0x05,
+        '4.000' => 0x06,
+        '5.657' => 0x07,
+        '8.000' => 0x08,
+        '11.31' => 0x09,
+        '16.00' => 0x10,
+        '22.62' => 0x11,
+        '32.00'  => 0x12,
+        '45.25' => 0x13,
+        '64.00' => 0x14,
+        '90.51' => 0x15
+    ];
     // private static $address;
     // private static $daliGatewayId;
     // private static $daliState;
@@ -336,13 +354,10 @@ class Dali extends System
     private function sendDirectCmd (int $cmd, $isResponse = false, $isConfCmd = false)
     {
         $directRegisters = $this->getDirectRegisters();
-        $directCmd = ($this->getCmdFirstByte() << 8) | $cmd;
-
         if ($isConfCmd) {
-            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', 0xA300);
-            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+            Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $cmd);
         }
-        Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $directCmd);
+        Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $cmd);
 
         if ($isResponse) {
             $start = microtime(true);
@@ -358,10 +373,12 @@ class Dali extends System
 
     public function addToGroup(int $group)
     {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
         $addCmd = 0x60 + $group;
-        $this->sendDirectCmd($addCmd, false, true);
-        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
-        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+        $this->writeToDtr(0x00);
+        $this->sendDirectCmd($firstByte << 8 | $addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd($firstByte << 8 | 0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd($firstByte << 8 | 0xC1, true, false);
 
         $groupFlags = ($groups15_8 << 8) | $groups7_0;
 
@@ -371,10 +388,12 @@ class Dali extends System
     
     public function delFromGroup(int $group)
     {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
         $addCmd = 0x70 + $group;
-        $this->sendDirectCmd($addCmd, false, true);
-        $groups7_0 = $this->sendDirectCmd (0xC0, true, false);
-        $groups15_8 = $this->sendDirectCmd (0xC1, true, false);
+        $this->writeToDtr(0x00);
+        $this->sendDirectCmd($firstByte << 8 | $addCmd, false, true);
+        $groups7_0 = $this->sendDirectCmd ($firstByte << 8 | 0xC0, true, false);
+        $groups15_8 = $this->sendDirectCmd ($firstByte << 8 | 0xC1, true, false);
 
         $groupFlags = ($groups15_8 << 8) | $groups7_0;
 
@@ -382,5 +401,20 @@ class Dali extends System
         else return true;
     }
 
+    public function writeToDtr($value) {
+        $this->sendDirectCmd(0xA3 << 8 | $value, false, true);
+    }
+
+    public function setFadeTime(string $fadeTime) {
+        $this->writeToDtr(self::FADE_TIME[$fadeTime]);
+        $firstByte = ($this->daliDevice->address << 1) + 1;
+        $this->sendDirectCmd($firstByte << 8 | 0x2E, false, true);
+    }
+
+    public function getMinArcLevel() {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
+        $min = $this->sendDirectCmd($firstByte << 8 | 0x9A, true, false);
+        var_dump($min);
+    }
 
 }

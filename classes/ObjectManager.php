@@ -109,5 +109,14 @@ class ObjectManager extends System
         if($sql->rowCount() > 0) return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
         else return null;
     }
+
+    public static function getAll(string $objectType)
+    {
+        $sql = parent::$db->query(
+            "SELECT `id` FROM `objects` WHERE `type` = '$objectType'"
+        );
+        if($sql->rowCount() > 0) return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
+        else return [];
+    }
 }
 

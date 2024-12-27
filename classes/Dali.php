@@ -357,7 +357,7 @@ class Dali extends System
         if ($isConfCmd) {
             Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $cmd);
         }
-        Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $cmd);
+        $result = Modbus::sendModbus($directRegisters['dali_direct_cmd'], 'write', $cmd);
 
         if ($isResponse) {
             $start = microtime(true);
@@ -369,6 +369,8 @@ class Dali extends System
             if ($response == 3)
                 return Modbus::sendModbus($directRegisters['dali_direct_response'], 'read');
         }
+        
+        return $result;
     }
 
     public function addToGroup(int $group)
@@ -413,7 +415,12 @@ class Dali extends System
 
     public function getMinArcLevel() {
         $firstByte = ($this->daliDevice->address << 1) + 1;
-        $min = $this->sendDirectCmd($firstByte << 8 | 0x9A, true, false);
+        return $this->sendDirectCmd($firstByte << 8 | 0x9A, true, false);
+    }
+
+    public function getDeviceType() {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
+        return $this->sendDirectCmd($firstByte << 8 | 0x99, true, false);
     }
 
     public function onWithFade($targetBrightness) {
@@ -424,6 +431,31 @@ class Dali extends System
     public function stop() {
         if ($this->daliDevice->is_group) $alias = "dali_set_brightness_g{$this->daliDevice->address}";
         else $alias = "dali_set_brightness_a{$this->daliDevice->address}";
+
+        $response = Modbus::sendModbus(
+            Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),
+            'write',
+            255
+        );
+        $this->getBrightnessFromDevice();
+        $this->setFadeTime('0.707');
+    }
+
+    public function up() {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
+        return $this->sendDirectCmd($firstByte << 8 | 0x01, false, false);
+    }
+
+    public function down() {
+        $firstByte = ($this->daliDevice->address << 1) + 1;
+        return $this->sendDirectCmd($firstByte << 8 | 0x04, false, false);
+    }
+
+
+    public function changeBrightness($targetValue) {
+
+        $mqtt = new Mqtt();
+        $mqtt->subscribe('dali/cmd');
 
         $response = Modbus::sendModbus(
             Modbus::getRegisterIdByAlias($this->daliDevice->dali_gateway, $alias),

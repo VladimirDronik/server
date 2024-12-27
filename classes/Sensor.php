@@ -80,7 +80,7 @@ class Sensor extends ObjectManager
 
             if ($this->device->connection == '1wbus') {
                 $pt = Megad::getPortNum($this->device->port);
-                $query = "pt={$pt}&{$param['get_param']}{$this->device->address}";
+                $query = "pt={$pt}&{$param['get_param']}";
             }
                 
             $param['value'] = Megad::getPortValue($this->device->source_id, $query);
@@ -149,7 +149,7 @@ class Sensor extends ObjectManager
                 
             }
             
-            echo "[$logTopic] $logMessage" . PHP_EOL;
+            echo "[$logTopic] Датчик {$this->object->name} ID {$this->object->id} : $logMessage" . PHP_EOL;
             System::addLog(
                 $logTopic, 
                 "Датчик [{$this->object->name} ID {$this->object->id}] : $logMessage",

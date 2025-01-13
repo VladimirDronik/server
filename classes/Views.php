@@ -83,8 +83,9 @@ class Views extends System
 
             $groupRoomsArray[] = $room;
         }
-
-        return $json = json_encode(array('status'=>'RoomItems', 'items'=>$groupRoomsArray));
+        $json = json_encode(array('status'=>'RoomItems', 'items'=>$groupRoomsArray));
+        var_dump($json);
+        return $json;
     }
 
 
@@ -233,6 +234,8 @@ class Views extends System
             $curTemp = round($termostat->current);
             $newTemp = (float)$termostat->optimal;
 
+            if(!isset($view->position_top)) $view->position_top = NULL;
+            if(!isset($view->position_left)) $view->position_left = NULL;
 
             if($typeOutput == 'array')
             $item = array('id' => (int)$view->id, 'type' => $view->type, 'icon' => $view->icon,
@@ -993,6 +996,8 @@ class Views extends System
             ($viewObject->type == 'customizable_light') ||
             ($viewObject->type == 'curtain'))
 
+            if(!isset($viewObject->position_left)) $viewObject->position_left = NULL;
+            if(!isset($viewObject->position_top)) $viewObject->position_top = NULL;
             return array('id' => (int)$viewObject->id,
                 'type' => $viewObject->type,
                 'icon' => $viewObject->icon,

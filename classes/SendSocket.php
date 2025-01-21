@@ -199,6 +199,7 @@ class SendSocket
      */
     public function readyDashboard($freeEntrance)
     {
+        $errorFlag = false;
         try {
             //Получаем данные из БД
             $data1 = $this->views->getGroupItems();

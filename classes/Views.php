@@ -56,22 +56,23 @@ class Views extends System
                                        AND `active` = 1 ORDER BY `view_items`.`sort`");
 
             while ($viewObject = $sql->fetch(PDO::FETCH_OBJ)) {
-
                 $item = self::getItem($viewObject);
-
-                if($item)
-                $items_array[] = $item;
-
+                if($item) $items_array[] = $item;
                 $roomsArray[$viewObject->room_id]['name'] = $viewObject->room_name;
                 $roomsArray[$viewObject->room_id]['image'] = $viewObject->room_image;
-
-
             }
 
 
 
-            foreach($roomsArray as $key => $value)
-            $roomsInGroup[] = array('id' => (int)$key, 'name' => $value['name'], 'image' => $value['icon']);
+            foreach($roomsArray as $key => $value){
+                if(!isset($value['icon'])) $value['icon'] = 'noimage.png';
+                $roomsInGroup[] = array(
+                    'id' => (int)$key,
+                    'name' => $value['name'],
+                    'image' => $value['icon']
+                );
+            }
+            
 
 
             $room = array('id' => (int)$rooms_obj->id,
@@ -83,9 +84,7 @@ class Views extends System
 
             $groupRoomsArray[] = $room;
         }
-        $json = json_encode(array('status'=>'RoomItems', 'items'=>$groupRoomsArray));
-        var_dump($json);
-        return $json;
+        return json_encode(array('status'=>'RoomItems', 'items'=>$groupRoomsArray));
     }
 
 
@@ -995,7 +994,7 @@ class Views extends System
             ($viewObject->type == 'tape') ||
             ($viewObject->type == 'customizable_light') ||
             ($viewObject->type == 'curtain'))
-
+        {
             if(!isset($viewObject->position_left)) $viewObject->position_left = NULL;
             if(!isset($viewObject->position_top)) $viewObject->position_top = NULL;
             return array('id' => (int)$viewObject->id,
@@ -1008,7 +1007,8 @@ class Views extends System
                 'params' => $viewObject->params,
                 'color' => $viewObject->color,
                 'top' => $viewObject->position_top);
-
+        }
+            
         // Если тип объекта термометр
         if ($viewObject->type == 'termostat') {
             return self::getTermostats($viewObject, 'array');

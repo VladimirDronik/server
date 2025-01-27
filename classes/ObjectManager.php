@@ -55,8 +55,7 @@ class ObjectManager extends System
     private function regulatorBuilder()
     {
         $sql = parent::$db->query(
-            "SELECT `sensor_param_id`,`setpoint`, `hysteresis`, `lower_method`, `higher_method`,
-            `fallback_method`, `min_setpoint`, `max_setpoint` FROM `regulators` WHERE `object_id` = {$this->object->id}"
+            "SELECT * FROM `regulators` WHERE `object_id` = {$this->object->id}"
         );
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
     }

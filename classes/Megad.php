@@ -201,4 +201,44 @@ class Megad extends System
         return parent::$db->query("SELECT `id_device` FROM `ports` WHERE `id` = $portId")
             ->fetchColumn();
     }
+
+    public static function setThermostatSetpoint($setpoint, $portId) {
+        $device = self::getDeviceParams(self::getDeviceIdByPortNum($portId));
+        if($device->active) {
+            $get_str = "http://$device->ip_address/$device->password?pt=" .
+                self::getPortNum($portId) . "&misc=$setpoint";
+            if (file_get_contents($get_str)) return true;
+            else return false;
+        }
+    }
+
+    public static function getThermostatState($portId) {
+        $device = self::getDeviceParams(self::getDeviceIdByPortNum($portId));
+        if($device->active) {
+            $get_str = "http://$device->ip_address/$device->password?pt=" . self::getPortNum($portId);
+            if ($s = file_get_contents($get_str)){
+                if(str_contains($s, 'DIS')) return 0;
+                else return 1;
+            }
+            else return null;
+        }
+    }
+
+    public static function getThermostatSetpoint($portId) {
+        $device = self::getDeviceParams(self::getDeviceIdByPortNum($portId));
+        if($device->active) {
+            $get_str = "http://$device->ip_address/$device->password?pt=" . self::getPortNum($portId);
+            if ($s = file_get_contents($get_str)){
+                $dom = new domDocument;
+                @$dom->loadHTML($s);
+                $elenments = $dom->getElementsByTagName('input');
+                foreach($elenments as $e) {
+                    if($e->getAttribute('name') == 'misc'){
+                        return (float)$e->getAttribute('value');
+                    }
+                }
+            }
+            else return null;
+        }
+    }
 }

@@ -61,6 +61,7 @@ class Sensor extends ObjectManager
         $this->aliceCallback();
         $this->writeValuesToGraphs();
         $this->setSensorStatus();
+        $this->launchRegulator();
     }
 
     private function getFromMegad()
@@ -228,12 +229,28 @@ class Sensor extends ObjectManager
         else $this->setStatus('ok');
     }
 
+    public function launchRegulator() {
+        if ($this->object->status != 'ok') return false;
+        foreach ($this->device->params as $key => $param)
+        {
+            $sql = parent::$db->query(
+                "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$param['id']}"
+            );
+            if($sql->rowCount() > 0) {
+                $r = new Regulator($sql->fetchColumn());
+                $r->checkRegulator();
+                return true;
+            }
+        }
+        
+    }
+
+
     public static function getSensorObjectIdByParamId($paramId)
     {
         $sql = parent::$db->query(
             "SELECT `object_id` FROM `sensors_params` WHERE `id` = $paramId"
         );
-        
         if($sql->rowCount() > 0) return $sql->fetchColumn();
     }
 }

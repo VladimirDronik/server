@@ -24,11 +24,11 @@ class Regulator extends ObjectManager
 
     public function checkRegulator()
     {
-        if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id)))
+        if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensors_param_id)))
         {
-            if ($this->object->status == 'on')
+            if ($this->object->status)
             {
-                if (null !== $sensorValue = $sensor->device->params[$this->device->sensor_param_id]['value'])
+                if (null !== $sensorValue = $sensor->device->params[$this->device->sensors_param_id]['value'])
                 {
                     if ($sensorValue <= ($this->device->setpoint - $this->device->hysteresis))
                     {
@@ -50,15 +50,15 @@ class Regulator extends ObjectManager
             else echo "[INFO] Регулятор (ID {$this->object->id}) отключен" . PHP_EOL;
 
             if (
-                $sensor->device->params[$this->device->sensor_param_id]['value'] !== 
-                $sensor->device->params[$this->device->sensor_param_id]['last_value'] ||
+                $sensor->device->params[$this->device->sensors_param_id]['value'] !== 
+                $sensor->device->params[$this->device->sensors_param_id]['last_value'] ||
                 date('i') == 0
             ) {
                 $aliceProperties[] = [
                     "type" => "devices.properties.float",
                     "state" => [
-                        "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
-                        "value" => $sensor->device->params[$this->device->sensor_param_id]['value']
+                        "instance" => $sensor->device->params[$this->device->sensors_param_id]['param'],
+                        "value" => $sensor->device->params[$this->device->sensors_param_id]['value']
                     ]
                 ];
             }
@@ -87,28 +87,95 @@ class Regulator extends ObjectManager
 
     public function setOptimalValue($value)
     {
-        if ($this->device->setpoint != $value) {
-            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensor_param_id));
-            $aliceCapabilities = [
-                "type" => "devices.capabilities.range",
-                "state" => [
-                    "instance" => $sensor->device->params[$this->device->sensor_param_id]['param'],
-                    "value" => $this->device->setpoint
-                ]
-            ];
-            $payload = [
-                "object_id" => $this->object->id,
-                "capabilities" => $aliceCapabilities,
-                "properties" => null
-            ];
-            $mqtt = new Mqtt();
-            $mqtt->publish('alice/callback', $payload, false);
-        }
-
         $this->device->setpoint = $value;
+    }
+
+    public function updateRegulator()
+    {
+        switch($this->device->source)
+        {
+            case 'megad':
+                if (false == Megad::setThermostatSetpoint($this->device->setpoint, $this->device->source_id))
+                    return false;
+                break;
+            
+            case 'modbus':
+                break;
+
+            default:
+                $this->checkRegulator();
+                break;
+        }
+        
+        $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($this->device->sensors_param_id));
+        $aliceCapabilities = [
+            "type" => "devices.capabilities.range",
+            "state" => [
+                "instance" => $sensor->device->params[$this->device->sensors_param_id]['param'],
+                "value" => $this->device->setpoint
+            ]
+        ];
+        $payload = [
+            "object_id" => $this->object->id,
+            "capabilities" => $aliceCapabilities,
+            "properties" => null
+        ];
+        $mqtt = new Mqtt();
+        $mqtt->publish('alice/callback', $payload, false);
+
         parent::$db->query("UPDATE `regulators`
             SET `setpoint` = '{$this->device->setpoint}'
             WHERE `object_id` = {$this->object->id}");
 
+        return true;
+    }
+
+    public function getRegulatorState(){
+        switch($this->device->source)
+        {
+            case 'megad':
+                $response = Megad::getThermostatState($this->device->source_id);
+                break;
+            
+            case 'modbus':
+                $response = Modbus::sendModbus(
+                    Modbus::getRegisterIdByAlias($this->device->source_id, "state"),
+                    'read'
+                ); 
+                break;
+        }
+
+        if (isset($response)) {
+            if ($response) $this->object->status = 'on';
+            else $this->object->status = 'off';
+            $this->setStatus($this->object->status);
+            return $this->object->status;
+        }
+        else return null;
+    }
+
+    public function getRegulatorSetpoint(){
+        switch($this->device->source)
+        {
+            case 'megad':
+                $response = Megad::getThermostatSetpoint($this->device->source_id);
+                break;
+            
+            case 'modbus':
+                $response = Modbus::sendModbus(
+                    Modbus::getRegisterIdByAlias($this->device->source_id, "setpoint"),
+                    'read'
+                );
+                break;
+        }
+
+        if (isset($response)) $this->device->setpoint = $response;
+        else return null;
+
+        parent::$db->query("UPDATE `regulators`
+            SET `setpoint` = '{$this->device->setpoint}'
+            WHERE `object_id` = {$this->object->id}");
+
+        return $this->device->setpoint;
     }
 }

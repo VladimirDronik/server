@@ -212,6 +212,7 @@ class Objects extends System
                 $view->updateItem($item->id, $status);
             }
         }
+
         return $status;
     }
 

@@ -212,6 +212,19 @@ class Megad extends System
         }
     }
 
+    public static function setThermostatStatus($status, $portId) {
+        $device = self::getDeviceParams(self::getDeviceIdByPortNum($portId));
+        if($device->active) {
+            if ($status == 'on') $cmd = 1;
+            else $cmd = 0;
+            $port = self::getPortNum($portId);
+            $get_str = "http://$device->ip_address/$device->password?" .
+                "pt=$port&cmd=$port:$cmd";
+            if (file_get_contents($get_str)) return true;
+            else return false;
+        }
+    }
+
     public static function getThermostatState($portId) {
         $device = self::getDeviceParams(self::getDeviceIdByPortNum($portId));
         if($device->active) {

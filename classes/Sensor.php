@@ -61,7 +61,6 @@ class Sensor extends ObjectManager
         $this->aliceCallback();
         $this->writeValuesToGraphs();
         $this->setSensorStatus();
-        $this->launchRegulator();
     }
 
     private function getFromMegad()
@@ -72,6 +71,11 @@ class Sensor extends ObjectManager
                 $sda = Megad::getPortNum($this->device->sda);
                 $scl = Megad::getPortNum($this->device->scl);
                 $query = "pt={$sda}&scl={$scl}&" . $param['get_param'];
+                if ($this->device->type == 'ptsensor') {
+                    $mQuery = "pt={$sda}&scl={$scl}&i2c_dev=ptsensor&i2c_par=1";
+                    if (null !== Megad::getPortValue($this->device->source_id, $mQuery))
+                        sleep(1);
+                }
             }
 
             if ($this->device->connection == '1w') {
@@ -83,7 +87,7 @@ class Sensor extends ObjectManager
                 $pt = Megad::getPortNum($this->device->port);
                 $query = "pt={$pt}&{$param['get_param']}";
             }
-                
+            
             $param['value'] = Megad::getPortValue($this->device->source_id, $query);
             
             if ($this->device->connection == '1w')
@@ -173,8 +177,10 @@ class Sensor extends ObjectManager
         {
             if ($param['graph'])
             {
-                parent::$db->query("INSERT INTO sensor_graphs (`param_id`, `datetime`, `value`)
-                    VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
+                if ($param['value'] !== $param['last_value'] || date('i') == 0) {
+                    parent::$db->query("INSERT INTO sensor_graphs (`param_id`, `datetime`, `value`)
+                        VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
+                }
             }
         }
     }
@@ -238,13 +244,12 @@ class Sensor extends ObjectManager
             );
             if($sql->rowCount() > 0) {
                 $r = new Regulator($sql->fetchColumn());
-                $r->checkRegulator();
+                $r->checkRegulator($this->device->params[$param['id']]);
                 return true;
             }
         }
         
     }
-
 
     public static function getSensorObjectIdByParamId($paramId)
     {

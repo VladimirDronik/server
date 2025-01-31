@@ -457,11 +457,11 @@ class Device extends System
             
             case 'regulator':
                 $regulator = new Regulator($objectId);
-                $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+                $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensors_param_id));
                 $type = 'devices.types.thermostat';
 
-                if ($sensor->device->params[$regulator->device->sensor_param_id]['param'] == 'temperature') $precision = 0.5;
-                elseif ($sensor->device->params[$regulator->device->sensor_param_id]['param'] == 'humidity') $precision = 10;
+                if ($sensor->device->params[$regulator->device->sensors_param_id]['param'] == 'temperature') $precision = 0.5;
+                elseif ($sensor->device->params[$regulator->device->sensors_param_id]['param'] == 'humidity') $precision = 10;
                 else $precision = 1;
 
                 $capabilities = [
@@ -469,13 +469,13 @@ class Device extends System
                     [
                         'type' => 'devices.capabilities.range',
                         'parameters' => [
-                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensor_param_id]['units']],
+                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensors_param_id]['units']],
                             'range' => [
                                 'min' => $regulator->device->min_setpoint,
                                 'max' => $regulator->device->max_setpoint,
                                 'precision' => $precision
                             ],
-                            'instance' => $sensor->device->params[$regulator->device->sensor_param_id]['param']
+                            'instance' => $sensor->device->params[$regulator->device->sensors_param_id]['param']
                         ],
                         'retrievable' => true,
                         'reportable' => true
@@ -486,8 +486,8 @@ class Device extends System
                     'retrievable' => true,
                     'reportable' => true,
                     'parameters' => [
-                        'instance' => $sensor->device->params[$regulator->device->sensor_param_id]['param'],
-                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensor_param_id]['units']]
+                        'instance' => $sensor->device->params[$regulator->device->sensors_param_id]['param'],
+                        'unit' => self::ALICE_UNITS_MAPPING[$sensor->device->params[$regulator->device->sensors_param_id]['units']]
                     ]
                 ];
         }
@@ -596,13 +596,13 @@ class Device extends System
 
         if ($device->type == 'regulator') {
             $regulator = new Regulator($idDevice);
-            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensors_param_id));
             $status = [
                 'on' => $on,
-                $sensor->device->params[$regulator->device->sensor_param_id]['param']
+                $sensor->device->params[$regulator->device->sensors_param_id]['param']
                     => $regulator->device->setpoint,
-                $sensor->device->params[$regulator->device->sensor_param_id]['param'].'_prop'
-                    => $sensor->device->params[$regulator->device->sensor_param_id]['value']
+                $sensor->device->params[$regulator->device->sensors_param_id]['param'].'_prop'
+                    => $sensor->device->params[$regulator->device->sensors_param_id]['value']
             ];
         }
 

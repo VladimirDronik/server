@@ -10,10 +10,12 @@ if (null !== $regulator = new Regulator($id))
     if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensors_param_id))) {
         $sensor->checkSensor();
     }
-
-    if(null !== $state = $regulator->getRegulatorState()) {
-        if(null !== $setpoint = $regulator->getRegulatorSetpoint()) {
-            exit(0);
+    
+    if (null !== $regulator->device->source) {
+        if (null !== $state = $regulator->getRegulatorState()) {
+            if (null !== $setpoint = $regulator->getRegulatorSetpoint()) {
+                exit(0);
+            }
         }
     }
 }

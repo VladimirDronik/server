@@ -399,13 +399,14 @@ class SendSocket
         elseif ($object->type == 'regulator') {
             $regulator = new Regulator($idObject);
             if ($instance == 'on') {
-                if ($status) $regulator->regulatorOn();
-                else $regulator->regulatorOff();
+                if ($status) $s = 'on';
+                else $s = 'off';
+                $regulator->setState($s);
             }
             else {
-                $regulator->setOptimalValue($status);
-                $regulator->checkRegulator();
+                $regulator->setSetpoint($status);
             }
+            $regulator->updateRegulator();
         }
 
     }

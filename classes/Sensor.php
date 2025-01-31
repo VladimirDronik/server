@@ -177,7 +177,7 @@ class Sensor extends ObjectManager
         {
             if ($param['graph'])
             {
-                if ($param['value'] !== $param['last_value'] || date('i') == 0) {
+                if (floatval($param['value']) != floatval($param['last_value']) || date('i') == 0) {
                     parent::$db->query("INSERT INTO sensor_graphs (`param_id`, `datetime`, `value`)
                         VALUES ({$param['id']}, '{$this->device->timestamp}', {$param['value']})");
                 }
@@ -244,7 +244,7 @@ class Sensor extends ObjectManager
             );
             if($sql->rowCount() > 0) {
                 $r = new Regulator($sql->fetchColumn());
-                $r->checkRegulator($this->device->params[$param['id']]);
+                $r->checkRegulator();
                 return true;
             }
         }
@@ -257,5 +257,14 @@ class Sensor extends ObjectManager
             "SELECT `object_id` FROM `sensors_params` WHERE `id` = $paramId"
         );
         if($sql->rowCount() > 0) return $sql->fetchColumn();
+    }
+
+    public static function getParamValue($paramId)
+    {
+        $sql = parent::$db->query(
+            "SELECT `value`, `param` FROM `sensors_params` WHERE `id` = $paramId"
+        );
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
+        else return null;
     }
 }

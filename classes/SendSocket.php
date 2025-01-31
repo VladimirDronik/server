@@ -458,4 +458,12 @@ class SendSocket
     {
         $this->send($this->views->getCurtain($this->param1));
     }
+
+    /**
+     * Отпарвка данных сенсора / регулятора
+     */
+    public function getSensor()
+    {
+        $this->send($this->views->getSensor($this->param1));
+    }
 }

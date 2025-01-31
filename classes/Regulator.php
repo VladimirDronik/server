@@ -309,9 +309,17 @@ class Regulator extends ObjectManager
         }
         
         parent::$db->query("UPDATE `regulators`
-            SET `setpoint` = '{$this->device->setpoint}'
+            SET `setpoint` = {$this->device->setpoint}
             WHERE `object_id` = {$this->object->id}");
 
         return $this->device->setpoint;
+    }
+
+    public static function getObjectIdBySensorParamId($sensorParamId)
+    {
+        $sql = parent::$db->query(
+            "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = $sensorParamId"
+        );
+        if($sql->rowCount() > 0) return $sql->fetchColumn();
     }
 }

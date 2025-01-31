@@ -582,22 +582,31 @@ class Views extends System
 
 
                 switch ($itemType) {
-                    case 'regulator':
-                        if (null !== $regulator = new Regulator($idObject))
-                        {
-                            if (isset($itemStatus))
+                    case 'sensor':
+                        $sql = parent::$db->query(
+                            "SELECT `params` FROM `view_items` WHERE `id` = $itemID"
+                        );
+                        if($sql->rowCount() > 0) {
+                            $paramId = (int)$sql->fetchColumn();
+                            $regulatorObjectId = Regulator::getObjectIdBySensorParamId($paramId);
+                            if (null !== $regulator = new Regulator($regulatorObjectId))
                             {
-                                if ($itemStatus == 'on') $regulator->regulatorOn();
-                                else $regulator->regulatorOff();
+                                if (isset($itemStatus))
+                                {
+                                    if ($itemStatus == 'on') $s = 'on';
+                                    else $s = 'off';
+                                    $regulator->setState($s);
+                                }
+                                
+                                if (isset($itemValue))
+                                {
+                                    $regulator->setSetpoint($itemValue);
+                                }
+
+                                $regulator->updateRegulator();
                             }
-                            
-                            if (isset($itemValue))
-                            {
-                                $regulator->setOptimalValue($itemValue);
-                                $regulator->checkRegulator();
-                            }
+                            self::updateItem($itemID);
                         }
-                        self::updateItem($itemID);
                         break;
 
                     case 'termostat':
@@ -869,6 +878,21 @@ class Views extends System
                             }
                         }
                     break;
+
+                    case  'sensor':
+                        // if (null != $curtain = new Curtain($idObject))
+                        // {
+                        //     if (!isset($set_value)) {
+                        //         if ($itemStatus == "on") $curtain->open();
+                        //         if ($itemStatus == "off") $curtain->close();
+                        //     }
+                        //     else {
+                        //         if ($set_value == 100) $curtain->open();
+                        //         elseif ($set_value == 0) $curtain->close();
+                        //         else $curtain->setPercent($set_value);
+                        //     }
+                        // }
+                    break;
                 }
 
                 //TODO: проверить является ли объект виртуальным
@@ -1035,7 +1059,7 @@ class Views extends System
         }
 
         if ($viewObject->type == 'sensor') return self::getSensor($viewObject, 'array');
-        if ($viewObject->type == 'regulator') return self::getRegulator($viewObject, 'array');
+        // if ($viewObject->type == 'regulator') return self::getRegulator($viewObject, 'array');
         
     }
 
@@ -1838,56 +1862,73 @@ class Views extends System
      */
     static function getSensor($viewObject, $output = 'array')
     {
-        if (null !== $sensor = new Sensor ($viewObject->id_object))
+        if (null !== $sensor = new Sensor($viewObject->id_object))
         {
-            $item = [
-                'id' => (int)$viewObject->id,
-                'type' => $viewObject->type,
-                'title' => $viewObject->title,
-                'value' => $sensor->device->params[(int)$viewObject->params]['value'],
-                'units' => $sensor->device->params[(int)$viewObject->params]['units']
-            ];
+            $sql = parent::$db->query(
+                "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$viewObject->params}"
+            );
+            if($sql->rowCount() > 0) {
+                $regulator = new Regulator($sql->fetchColumn());
 
+                $item = [
+                    'id' => (int)$viewObject->id,
+                    'type' => $viewObject->type,
+                    'title' => $viewObject->title,
+                    'value' => $regulator->sensor->value,
+                    'units' => Sensor::UNITS_MAPPING[$regulator->sensor->units],
+                    'regulator' => true,
+                    'status' => $regulator->object->status,
+                    'setpoint' => $regulator->device->setpoint,
+                    'lowval' => $regulator->device->min_setpoint,
+                    'highval' => $regulator->device->max_setpoint
+                ];
+            }
+            else 
+            {
+                $sensorParam = Sensor::getParamValue((int)$viewObject->params);
+                $item = [
+                    'id' => (int)$viewObject->id,
+                    'type' => $viewObject->type,
+                    'title' => $viewObject->title,
+                    'value' => $sensorParam->value,
+                    'units' => Sensor::UNITS_MAPPING[$sensorParam->units],
+                    'regulator' => false
+                ];
+            }
+            
             if  ($output == 'array') return $item;
             else return json_encode($item);
-            // {
-            //     return '{"id":"'.$viewObject->id.'", ' .
-            //         '"type":"'.$viewObject->type.'", ' .
-            //         '"title":"'.$viewObject->title.'", ' .
-            //         '"value":"'.$param[0].'", ' .
-            //         '"units":"'.$param[1].'"}';
-            // } 
         }
         else return false;
     }
 
     /** Функция отдает параметры выбранного сенсора
      */
-    static function getRegulator($viewObject, $output = 'array')
-    {
-        if (null !== $regulator = new Regulator($viewObject->id_object))
-        {
-            $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
-            $controlDevice = new ObjectManager(ObjectManager::getObjectIdByMethod($regulator->device->lower_method));
-            $params = "lowval={$regulator->device->min_setpoint};highval={$regulator->device->max_setpoint}";
-            $item = [
-                'id' => (int)$viewObject->id,
-                'type' => $viewObject->type,
-                'title' => $viewObject->title,
-                'status' => $regulator->object->status,
-                'current' => $sensor->device->params[$regulator->device->sensor_param_id]['value'],
-                'setpoint' => $regulator->device->setpoint,
-                'units' => $sensor->device->params[$regulator->device->sensor_param_id]['units'],
-                'control_device' => $controlDevice->object->status,
-                'params' => $params,
-                'lowval' => $regulator->device->min_setpoint,
-                'highval' => $regulator->device->max_setpoint
-            ];
-            if ($output == 'array') return $item;
-            else return json_encode($item);
-        }
-        else return false;
-    }
+    // static function getRegulator($viewObject, $output = 'array')
+    // {
+    //     if (null !== $regulator = new Regulator($viewObject->id_object))
+    //     {
+    //         $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensor_param_id));
+    //         $controlDevice = new ObjectManager(ObjectManager::getObjectIdByMethod($regulator->device->lower_method));
+    //         $params = "lowval={$regulator->device->min_setpoint};highval={$regulator->device->max_setpoint}";
+    //         $item = [
+    //             'id' => (int)$viewObject->id,
+    //             'type' => $viewObject->type,
+    //             'title' => $viewObject->title,
+    //             'status' => $regulator->object->status,
+    //             'current' => $sensor->device->params[$regulator->device->sensor_param_id]['value'],
+    //             'setpoint' => $regulator->device->setpoint,
+    //             'units' => $sensor->device->params[$regulator->device->sensor_param_id]['units'],
+    //             'control_device' => $controlDevice->object->status,
+    //             'params' => $params,
+    //             'lowval' => $regulator->device->min_setpoint,
+    //             'highval' => $regulator->device->max_setpoint
+    //         ];
+    //         if ($output == 'array') return $item;
+    //         else return json_encode($item);
+    //     }
+    //     else return false;
+    // }
 }
 
 

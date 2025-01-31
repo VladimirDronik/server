@@ -248,7 +248,6 @@ class Sensor extends ObjectManager
                 return true;
             }
         }
-        
     }
 
     public static function getSensorObjectIdByParamId($paramId)
@@ -262,7 +261,7 @@ class Sensor extends ObjectManager
     public static function getParamValue($paramId)
     {
         $sql = parent::$db->query(
-            "SELECT `value`, `param` FROM `sensors_params` WHERE `id` = $paramId"
+            "SELECT `value`, `param`, `units` FROM `sensors_params` WHERE `id` = $paramId"
         );
         if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
         else return null;

@@ -182,7 +182,6 @@ class Megad extends System
     public static function getPortValue($idDevice, string $getQueryParams)
     {
         $device = self::getDeviceParams($idDevice);
-        
         if($device->active)
         {
             $get_str = "http://$device->ip_address/$device->password?" . $getQueryParams;

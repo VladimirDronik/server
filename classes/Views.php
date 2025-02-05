@@ -1089,7 +1089,7 @@ class Views extends System
             else
                 $state = 'ON';
             */
-
+            
             $items = array('id' => $idDimmer,
                 'type' => 'dimmer',
                 'title' => $dimmer->title,
@@ -1864,23 +1864,27 @@ class Views extends System
     {
         if (null !== $sensor = new Sensor($viewObject->id_object))
         {
+            $sensor->checkSensor();
             $sql = parent::$db->query(
                 "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$viewObject->params}"
             );
             if($sql->rowCount() > 0) {
                 $regulator = new Regulator($sql->fetchColumn());
+                $regulator->getRegulatorState();
+                $regulator->getRegulatorSetpoint();
 
                 $item = [
                     'id' => (int)$viewObject->id,
                     'type' => $viewObject->type,
                     'title' => $viewObject->title,
-                    'value' => $regulator->sensor->value,
+                    'value' => (string)$regulator->sensor->value,
                     'units' => Sensor::UNITS_MAPPING[$regulator->sensor->units],
                     'regulator' => true,
                     'status' => $regulator->object->status,
                     'setpoint' => $regulator->device->setpoint,
                     'lowval' => $regulator->device->min_setpoint,
-                    'highval' => $regulator->device->max_setpoint
+                    'highval' => $regulator->device->max_setpoint,
+                    'precision' => $sensor->device->params[$viewObject->params]["accuracy"]
                 ];
             }
             else 
@@ -1890,7 +1894,7 @@ class Views extends System
                     'id' => (int)$viewObject->id,
                     'type' => $viewObject->type,
                     'title' => $viewObject->title,
-                    'value' => $sensorParam->value,
+                    'value' => (string)$sensorParam->value,
                     'units' => Sensor::UNITS_MAPPING[$sensorParam->units],
                     'regulator' => false
                 ];

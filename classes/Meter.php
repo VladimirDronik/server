@@ -34,7 +34,7 @@ class Meter extends ObjectManager
             {
                 $this->object = $meter->object;
                 $this->device = $meter->device;
-            }  
+            }
         }
         else return null;
     }
@@ -52,7 +52,6 @@ class Meter extends ObjectManager
             case 'mqtt': $value = $this->getFromMqtt();
                 break;
         }
-
         if (!$this->validateValue($value)) return false;
 
         // $this->aliceCallback();

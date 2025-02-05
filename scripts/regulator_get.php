@@ -18,6 +18,7 @@ if (null !== $regulator = new Regulator($id))
             }
         }
     }
+    else exit(0);
 }
 
 exit(1);

@@ -763,7 +763,7 @@ class Views extends System
                                 $brightness = $itemValue;
                             }
                             else {
-                                if ($status == 'off') $brightness = 0;
+                                if ($itemStatus == 'off') $brightness = 0;
                                 else $brightness = $dimmer->getValue();
                             }
                             $dimmer->setValue($brightness);
@@ -1862,14 +1862,36 @@ class Views extends System
      */
     static function getSensor($viewObject, $output = 'array')
     {
-        if (null !== $sensor = new Sensor($viewObject->id_object))
+        if (null !== $object = new Objects($viewObject->id_object))
         {
+            if ($object->type == 'sensor') $sensor = new Sensor($viewObject->id_object);
+            else $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($viewObject->params));
+
             $sensor->checkSensor();
-            $sql = parent::$db->query(
-                "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$viewObject->params}"
-            );
-            if($sql->rowCount() > 0) {
-                $regulator = new Regulator($sql->fetchColumn());
+
+            if ($object->type == 'regulator') $regulator = new Regulator($viewObject->id_object);
+            else
+            {
+                $sql = parent::$db->query(
+                    "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$viewObject->params}"
+                );
+                if($sql->rowCount() > 0) $regulator = new Regulator($sql->fetchColumn());
+            }
+            
+            if ($regulator == null)
+            {
+                $sensorParam = Sensor::getParamValue((int)$viewObject->params);
+                $item = [
+                    'id' => (int)$viewObject->id,
+                    'type' => $viewObject->type,
+                    'title' => $viewObject->title,
+                    'value' => (string)$sensorParam->value,
+                    'units' => Sensor::UNITS_MAPPING[$sensorParam->units],
+                    'regulator' => false
+                ];
+            }
+            else
+            {
                 $regulator->getRegulatorState();
                 $regulator->getRegulatorSetpoint();
 
@@ -1885,18 +1907,6 @@ class Views extends System
                     'lowval' => $regulator->device->min_setpoint,
                     'highval' => $regulator->device->max_setpoint,
                     'precision' => $sensor->device->params[$viewObject->params]["accuracy"]
-                ];
-            }
-            else 
-            {
-                $sensorParam = Sensor::getParamValue((int)$viewObject->params);
-                $item = [
-                    'id' => (int)$viewObject->id,
-                    'type' => $viewObject->type,
-                    'title' => $viewObject->title,
-                    'value' => (string)$sensorParam->value,
-                    'units' => Sensor::UNITS_MAPPING[$sensorParam->units],
-                    'regulator' => false
                 ];
             }
             

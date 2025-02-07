@@ -158,10 +158,13 @@ class Regulator extends ObjectManager
             "INSERT INTO regulator_graphs (`regulator_id`, `param`, `datetime`, `value`)
             VALUES ({$this->device->id}, 'state', CONCAT(CURRENT_DATE,' ',CURRENT_TIME), '{$this->object->status}')"
         );
-        parent::$db->query(
-            "INSERT INTO regulator_graphs (`regulator_id`, `param`, `datetime`, `value`)
-            VALUES ({$this->device->id}, 'method', CONCAT(CURRENT_DATE,' ',CURRENT_TIME), '{$this->device->current_method}')"
-        );
+        if (null === $this->device->source)
+        {
+            parent::$db->query(
+                "INSERT INTO regulator_graphs (`regulator_id`, `param`, `datetime`, `value`)
+                VALUES ({$this->device->id}, 'method', CONCAT(CURRENT_DATE,' ',CURRENT_TIME), '{$this->device->current_method}')"
+            );
+        }
     }
 
     private function aliceCallback() {

@@ -42,13 +42,25 @@ class Regulator extends ObjectManager
                 {
                     if ($this->sensor->value <= ($this->device->setpoint - $this->device->hysteresis))
                     {
-                        Action::runAction($this->device->lower_method);
+                        Action::runAction(
+                            $this->device->lower_method,
+                            'regulator',
+                            $this->object->id,
+                            null,
+                            $this->device->lower_method_params
+                        );
                         echo "[INFO] Регулятор (ID {$this->object->id}) вызвал метод при значении датчика ниже уставки" . PHP_EOL;
                         $this->device->current_method = 'lower';
                     }
                     elseif ($this->sensor->value >= ($this->device->setpoint + $this->device->hysteresis))
                     {
-                        Action::runAction($this->device->higher_method);
+                        Action::runAction(
+                            $this->device->higher_method,
+                            'regulator',
+                            $this->object->id,
+                            null, 
+                            $this->device->higher_method_params
+                        );
                         echo "[INFO] Регулятор (ID {$this->object->id}) вызвал метод при значении датчика выше уставки" . PHP_EOL;
                         $this->device->current_method = 'higher';
                     }
@@ -60,14 +72,27 @@ class Regulator extends ObjectManager
                 } 
                 else
                 {
-                    Action::runAction($this->device->fallback_method);
+                    Action::runAction(
+                        $this->device->fallback_method,
+                        'regulator',
+                        $this->object->id,
+                        null,
+                        $this->device->fallback_method_params
+                    );
                     echo "[WARN] Регулятор (ID {$this->object->id}) вызвал аварийный метод, т.к. не получил текущее значение датчика" . PHP_EOL;
                     $this->device->current_method = 'fallback';
                 }
             }
             else 
             {
-                if (null !== $this->device->fallback_method) Action::runAction($this->device->fallback_method);
+                if (null !== $this->device->fallback_method)
+                    Action::runAction(
+                        $this->device->fallback_method,
+                        'regulator',
+                        $this->object->id,
+                        null,
+                        $this->device->fallback_method_params
+                    );
                 echo "[INFO] Регулятор (ID {$this->object->id}) был отключен, вызван аварийный метод" . PHP_EOL;
                 $this->device->current_method = 'fallback';
             }

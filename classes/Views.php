@@ -564,6 +564,7 @@ class Views extends System
             if (isset($data_array->items[0]->description)) $itemDescription = $data_array->items[0]->description;
             if (isset($data_array->items[0]->type)) $itemType = $data_array->items[0]->type;
             if (isset($data_array->items[0]->status)) $itemStatus = $data_array->items[0]->status;
+            else $itemStatus = null;
             if (isset($data_array->items[0]->value)) $itemValue = $data_array->items[0]->value;
             if (isset($data_array->items[0]->set_value)) $set_value = $data_array->items[0]->set_value;
 
@@ -586,22 +587,23 @@ class Views extends System
                         $sql = parent::$db->query(
                             "SELECT `params` FROM `view_items` WHERE `id` = $itemID"
                         );
-                        if($sql->rowCount() > 0) {
-                            $paramId = (int)$sql->fetchColumn();
-                            $regulatorObjectId = Regulator::getObjectIdBySensorParamId($paramId);
+                        if($sql->rowCount() > 0)
+                        {
+                            $viewParams = explode(';', $sql->fetchColumn());
+                            foreach ($viewParams as $viewParam)
+                            {
+                                $vp = explode('=', $viewParam);
+                                if ($vp[0] == 'sensors_param_id') $sensParamId = $vp[1];
+                            }
+
+                            $regulatorObjectId = Regulator::getObjectIdBySensorParamId($sensParamId);
                             if (null !== $regulator = new Regulator($regulatorObjectId))
                             {
                                 if (isset($itemStatus))
-                                {
-                                    if ($itemStatus == 'on') $s = 'on';
-                                    else $s = 'off';
-                                    $regulator->setState($s);
-                                }
+                                    $regulator->setState($itemStatus);
                                 
                                 if (isset($itemValue))
-                                {
                                     $regulator->setSetpoint($itemValue);
-                                }
 
                                 $regulator->updateRegulator();
                             }
@@ -1862,10 +1864,18 @@ class Views extends System
      */
     static function getSensor($viewObject, $output = 'array')
     {
+        $viewParams = explode(';', $viewObject->params);
+        
+        // var_dump($viewParams);
+        foreach ($viewParams as $viewParam)
+        {
+            $vp = explode('=', $viewParam);
+            if ($vp[0] == 'sensors_param_id') $sensParamId = $vp[1];
+        }
         if (null !== $object = new Objects($viewObject->id_object))
         {
             if ($object->type == 'sensor') $sensor = new Sensor($viewObject->id_object);
-            else $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($viewObject->params));
+            else $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($sensParamId));
 
             $sensor->checkSensor();
 
@@ -1873,14 +1883,14 @@ class Views extends System
             else
             {
                 $sql = parent::$db->query(
-                    "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$viewObject->params}"
+                    "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$sensParamId}"
                 );
                 if($sql->rowCount() > 0) $regulator = new Regulator($sql->fetchColumn());
             }
             
             if ($regulator == null)
             {
-                $sensorParam = Sensor::getParamValue((int)$viewObject->params);
+                $sensorParam = Sensor::getParamValue((int)$sensParamId);
                 $item = [
                     'id' => (int)$viewObject->id,
                     'type' => $viewObject->type,
@@ -1906,7 +1916,7 @@ class Views extends System
                     'setpoint' => $regulator->device->setpoint,
                     'lowval' => $regulator->device->min_setpoint,
                     'highval' => $regulator->device->max_setpoint,
-                    'precision' => $sensor->device->params[$viewObject->params]["accuracy"]
+                    'precision' => $sensor->device->params[$sensParamId]["accuracy"]
                 ];
             }
             

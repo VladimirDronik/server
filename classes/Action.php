@@ -183,9 +183,13 @@ class Action extends Megad
             else return "'odd'";
         }
 
-        if (($whence)&&($idCausing)) {
-
+        if (($whence)&&($idCausing))
+        {
             switch ($whence) {
+                case 'regulator':
+                    $resParams = $method_params;
+                    break;
+
                 case 'view' :
                     if ($method_params == 'on')
                         $sql = parent::$db->query("SELECT `on_method_params` AS param FROM `view_items` WHERE `id_object`=$idCausing");
@@ -212,12 +216,16 @@ class Action extends Megad
                     break;
             }
 
-            $paramsArray = explode(';', $method->param);
-            $resParams = implode(' ', $paramsArray);
-            $resParams = "'".$resParams."'";
-            return $resParams;
+            if (isset($method->param))
+            {
+                $paramsArray = explode(';', $method->param);
+                $resParams = implode(' ', $paramsArray);
+                $resParams = "'".$resParams."'";
+            }
 
-        } else return null;
+            return $resParams;
+        }
+        else return null;
     }
 
     /**

@@ -1877,7 +1877,7 @@ class Views extends System
             if ($object->type == 'sensor') $sensor = new Sensor($viewObject->id_object);
             else $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($sensParamId));
 
-            $sensor->checkSensor();
+            // $sensor->checkSensor();
 
             if ($object->type == 'regulator') $regulator = new Regulator($viewObject->id_object);
             else

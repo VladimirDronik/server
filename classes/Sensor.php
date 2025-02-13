@@ -245,9 +245,9 @@ class Sensor extends ObjectManager
             if($sql->rowCount() > 0) {
                 $r = new Regulator($sql->fetchColumn());
                 $r->checkRegulator();
-                return true;
             }
         }
+        return true;
     }
 
     public static function getSensorObjectIdByParamId($paramId)

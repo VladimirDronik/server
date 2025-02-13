@@ -7,9 +7,9 @@ $id = (isset($argv[1]) ? $argv[1] : null);
 
 if (null !== $regulator = new Regulator($id))
 {
-    if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensors_param_id))) {
-        $sensor->checkSensor();
-    }
+    // if (null !== $sensor = new Sensor(Sensor::getSensorObjectIdByParamId($regulator->device->sensors_param_id))) {
+    //     $sensor->checkSensor();
+    // }
     
     if (null !== $regulator->device->source) {
         if (null !== $state = $regulator->getRegulatorState()) {

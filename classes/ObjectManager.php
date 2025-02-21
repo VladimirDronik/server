@@ -17,6 +17,19 @@ class ObjectManager extends System
         }
     }
 
+    public function getStaticInfo()
+    {
+        if ($this->object->type == 'meter') return $this->meterStaticInfo();
+    }
+
+    private function meterStaticInfo()
+    {
+        $json = file_get_contents(ADM_DIR . "/storage/app/devices/meters.json");
+        foreach (json_decode($json) as $m)
+            if ($m->type == $this->device->type) return $m;
+        return null;
+    }
+
     private function getDevicebyType()
     {
         if ($this->object->type == 'sensor') return $this->sensorBuilder();
@@ -117,5 +130,7 @@ class ObjectManager extends System
         if($sql->rowCount() > 0) return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
         else return [];
     }
+
+
 }
 

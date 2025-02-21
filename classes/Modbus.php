@@ -134,9 +134,39 @@ class Modbus extends System {
 		return chr($lowCrc).chr($highCrc);
 	}
 
+    public static function send(int $regId, string $action, mixed $value = null, int $priority = null)
+    {
+        switch(Modbus::getProtoByRegId($regId))
+        {
+            case 'modbus': return Modbus::sendModbus($regId, $action, $value, $priority);
+                break;
+            
+            case 'pulsarm': return Modbus::sendPulsar($regId, $action, $value, $priority);
+                break;
+        }
+    }
+
+    public static function sendPulsar(int $regId, string $action, mixed $value = null, int $priority = null)
+    {
+        $param = self::getModbusRegister($regId);
+        if ($param->register_type == 'channel')
+            $packet = Pulsarm::getChannelPackage($param->address, $param->starting_register);
+        if ($param->register_type == 'parameter')
+            $packet = Pulsarm::getParamPackage($param->address, $param->starting_register);
+
+        $bus = new Rs485($param->bus_id);
+        if(null !== $response = $bus->sendRaw($packet))
+        {
+            $payload = Pulsarm::getPayload($response);
+            $result = Utils::formatData($payload, $param->data_format, $param->scale_unit);
+            self::setValue($regId, $result);
+            return $result;
+        }
+        else return null;
+    }
+
     /**
      * Постановка задания на чтение/запись регистра(ов) в очередь
-     * $force=true для принудительного опроса, даже если устройство неактивно
      */
     public static function sendModbus(int $modbusRegisterId, string $action, mixed $value = null, int $priority = null)
     {
@@ -201,5 +231,17 @@ class Modbus extends System {
                 return $response;
             }
         }
+    }
+
+    public static function getProtoByRegId($registerId)
+    {
+        $sql = parent::$db->query(
+            "SELECT `modbus_slavers_types`.`protocol` FROM `modbus_slavers_types`
+            JOIN `modbus_slavers` ON `modbus_slavers_types`.`id` = `modbus_slavers`.`type`
+            JOIN `modbus_registers` ON `modbus_slavers`.`id` = `modbus_registers`.`slaver_id`
+            WHERE `modbus_registers`.`id` = $registerId"
+        );
+
+        if ($sql->rowCount() > 0) return $sql->fetchColumn();
     }
 }

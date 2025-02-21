@@ -18,7 +18,7 @@ use ModbusTcpClient\Utils\Endian;
 use ModbusTcpClient\Utils\Types;
 
 class Rs485 extends System
-{
+{   
     private $bus;
 
     function __construct($busId) {
@@ -373,5 +373,12 @@ class Rs485 extends System
             foreach ($buses AS $bus) $busesArray[] = $bus->bus_id;
             return $busesArray;
         }
+    }
+
+    public static function getDevice($deviceId) {
+        $sql = parent::$db->query(
+            "SELECT * FROM `modbus_slavers` WHERE `id` = $deviceId"
+        );
+        if($sql->rowCount() > 0) return $sql->fetch(PDO::FETCH_OBJ);
     }
 }

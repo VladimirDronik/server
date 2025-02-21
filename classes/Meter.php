@@ -5,6 +5,7 @@ class Meter extends ObjectManager
 {
     public $object;
     public $device;
+    public $params;
 
     const UNITS_MAPPING = [
         'celsius' => '°C',
@@ -34,6 +35,12 @@ class Meter extends ObjectManager
             {
                 $this->object = $meter->object;
                 $this->device = $meter->device;
+                $sql = parent::$db->query(
+                    "SELECT * FROM `meters_params` WHERE `object_id` = {$this->object->id}
+                    AND `active` = 1"
+                );
+                if($sql->rowCount() > 0) $this->params = $sql->fetchAll(PDO::FETCH_OBJ);
+                else $this->params = null;
             }
         }
         else return null;
@@ -47,6 +54,9 @@ class Meter extends ObjectManager
                 break;
             
             case 'modbus': $value = $this->getFromModbus();
+                break;
+            
+            case 'rs485': $value = $this->getFromRs485();
                 break;
             
             case 'mqtt': $value = $this->getFromMqtt();
@@ -78,12 +88,50 @@ class Meter extends ObjectManager
 
     private function getFromModbus()
     {
-        $value = Modbus::sendModbus($this->device->source_id, 'read');
+        $value = Modbus::send($this->device->source_id, 'read');
         if(isset($value)) {
             $result = $value - $this->device->init_value - $this->getTotalFromDb();
             return $result;
         }
         else return null;
+    }
+
+    private function getFromRs485()
+    {
+        $json = $this->getStaticInfo();
+        if ($json->protocol == 'pulsarm')
+        {
+            // $p = new Pulsarm($this);
+            // $p->getChannels();
+            foreach($this->params as &$param)
+            {
+                foreach($json->params as $s_param) {
+                    if($s_param->param_name == $param->name)
+                    {
+                        $param->channel = $s_param->address;
+                        $param->format = $s_param->format;
+                        $param->units = $s_param->units;
+                        $param->scale = $s_param->scale;
+                    }
+                }
+            }
+            $p = (new Pulsarm($this))->getChannels();
+            // var_dump($this->params);
+        }
+        // $d = Rs485::getDevice($this->device->source_id);
+        // $bus = new Rs485($d->bus);
+        // $packet = getPackage($d->address, $this);
+        // $result = $bus->sendRaw($packet);
+        // $r = array_slice($result, 6);
+        // $r = array_slice($r, 0, -4);
+        // $r = array_reverse($r);
+        // $value = unpack('G', hex2bin(implode('', $r)))[1];
+        // if(isset($value)) {
+        //     $result = $value - $this->device->init_value - $this->getTotalFromDb();
+        //     $result = round($result, 17);
+        //     return $result;
+        // }
+        // else return null;
     }
 
     private function validateValue($value)
@@ -222,12 +270,10 @@ class Meter extends ObjectManager
     public function getTotalFromDb() {
         try {
             $sql = parent::$db->query(
-                "SELECT ROUND(SUM(`value`), {$this->device->accuracy}) FROM `meter_graphs`
+                "SELECT SUM(`value`) FROM `meter_graphs`
                 WHERE `meter_id` = {$this->device->id}"
             );
-            if($sql->rowCount() > 0) {
-                return round($sql->fetchColumn(), $this->device->accuracy);
-            }
+            if($sql->rowCount() > 0) return $sql->fetchColumn();
         }
         catch (Exception $exception) {
             echo $exception->getMessage() . PHP_EOL;

@@ -6,6 +6,7 @@
 
 //Корневая папка для проекта
 define("ROOT_DIR",  __DIR__);
+define("ADM_DIR",  dirname(__DIR__, 1).'/adm');
 
 //Переменная для вывода в неё служебной информации
 $system_message = true;
@@ -25,6 +26,9 @@ define('YA_CALLBACK_SCRIPT', 'ydr.php');
 
 define('MQTT_HOST', 'localhost');
 define('MQTT_PORT', 1883);
+
+define('LITTLE_ENDIAN', 0);
+define('BIG_ENDIAN', 1);
 
 require_once __DIR__. '/classes/System.php';
 require_once __DIR__. '/classes/Device.php';
@@ -72,6 +76,10 @@ require_once __DIR__. '/classes/Rs485.php';
 require_once __DIR__. '/classes/Sensor.php';
 require_once __DIR__. '/classes/Regulator.php';
 require_once __DIR__. '/classes/Meter.php';
+require_once __DIR__. '/classes/Utils.php';
+
+// RS485 Protocols
+require_once __DIR__. '/classes/Rs485Protocols/Pulsarm.php';
 
 //i2c drivers
 require_once __DIR__.'/libs/mod_i2c_htu21d.php';

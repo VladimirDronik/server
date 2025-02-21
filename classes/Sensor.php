@@ -21,11 +21,13 @@ class Sensor extends ObjectManager
         'ampere' => 'А',
         'kilowatt_hour' => 'кВт/ч',
         'cubic_meter' => 'м³',
+        'cubic_meter_hour' => 'м³/ч',
         'gigacalorie' => 'Гкал',
         'mcg_m3'  => 'мкг/м³',
         'watt' => 'Вт',
         'kelvin' => 'К',
         'volt' => 'В',
+        'hertz' => 'Гц',
         NULL => ''
     ];
 

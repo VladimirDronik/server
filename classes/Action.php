@@ -38,6 +38,7 @@ class Action extends Megad
     {
         // var_dump ($idMethod, $whence, $idCausing, $params, $method_params, $sendMessage);
         // var_dump ($params);
+
         if ($idCausing)
         {
             //Меняем состояние объекта и итема, которые вызвали действие
@@ -68,9 +69,16 @@ class Action extends Megad
             if ($idCausing != $method->id_object)
             Messages::sendByObject($method->id_object, $sendMessage); //Вызов сообщений для объекта воздействия
 
-            if (self::$easy) self::easy($object, $whence, $params);
-            elseif ((self::$idScript) && ($method->is_system == 0)) self::script($object);
-            else self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
+            if (self::$easy) {
+              self::easy($object, $whence, $params);
+            }
+            elseif ((self::$idScript) && ($method->is_system == 0)) {
+              self::script($object);
+            }
+            else {
+              self::runSystem($method->id_object, self::params($whence, $idCausing, $method_params));
+              MqttPanel::publish_anystat($idCausing);
+            }
 
         }
           

@@ -201,6 +201,9 @@ class Objects extends System
                 $view = new Views();
                 $view->updateItem($item->id, $status);
             }
+
+
+            MqttPanel::publish_switches($this->id, $status);
         }
 
 

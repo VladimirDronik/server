@@ -79,14 +79,8 @@ class Thermostats extends Objects
      */
     public function getProperty($event)
     {
-        $object = new Objects();
-        $object->select($this->idObject);
-
-        switch ($event) //->property
+        switch ($event->property)
         {
-            case 'id' :
-                $property = $this->termostat->id;
-                break;
 
             case 'current' :
                 $property = $this->termostat->current;
@@ -102,11 +96,10 @@ class Thermostats extends Objects
 
             case 'type' :
             case 'thermostat':
-                //if($this->termostat->thermostat == 1)
-                //$property = 'нагрев';
-                //else
-                //    $property = 'охлаждение';
-                $property = $this->termostat->thermostat;
+                if($this->termostat->termostat == 1)
+                $property = 'нагрев';
+                else
+                    $property = 'охлаждение';
                 break;
 
             case 'min_threshold' :
@@ -131,11 +124,6 @@ class Thermostats extends Objects
 
             case 'battery' :
                 //TODO: Здесь сделать запрос заряда батареи для беспроводного термостата
-                break;
-            case 'state' :
-                $object = new Objects();
-                $object->select($this->idObject);
-                $property = mb_strtoupper($object->status);
                 break;
         }
         return $property;
@@ -334,133 +322,3 @@ class Thermostats extends Objects
                                AND handle = 'temperature'");
             
             $this->termostat->current = $termometr_value;
-            
-            $sql = parent::$db->query("SELECT `value` from graph_termostats 
-                                       WHERE `id_termostat` = $this->id_termostat 
-                                       ORDER BY id DESC LIMIT 1");
-            $termometr_prev_value = $sql->fetch(PDO::FETCH_OBJ);
-
-            if ((floatval($termometr_value) >= $termometr_prev_value->value+0.5) ||
-                (floatval($termometr_value) <= $termometr_prev_value->value-0.5))
-            {
-                Graphs::insertToTermostats($this->id_termostat, $termometr_value);
-            }
-
-            //Отправка значения для labels
-            Labels::setValue(round($this->termostat->current,1).'°C', "current", $this->idObject);
-        }
-
-        //Отдаем значение визуальному компоненту
-        $sql = parent::$db->query("SELECT id FROM `view_items` WHERE `id_object`= $this->idObject");
-        $viewItem = $sql->fetch(PDO::FETCH_OBJ);
-
-        if(isset($viewItem->id))
-        {
-            $view = new Views();
-            $view->updateItem($viewItem->id);
-        }
-       
-        return $termometr_value;
-    }
-
-    /**
-     * Проверка снятого с термостата значения на пороговое и формирование аварии
-     *
-     * @param float $termometr_value - снятое с термостата значение
-     */
-    private function checkValue($termometr_value)
-    {
-        //Проверяем является ли значение числом
-        if(!is_numeric($termometr_value))
-        {
-            System::addLog('error', 
-                'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                '). Некорректное значение ' . $termometr_value . '.',
-                'sensor');
-            // Messages::send(1,
-            //     'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-            //     '). Некорректное значение: ' . $termometr_value . '°C.');
-            return $error = true;
-        }
-        //Проверяем входит ли значение в диапазон измерений
-        elseif (($termometr_value < $this->min_threshold) || ($termometr_value > $this->max_threshold))
-        {
-            System::addLog('error', 
-                'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                '). Значение ' . $termometr_value . ' выходит за пределы измерения.',
-                'sensor');
-            return $error = true;
-        }
-        //Проверяем входит ли значение в диапазон аварийных значений
-        else 
-        {
-            if ($termometr_value > $this->max_alarm) 
-            {
-                System::addLog('warning',
-                    'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                    '). Значение ' . $humidity . ' ед. выше аварийного порога.',
-                    'sensor');
-            }
-
-            if ($termometr_value < $this->min_alarm)
-            {
-                System::addLog('warning',
-                    'Термостат "' . $this->name . '" (ID ' . $this->idObject .
-                    '). Значение ' . $termometr_value . ' ед. ниже аварийного порога.',
-                    'sensor');
-            }
-            return $error = false;
-        }
-    }
-
-    /**
-     * Заносим в таблицу термостатов данные об установленной пользователем температуре
-     *
-     * @param int $idObject - id термостата
-     * @param float $value - Значение выбраной темпертуры
-     */
-    function set_temperature($idObject, $value)
-    {
-        //Заносим значение термостата в БД
-        parent::$db->query("UPDATE termostats SET `optimal` = $value WHERE id_object='$idObject'");
-    }
-
-    /**
-     * Установка режима отопления для термостата и изменение связанного графического элемента
-     *
-     * @param string $mode - режим, коорый хотим установить
-     * @param int $idObject - id объекта, к которому привязан термостат
-     * @return void
-     */
-    static function set_temperature_mode($mode, $idObject)
-    {
-        //Берем температуру у выбранного режима
-        $modesql = parent::$db->query("SELECT `temperatures`.$mode AS temperature FROM `temperatures` 
-                                       INNER JOIN `termostats` ON `temperatures`.`id_room` = `termostats`.`room` 
-                                       INNER JOIN `objects` ON `termostats`.`id_object` = `objects`.`id`
-                                       LEFT JOIN `view_items` ON `view_items`.`id_object` = `termostats`.`id_object`
-                                       WHERE `termostats`.`id_object` = $idObject");
-
-        $result = $modesql->fetch(PDO::FETCH_OBJ);
-
-        //Заносим значение в БД для выбранного термостата
-        self::set_temperature($idObject, $result->temperature);
-
-        if(isset($result->view))
-        {
-            $view = new Views();
-            $view->updateItem($result->view, $result->temperature);
-        }
-    }
-
-    /**
-     * Удаление старых значений температуры в таблице графиков
-     *
-     * @return void
-     */
-    static function deleteGraphOldValues()
-    {
-        Graphs::deleteOldValues('graph_termostats');
-    }
-
-}

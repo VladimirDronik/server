@@ -7,11 +7,8 @@ checkSupervisorCfg ('modbus');
 // checkSupervisorCfg ('modbus_polling');
 checkSupervisorCfg ('dali_polling');
 // checkSupervisorCfg ('curtain_polling');
-checkSupervisorCfg ('panel_anystat');
 
-checkSupervisorCfg ('panel_switches');
 
-checkSupervisorCfg ('panel_lights');
 //* FUNCTIONS */
 
 // Функция получения несистемных процессов из конфига supervisord
@@ -74,8 +71,8 @@ function getIdArrayFromDb(string $subject)
     $idArrayFromDb = [];
     if ($subject == 'modbus' || $subject == 'modbus_polling') $idArrayFromDb = Modbus::getModbusRtuBuses();
     if ($subject == 'dali_polling') $idArrayFromDb = Dali::getDaliBuses();
-    // if ($subject == curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
-    if ($subject == 'panel_anystat' || $subject == 'panel_switches' || $subject == 'panel_lights') $idArrayFromDb = MqttPanel::getMqttPanelId();
+    // if ($subject == 'curtain_polling') $idArrayFromDb = Curtain::getRsMotors();
+
     return $idArrayFromDb;
 }
 
@@ -106,9 +103,8 @@ function addToSupervisorConfig(string $subject, int $subjectId)
     if ($subject == 'modbus_polling') $scriptName = 'modbus_polling_loop.php';
     if ($subject == 'dali_polling') $scriptName = 'dali_polling_loop.php';
     // if ($subject == 'curtain_polling') $scriptName = 'curtain_polling_loop.php';
-    if ($subject == 'panel_anystat') $scriptName = 'mqtt_sub_anystat.php';
-    if ($subject == 'panel_switches') $scriptName = 'mqtt_sub_switches.php';
-    if ($subject == 'panel_lights') $scriptName = 'mqtt_sub_lights.php';
+
+    
     $query = 'grep ' . escapeshellarg("\[program:${subject}_id${subjectId}\]") . ' ' .  $configFile;
     
     if (!exec($query))

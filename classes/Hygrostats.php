@@ -38,8 +38,11 @@ class Hygrostats extends Objects
                                        WHERE id_object=$idObject");
 
             self::$hygrostat = $sql->fetch(PDO::FETCH_OBJ);
+
         }
     }
+
+
 
     /**
      * Проверяем параметры термостата с которыми работаем
@@ -142,7 +145,33 @@ class Hygrostats extends Objects
         }
     }
 
-    /**
+
+
+    /*
+      Получаем параметры гигростата
+    */
+    public function getProperty($event)
+    {
+      $hygrostat = self::$hygrostat;
+
+      switch ($event) //->property
+        {
+          case 'current' :
+            $property = $hygrostat->current;
+            break;
+
+          case 'optimal' :
+            $property = $hygrostat->optimal;
+            break;
+
+          case 'type' :
+            $property = $hygrostat->type;
+            break;
+       }
+      return $property;
+    }
+
+  /**
      * Получение значение гигростата
      *
      * @return void

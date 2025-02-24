@@ -266,4 +266,28 @@ class Lightstats extends Objects
         //Заносим значение датчика в БД
         parent::$db->query("UPDATE lightstats SET `optimal` = $value WHERE id_object='$idObject'");
     }
+
+    /*
+      Получаем параметры светостата
+    */
+    public function getProperty($event)
+    {
+      $lightstat = self::$lightstat;
+
+      switch ($event) //->property
+        {
+          case 'current' :
+            $property = $lightstat->current;
+            break;
+
+          case 'optimal' :
+            $property = $lightstat->optimal;
+            break;
+
+          case 'type' :
+            $property = $lightstat->type;
+            break;
+       }
+      return $property;
+    }
 }

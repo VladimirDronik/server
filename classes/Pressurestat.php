@@ -253,4 +253,28 @@ class Pressurestat extends Objects
         //Заносим значение в БД
         parent::$db->query("UPDATE pressurestats SET `optimal` = $value WHERE id_object='$idObject'");
     }
+
+    /*
+      Получаем параметры прессостата
+    */
+    public function getProperty($event)
+    {
+      $pressurestat = self::$pressurestat;
+
+      switch ($event) //->property
+        {
+          case 'current' :
+            $property = $pressurestat->current;
+            break;
+
+          case 'optimal' :
+            $property = $pressurestat->optimal;
+            break;
+
+          case 'type' :
+            $property = $pressurestat->type;
+            break;
+       }
+      return $property;
+    }
 }

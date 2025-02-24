@@ -72,6 +72,11 @@ class Curtain extends Device
         }
     }
 
+public static function openScript($objectId) {
+//passthru("(php -f /opt/touchon/server/scripts/curtain_open.php $objectId -DFOREGROUND) >> /dev/null 2>&1");
+    passthru("(php -f /opt/touchon/server/scripts/curtain_open.php $objectId &) >> /dev/null 2>&1");
+}
+
     /**
      * Отправка команды (для штор с RS485)
      */

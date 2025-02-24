@@ -1,0 +1,202 @@
+<?php
+
+include_once "../include.php";
+
+use PhpMqtt\Client\MqttClient;
+use PhpMqtt\Client\Exceptions\MqttClientException;
+
+class MqttPanel extends System
+{
+    const MQTT_HOST = 'localhost';
+    const MQTT_PORT = 1883;
+
+    static $response = null;
+//Функция возвращает id 
+    public static function subscribe(string $topic)
+    {
+      $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+      $client->connect(null, true);
+      $client->subscribe($topic, function (string $topic, string $message, bool $retained) use ($client) {
+        self::$response = json_decode($message, true);
+        $client->interrupt();
+      }, MqttClient::QOS_AT_MOST_ONCE);
+      $client->loop(true);
+      $client->disconnect();
+      return self::$response;
+    }
+//Функция подписывается на топик Энистата и при изменении значения target запускает RunAction
+    public static function subscribe_anystat(int $panel_id)
+    {
+      //Формируем топик
+      $sql = Objects::$db->query("SELECT  `mac` FROM `mqtt_panel` WHERE `id` = $panel_id");
+      $sql = $sql->fetch(PDO::FETCH_OBJ);
+      $mac = $sql->mac;
+      $topic = "touchon-panel-". $mac . "/anystat/state";
+      try {
+        $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+        $client->connect(null, true);
+
+        $client->subscribe($topic, function (string $topic, string $message, bool $retained) use ($client) {
+          $response = json_decode($message, true);
+
+          $anystat_id = $response['object_id'];
+          $state = $response['anystat_state'];
+          $target_value = $response['target_value'];
+
+          $opt_t = Objects::$db->query("SELECT  `optimal` FROM `termostats` WHERE `id` = $anystat_id");
+          $opt_t = $opt_t->fetch(PDO::FETCH_OBJ);
+          $target_value_old = $opt_t->optimal;
+
+          //Получаем параметры из таблицы представлений
+          $params = Objects::$db->query("SELECT  `type`, `on_method`, `off_method` FROM `view_items` WHERE `id_object` = $anystat_id");
+          $params = $params->fetch(PDO::FETCH_OBJ);
+          if ($params->type != null) {
+            $onMethod = $params->on_method;
+            $typeObject = $params->type;
+            if ($state == "ON"){
+              if (round($target_value_old) != round($target_value)){
+                if ($typeObject == "termostat"){
+                  $termostat = new Thermostats();
+                  $termostat->set_temperature($anystat_id, $target_value);
+                }
+                if ($typeObject == "hygrostat"){
+                  $hygrostat = new Hygrostats();
+                  $hygrostat->set_humiduty($anystat_id, $target_value);
+                }
+                print("\nSubscribe: \nAnystat ID: $anystat_id\nType anystat: $typeObject\nTarget value: $target_value\n\n");
+                //Запускаем метод
+                Action::runAction($onMethod, NULL, $anystat_id);
+              }
+            }
+          }
+          //$client->interrupt();
+        }, MqttClient::QOS_AT_MOST_ONCE);
+        $client->loop(true);
+
+        // Gracefully terminate the connection to the broker.
+        $client->disconnect();
+      } catch (MqttClientException $e) {
+          // MqttClientException is the base exception of all exceptions in the library. Catching it will catch all MQTT related exceptions.
+          $logger->error('Subscribing to a topic using QoS 0 failed. An exception occurred.', ['exception' => $e]);
+      }
+    }
+//Функция подписывается на топик Выключателей и при изменении состояния запускает RunAction
+    public static function subscribe_switch(int $panel_id)
+    {
+      //Формируем топик
+      $sql = Objects::$db->query("SELECT  `mac` FROM `mqtt_panel` WHERE `id` = $panel_id");
+      $sql = $sql->fetch(PDO::FETCH_OBJ);
+      $mac = $sql->mac;
+      $topic = "touchon-panel-". $mac . "/switches/state";
+      try {
+        $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+        $client->connect(null, true);
+
+        $client->subscribe($topic, function (string $topic, string $message, bool $retained) use ($client) {
+          $response = json_decode($message, true);
+          $switch_id = $response['object_id'];
+          $state = $response['state'];
+
+          $params = Objects::$db->query("SELECT  `on_method`, `off_method` FROM `view_items` WHERE `id_object` = $switch_id");
+          $params = $params->fetch(PDO::FETCH_OBJ);
+          if ($params->on_method != null) {
+             if ($state == "ON"){
+               print("Switch ID: $switch_id State: ON\n");
+               $onMethod = $params->on_method;
+               Action::runAction($onMethod, NULL, $switch_id);
+             }
+             if ($state == "OFF"){
+               print("Switch ID: $switch_id State: OFF\n");
+               $offMethod = $params->off_method;
+               Action::runAction($offMethod, NULL, $switch_id);
+             }
+          }
+          //$client->interrupt();
+        }, MqttClient::QOS_AT_MOST_ONCE);
+        $client->loop(true);
+
+        // Gracefully terminate the connection to the broker.
+        $client->disconnect();
+      } catch (MqttClientException $e) {
+          // MqttClientException is the base exception of all exceptions in the library. Catching it will catch all MQTT related exceptions.
+          $logger->error('Subscribing to a topic using QoS 0 failed. An exception occurred.', ['exception' => $e]);
+        }
+    }
+
+
+//Функция публикует пэйлоад в топик
+    public static function publish(string $topic, array $payload, int $qos, bool $retain)
+    {
+        $client = new MqttClient(self::MQTT_HOST, self::MQTT_PORT);
+        $client->connect(null, true);
+        $client->publish($topic, json_encode($payload), $qos,  $retain);
+        $client->disconnect();
+    }
+//Функция публикует пэйлоад отправленный сервером в топик Энистата
+    public static function publish_anystat(int $anystat_id)
+    {
+      //Формируем топик
+      $sql = Objects::$db->query("SELECT  `mac` FROM `mqtt_panel` WHERE JSON_EXTRACT(page1,'$.object_id') LIKE $anystat_id");
+      $sql = $sql->fetch(PDO::FETCH_OBJ);
+      $mac = $sql->mac;
+      $topic = "touchon-panel-". $mac . "/anystat/state";
+      $response = self::subscribe($topic);
+      $object_id = $response['object_id'];
+
+      if ($object_id == $anystat_id){
+        //MQTT anystat
+        $params = Objects::$db->query("SELECT  `thermostat`, `current`, `optimal` FROM `termostats` WHERE `id_object` = $anystat_id");
+        $params = $params->fetch(PDO::FETCH_OBJ);
+        $current = $params->current;
+        $optimal = $params->optimal;
+        $mode = $params->thermostat;
+
+        $states = Objects::$db->query("SELECT  `status` FROM `objects` WHERE `id` = $anystat_id");
+        $states = $states->fetch(PDO::FETCH_OBJ);
+        $state = $states->status;
+        print("Publish:\n");
+        print("Current: $current\n");
+        print("Target: $optimal\n");
+        print("Mode: $mode\n");
+        print("State: $state\n");
+        if ($mode == 0) {
+          if ($state == "ON"){
+            $activity = 3;
+          } else {
+            $activity = 1;
+          }
+        }
+        if ($mode == 1) {
+          if ($state == "ON"){
+            $activity = 2;
+          } else {
+            $activity = 1;
+          }
+          $topic = "touchon-panel-". $mac . "/settings/anystat/state";
+          $payload = [
+            "id" => "anystat",
+            "object_id" => $anystat_id,
+            "activity"  => $activity,
+            "anystat_state"  =>  "ON",
+            "target_value"  => round($optimal),
+            "current_value"  => round($current),
+            "unit"  => "°C"
+            ];
+          self::publish($topic, $payload, 0, true);
+        }
+      }
+    }
+
+    //Функция публикует пэйлоад отправленный сервером в топик Выключателей
+    public static function publish_switches(int $switch_id)
+    {
+      //Формируем топик
+      $sql = Objects::$db->query("SELECT  `mac` FROM `mqtt_panel` WHERE JSON_EXTRACT(page2,'$.object_id') LIKE $anystat_id");
+      $sql = $sql->fetch(PDO::FETCH_OBJ);
+      $mac = $sql->mac;
+      $topic = "touchon-panel-". $mac . "/switches/state";
+      $response = self::subscribe($topic);
+      $object_id = $response['object_id'];
+
+    }
+}

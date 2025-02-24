@@ -269,4 +269,29 @@ class CarbDioxide extends Objects
         //Заносим значение в БД
         parent::$db->query("UPDATE carbdioxides SET `optimal` = $value WHERE id_object='$idObject'");
     }
+    /*
+      Получаем параметры датчика
+    */
+    public function getProperty($event)
+    {
+      $carbdioxide = self::$carbdioxide;
+
+      switch ($event) //->property
+        {
+          case 'current' :
+            $property = $carbdioxide->current;
+            break;
+
+          case 'optimal' :
+            $property = $carbdioxide->optimal;
+            break;
+
+          case 'type' :
+            $property = $carbdioxide->mode;
+            break;
+       }
+      return $property;
+    }
+
+ 
 }

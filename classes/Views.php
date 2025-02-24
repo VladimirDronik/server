@@ -530,7 +530,6 @@ class Views extends System
     {
    
         $data_array = json_decode($data);
-
         //Если клиент отправил запрос на изменение состояния термометра на странице термометров
         if ($data_array->status == 'temperaturesChange') {
 
@@ -562,7 +561,6 @@ class Views extends System
             if (isset($data_array->items[0]->status)) $itemStatus = $data_array->items[0]->status;
             if (isset($data_array->items[0]->value)) $itemValue = $data_array->items[0]->value;
             if (isset($data_array->items[0]->set_value)) $set_value = $data_array->items[0]->set_value;
-
             //Получаем id объекта из таблицы представлений
             $object = $this->getObjectAndMethod($itemID);
 
@@ -839,6 +837,8 @@ class Views extends System
                             if ($brightness == 0) $status = 'off'; //Выключаем диммер
                             $dimmer->setValue($brightness);
                             $newObject->setStatus($status, true, false);
+                            MqttPanel::publish_lights($idObject, $brightness, $status);
+                            system::addLog('View', "Object ID: " .  $idObject . " Brightness: " . $brightness . " State: " . $status, 'socket_server');
                         }
                         
                     break;
@@ -948,7 +948,7 @@ class Views extends System
     function getObjectAndMethod($idItem)
     {
         $sql = parent::$db->query("SELECT `id_object`, `on_method`, `off_method` FROM `view_items` WHERE `id`= $idItem");
-
+        
         if($sql->rowCount() > 0)
         return $sql->fetch(PDO::FETCH_OBJ);
         else return false;

@@ -281,7 +281,7 @@ class Device extends System
                     ];
                 }
 
-                if ($tape->getType() == 'RGB') {
+                if ($tape->getType() == 'CCT') {
 
                     $capabilities[] = [
                         'type' => 'devices.capabilities.color_setting',
@@ -289,8 +289,8 @@ class Device extends System
                         'reportable' => true,
                         'parameters' => [
                                 'temperature_k' => [
-                                    "min" => 0,
-                                    "max" => 100
+                                    "min" => 1000,
+                                    "max" => 10000
                                 ],
                                 'instance' => 'temperature_k'
                             ]

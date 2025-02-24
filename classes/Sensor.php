@@ -245,8 +245,10 @@ class Sensor extends ObjectManager
                 "SELECT `object_id` FROM `regulators` WHERE `sensors_param_id` = {$param['id']}"
             );
             if($sql->rowCount() > 0) {
-                $r = new Regulator($sql->fetchColumn());
-                $r->checkRegulator();
+                while ($rId = $sql->fetchColumn()) {
+                    $r = new Regulator($rId);
+                    $r->checkRegulator();
+                }
             }
         }
         return true;

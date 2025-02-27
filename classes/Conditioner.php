@@ -343,7 +343,8 @@ class Conditioner extends Device
     public function updateAcParams() {
         $sql = parent::$db->query(" SELECT `id`, `alias`
                                     FROM `modbus_registers`
-                                    WHERE `slaver_id` = {$this->ac->modbus_slaver_id}");
+                                    WHERE `slaver_id` = {$this->ac->modbus_slaver_id}
+                                    AND `alias` IS NOT NULL");
         while ($acParam = $sql->fetch(PDO::FETCH_OBJ)) {
             $registerId = Modbus::getRegisterIdByAlias ($this->ac->modbus_slaver_id, $acParam->alias);
             if (isset($registerId)) {

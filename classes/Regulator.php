@@ -261,7 +261,7 @@ class Regulator extends ObjectManager
                 if ($this->object->status == 'on') $s = 1;
                 else $s = 0;
                 $status = Modbus::sendModbus(
-                    Modbus::getRegisterIdByAlias($this->device->source_id, "status"),
+                    Modbus::getRegisterIdByAlias($this->device->source_id, "state"),
                     'write',
                     $s
                 );

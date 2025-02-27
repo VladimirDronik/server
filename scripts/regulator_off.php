@@ -7,7 +7,7 @@ $id = (isset($argv[1]) ? $argv[1] : null);
 
 if (null !== $regulator = new Regulator($id))
 {
-    $regulator->regulatorOff();
+    $regulator->setState('off');
     exit(0);
 }
 

@@ -327,23 +327,13 @@ class Rs485 extends System
                 break;
             case 3:
             case 4:
-            case 6:
                 if ($task->format == 'u64') return $response->getQuadWordAt(0)->getUInt64();
                 if ($task->format == 's64') return $response->getQuadWordAt(0)->getInt64();
                 if ($task->format == 'double') return $response->getQuadWordAt(0)->getDouble();
                 if ($task->format == 'float') return $response->getDoubleWordAt(0)->getFloat();
                 if ($task->format == 's32') return $response->getDoubleWordAt(0)->getInt32();
                 if ($task->format == 'u32') return $response->getDoubleWordAt(0)->getUInt32();
-                if ($task->format == 'u16') {
-                    if ($task->quantity > 1) {
-                        $r = [];
-                        foreach ($response->getWords() as $word) {
-                            $r[] = $word->getUInt16();
-                        }
-                        return $r;
-                    }
-                    else return $response->getWordAt(0)->getUInt16();
-                }
+                if ($task->format == 'u16') return $response->getWordAt(0)->getUInt16();
                 if ($task->format == 's16') return $response->getWordAt(0)->getInt16();
                 if ($task->format == 'f8.8') return Boiler::convertToF88($response->getWordAt(0)->getUInt16());
                 if (($task->format == 'collection')) {
@@ -352,6 +342,9 @@ class Rs485 extends System
                 break;
             case 5:
                 return $response->isCoil() ? '1' : '0';
+                break;
+            case 6:
+                return $response->getWord();
                 break;
             case 15:
                 return $response->getCoilCount();

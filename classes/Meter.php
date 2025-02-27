@@ -260,7 +260,8 @@ class Meter extends ObjectManager
                 break;
             
             case 'modbus':
-                $value = Modbus::sendModbus($this->device->source_id, 'read');
+            case 'rs485':
+                $value = Modbus::send($this->device->source_id, 'read');
                 if(isset($value)) return $value;
                 else return null;
                 break;

@@ -26,7 +26,7 @@ passthru("(cd scripts && php -f ping.php &) >> /dev/null 2>&1");
  * выполняем найденный скрипт
  */
 //День для еженедельных скриптов
-$day = date("w");
+$day = date("w") - 1;
 $script->scheduler($day,$time, 'w');
 
 //День для ежемесячных скриптов

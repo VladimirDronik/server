@@ -47,8 +47,6 @@ class Scripts extends Megad
 
     function scheduler($day, $time, $type)
     {
-
-
         $sql = parent::$db->query("SELECT  scheduler_tasks.id AS id_task, scheduler_tasks.method AS method, 
                                            scheduler_tasks.script AS script, scheduler_tasks.object AS id_object
                                     FROM scheduler_tasks        

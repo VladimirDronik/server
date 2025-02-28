@@ -8,6 +8,7 @@ $id = (isset($argv[1]) ? $argv[1] : null);
 if (null !== $regulator = new Regulator($id))
 {
     $regulator->setState('off');
+    $regulator->updateRegulator()
     exit(0);
 }
 

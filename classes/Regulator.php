@@ -244,6 +244,7 @@ class Regulator extends ObjectManager
 
     public function setState($value) {
         $this->object->status = $value;
+        
     }
 
     public function updateRegulator()
